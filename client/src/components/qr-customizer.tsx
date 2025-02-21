@@ -47,7 +47,12 @@ interface QrCustomizerProps {
 }
 
 export function QrCustomizer({ url, config, onSave }: QrCustomizerProps) {
-  const [localConfig, setLocalConfig] = useState<QrConfig>(config);
+  const [localConfig, setLocalConfig] = useState<QrConfig>({
+    ...config,
+    cornerDotColor: config.cornerDotColor || config.fgColor,
+    cornerSquareColor: config.cornerSquareColor || config.fgColor,
+    frameColor: config.frameColor || config.fgColor,
+  });
   const qrRef = useRef<HTMLDivElement>(null);
 
   const handleDownload = () => {
@@ -71,7 +76,7 @@ export function QrCustomizer({ url, config, onSave }: QrCustomizerProps) {
     >
       <div className="w-20 h-20 flex items-center justify-center bg-background rounded-md">
         <QRCodeSVG
-          value={url}
+          value="Preview"
           size={60}
           level="Q"
           fgColor={localConfig.fgColor}
@@ -84,9 +89,19 @@ export function QrCustomizer({ url, config, onSave }: QrCustomizerProps) {
           }}
         />
       </div>
-      <span className="text-xs">{value}</span>
+      <span className="text-xs capitalize">{value.replace('-', ' ')}</span>
     </Button>
   );
+
+  const updateColors = (color: string) => {
+    setLocalConfig(prev => ({
+      ...prev,
+      fgColor: color,
+      cornerDotColor: color,
+      cornerSquareColor: color,
+      frameColor: color,
+    }));
+  };
 
   return (
     <div className="flex items-center gap-2">
@@ -101,7 +116,7 @@ export function QrCustomizer({ url, config, onSave }: QrCustomizerProps) {
             <DialogTitle>Customize QR Code</DialogTitle>
           </DialogHeader>
           <div className="grid grid-cols-[1fr,auto] gap-6">
-            <Tabs defaultValue="style" className="flex-1">
+            <Tabs defaultValue="style">
               <TabsList className="grid w-full grid-cols-4 mb-4">
                 <TabsTrigger value="style" className="flex items-center gap-2">
                   <Paintbrush className="h-4 w-4" /> Style
@@ -158,29 +173,13 @@ export function QrCustomizer({ url, config, onSave }: QrCustomizerProps) {
                           id="fgColor"
                           type="color"
                           value={localConfig.fgColor}
-                          onChange={(e) =>
-                            setLocalConfig((prev) => ({ 
-                              ...prev, 
-                              fgColor: e.target.value,
-                              cornerDotColor: e.target.value,
-                              cornerSquareColor: e.target.value,
-                              frameColor: e.target.value
-                            }))
-                          }
+                          onChange={(e) => updateColors(e.target.value)}
                           className="w-12 h-12 p-1"
                         />
                         <Input
                           type="text"
                           value={localConfig.fgColor}
-                          onChange={(e) =>
-                            setLocalConfig((prev) => ({ 
-                              ...prev, 
-                              fgColor: e.target.value,
-                              cornerDotColor: e.target.value,
-                              cornerSquareColor: e.target.value,
-                              frameColor: e.target.value
-                            }))
-                          }
+                          onChange={(e) => updateColors(e.target.value)}
                           className="flex-1"
                         />
                       </div>
