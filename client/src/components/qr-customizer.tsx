@@ -4,8 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Slider } from "@/components/ui/slider";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
 import { QRCodeSVG } from "qrcode.react";
@@ -23,23 +21,23 @@ const colorPresets = [
 ];
 
 const patternStyles = [
-  { name: "Squares", value: "squares" },
-  { name: "Dots", value: "dots" },
-  { name: "Rounded", value: "rounded" },
-  { name: "Classy", value: "classy" },
-  { name: "Elegant", value: "elegant" },
+  { name: "Squares", value: "squares", previewUrl: "data:image/svg+xml,%3Csvg width='50' height='50' viewBox='0 0 50 50' xmlns='http://www.w3.org/2000/svg'%3E%3Crect x='10' y='10' width='10' height='10' fill='currentColor'/%3E%3Crect x='30' y='10' width='10' height='10' fill='currentColor'/%3E%3Crect x='10' y='30' width='10' height='10' fill='currentColor'/%3E%3Crect x='30' y='30' width='10' height='10' fill='currentColor'/%3E%3C/svg%3E" },
+  { name: "Dots", value: "dots", previewUrl: "data:image/svg+xml,%3Csvg width='50' height='50' viewBox='0 0 50 50' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='15' cy='15' r='5' fill='currentColor'/%3E%3Ccircle cx='35' cy='15' r='5' fill='currentColor'/%3E%3Ccircle cx='15' cy='35' r='5' fill='currentColor'/%3E%3Ccircle cx='35' cy='35' r='5' fill='currentColor'/%3E%3C/svg%3E" },
+  { name: "Rounded", value: "rounded", previewUrl: "data:image/svg+xml,%3Csvg width='50' height='50' viewBox='0 0 50 50' xmlns='http://www.w3.org/2000/svg'%3E%3Crect x='10' y='10' width='10' height='10' rx='2' fill='currentColor'/%3E%3Crect x='30' y='10' width='10' height='10' rx='2' fill='currentColor'/%3E%3Crect x='10' y='30' width='10' height='10' rx='2' fill='currentColor'/%3E%3Crect x='30' y='30' width='10' height='10' rx='2' fill='currentColor'/%3E%3C/svg%3E" },
+  { name: "Classy", value: "classy", previewUrl: "data:image/svg+xml,%3Csvg width='50' height='50' viewBox='0 0 50 50' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M15,10 L35,10 L35,15 L15,15 Z M10,15 L15,15 L15,35 L10,35 Z M35,15 L40,15 L40,35 L35,35 Z M15,35 L35,35 L35,40 L15,40 Z' fill='currentColor'/%3E%3C/svg%3E" },
+  { name: "Elegant", value: "elegant", previewUrl: "data:image/svg+xml,%3Csvg width='50' height='50' viewBox='0 0 50 50' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M25,10 L40,25 L25,40 L10,25 Z' fill='currentColor'/%3E%3C/svg%3E" },
 ];
 
 const cornerStyles = [
-  { name: "Square", value: "square" },
-  { name: "Dot", value: "dot" },
-  { name: "Extra Rounded", value: "extra-rounded" },
+  { name: "Square", value: "square", previewUrl: "data:image/svg+xml,%3Csvg width='50' height='50' viewBox='0 0 50 50' xmlns='http://www.w3.org/2000/svg'%3E%3Crect x='10' y='10' width='30' height='30' fill='currentColor'/%3E%3C/svg%3E" },
+  { name: "Dot", value: "dot", previewUrl: "data:image/svg+xml,%3Csvg width='50' height='50' viewBox='0 0 50 50' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='25' cy='25' r='15' fill='currentColor'/%3E%3C/svg%3E" },
+  { name: "Extra Rounded", value: "extra-rounded", previewUrl: "data:image/svg+xml,%3Csvg width='50' height='50' viewBox='0 0 50 50' xmlns='http://www.w3.org/2000/svg'%3E%3Crect x='10' y='10' width='30' height='30' rx='15' fill='currentColor'/%3E%3C/svg%3E" },
 ];
 
 const frameStyles = [
-  { name: "None", value: "none" },
-  { name: "Simple", value: "simple" },
-  { name: "Dots", value: "dots" },
+  { name: "None", value: "none", previewUrl: "data:image/svg+xml,%3Csvg width='50' height='50' viewBox='0 0 50 50' xmlns='http://www.w3.org/2000/svg'%3E%3Crect x='15' y='15' width='20' height='20' fill='currentColor'/%3E%3C/svg%3E" },
+  { name: "Simple", value: "simple", previewUrl: "data:image/svg+xml,%3Csvg width='50' height='50' viewBox='0 0 50 50' xmlns='http://www.w3.org/2000/svg'%3E%3Crect x='5' y='5' width='40' height='40' stroke='currentColor' fill='none' stroke-width='2'/%3E%3Crect x='15' y='15' width='20' height='20' fill='currentColor'/%3E%3C/svg%3E" },
+  { name: "Dots", value: "dots", previewUrl: "data:image/svg+xml,%3Csvg width='50' height='50' viewBox='0 0 50 50' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='5' cy='5' r='2' fill='currentColor'/%3E%3Ccircle cx='15' cy='5' r='2' fill='currentColor'/%3E%3Ccircle cx='25' cy='5' r='2' fill='currentColor'/%3E%3Ccircle cx='35' cy='5' r='2' fill='currentColor'/%3E%3Ccircle cx='45' cy='5' r='2' fill='currentColor'/%3E%3Ccircle cx='5' cy='45' r='2' fill='currentColor'/%3E%3Ccircle cx='15' cy='45' r='2' fill='currentColor'/%3E%3Ccircle cx='25' cy='45' r='2' fill='currentColor'/%3E%3Ccircle cx='35' cy='45' r='2' fill='currentColor'/%3E%3Ccircle cx='45' cy='45' r='2' fill='currentColor'/%3E%3Ccircle cx='5' cy='15' r='2' fill='currentColor'/%3E%3Ccircle cx='5' cy='25' r='2' fill='currentColor'/%3E%3Ccircle cx='5' cy='35' r='2' fill='currentColor'/%3E%3Ccircle cx='45' cy='15' r='2' fill='currentColor'/%3E%3Ccircle cx='45' cy='25' r='2' fill='currentColor'/%3E%3Ccircle cx='45' cy='35' r='2' fill='currentColor'/%3E%3Crect x='15' y='15' width='20' height='20' fill='currentColor'/%3E%3C/svg%3E" },
 ];
 
 interface QrCustomizerProps {
@@ -57,6 +55,29 @@ export function QrCustomizer({ url, config, onSave }: QrCustomizerProps) {
       downloadQRCode(qrRef.current, `qr-${url.split('/').pop()}`);
     }
   };
+
+  const StylePreview = ({ style, isSelected, onClick }: { style: { name: string; value: string; previewUrl: string }; isSelected: boolean; onClick: () => void }) => (
+    <Button
+      variant="outline"
+      className={cn("h-auto p-2 flex flex-col gap-1 relative", {
+        'ring-2 ring-primary': isSelected
+      })}
+      onClick={onClick}
+    >
+      <div className="w-20 h-20 flex items-center justify-center bg-background rounded-md">
+        <div className="w-12 h-12" style={{ 
+          WebkitMaskImage: `url(${style.previewUrl})`,
+          maskImage: `url(${style.previewUrl})`,
+          WebkitMaskSize: 'contain',
+          maskSize: 'contain',
+          WebkitMaskRepeat: 'no-repeat',
+          maskRepeat: 'no-repeat',
+          backgroundColor: 'currentColor'
+        }} />
+      </div>
+      <span className="text-xs">{style.name}</span>
+    </Button>
+  );
 
   return (
     <div className="flex items-center gap-2">
@@ -173,38 +194,30 @@ export function QrCustomizer({ url, config, onSave }: QrCustomizerProps) {
                 <div className="space-y-4">
                   <div>
                     <Label>Pattern Style</Label>
-                    <RadioGroup
-                      value={localConfig.pattern}
-                      onValueChange={(value: QrConfig["pattern"]) =>
-                        setLocalConfig((prev) => ({ ...prev, pattern: value }))
-                      }
-                      className="grid grid-cols-3 gap-2 mt-2"
-                    >
+                    <div className="grid grid-cols-3 gap-2 mt-2">
                       {patternStyles.map((style) => (
-                        <div key={style.value} className="flex items-center space-x-2">
-                          <RadioGroupItem value={style.value} id={`pattern-${style.value}`} />
-                          <Label htmlFor={`pattern-${style.value}`}>{style.name}</Label>
-                        </div>
+                        <StylePreview
+                          key={style.value}
+                          style={style}
+                          isSelected={localConfig.pattern === style.value}
+                          onClick={() => setLocalConfig(prev => ({ ...prev, pattern: style.value as QrConfig['pattern'] }))}
+                        />
                       ))}
-                    </RadioGroup>
+                    </div>
                   </div>
 
                   <div>
                     <Label>Corner Style</Label>
-                    <RadioGroup
-                      value={localConfig.cornerStyle}
-                      onValueChange={(value: QrConfig["cornerStyle"]) =>
-                        setLocalConfig((prev) => ({ ...prev, cornerStyle: value }))
-                      }
-                      className="grid grid-cols-3 gap-2 mt-2"
-                    >
+                    <div className="grid grid-cols-3 gap-2 mt-2">
                       {cornerStyles.map((style) => (
-                        <div key={style.value} className="flex items-center space-x-2">
-                          <RadioGroupItem value={style.value} id={`corner-${style.value}`} />
-                          <Label htmlFor={`corner-${style.value}`}>{style.name}</Label>
-                        </div>
+                        <StylePreview
+                          key={style.value}
+                          style={style}
+                          isSelected={localConfig.cornerStyle === style.value}
+                          onClick={() => setLocalConfig(prev => ({ ...prev, cornerStyle: style.value as QrConfig['cornerStyle'] }))}
+                        />
                       ))}
-                    </RadioGroup>
+                    </div>
                   </div>
 
                   <div>
@@ -259,20 +272,16 @@ export function QrCustomizer({ url, config, onSave }: QrCustomizerProps) {
                 <div className="space-y-4">
                   <div>
                     <Label>Frame Style</Label>
-                    <RadioGroup
-                      value={localConfig.frameStyle}
-                      onValueChange={(value: QrConfig["frameStyle"]) =>
-                        setLocalConfig((prev) => ({ ...prev, frameStyle: value }))
-                      }
-                      className="grid grid-cols-3 gap-2 mt-2"
-                    >
+                    <div className="grid grid-cols-3 gap-2 mt-2">
                       {frameStyles.map((style) => (
-                        <div key={style.value} className="flex items-center space-x-2">
-                          <RadioGroupItem value={style.value} id={`frame-${style.value}`} />
-                          <Label htmlFor={`frame-${style.value}`}>{style.name}</Label>
-                        </div>
+                        <StylePreview
+                          key={style.value}
+                          style={style}
+                          isSelected={localConfig.frameStyle === style.value}
+                          onClick={() => setLocalConfig(prev => ({ ...prev, frameStyle: style.value as QrConfig['frameStyle'] }))}
+                        />
                       ))}
-                    </RadioGroup>
+                    </div>
                   </div>
 
                   {localConfig.frameStyle !== "none" && (
