@@ -5,9 +5,16 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { Loader2 } from "lucide-react";
 
 export default function AnalyticsPage() {
-  const { data: urls = [], isLoading } = useQuery<Url[]>({
+  const { data, isLoading } = useQuery<{ urls: Url[], pagination: any }>({
     queryKey: ["/api/urls"],
+    queryFn: async () => {
+      const res = await fetch("/api/urls?limit=100"); // Get more URLs for analytics
+      if (!res.ok) throw new Error("Failed to fetch URLs");
+      return res.json();
+    },
   });
+
+  const urls = data?.urls || [];
 
   if (isLoading) {
     return (
@@ -21,7 +28,7 @@ export default function AnalyticsPage() {
     <div className="min-h-screen bg-background p-8">
       <div className="max-w-6xl mx-auto space-y-8">
         <h1 className="text-3xl font-bold">Analytics Dashboard</h1>
-        
+
         <div className="grid gap-8 grid-cols-1 lg:grid-cols-2">
           <Card>
             <CardHeader>
