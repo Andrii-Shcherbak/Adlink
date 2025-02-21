@@ -67,10 +67,13 @@ export class DatabaseStorage implements IStorage {
   }
 
   async incrementUrlClicks(id: number): Promise<void> {
-    await db
-      .update(urls)
-      .set({ clicks: db.raw('clicks + 1') })
-      .where(eq(urls.id, id));
+    const [url] = await db.select().from(urls).where(eq(urls.id, id));
+    if (url) {
+      await db
+        .update(urls)
+        .set({ clicks: url.clicks + 1 })
+        .where(eq(urls.id, id));
+    }
   }
 }
 
