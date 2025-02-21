@@ -15,6 +15,14 @@ export const urls = pgTable("urls", {
   shortCode: text("short_code").notNull().unique(),
   clicks: integer("clicks").notNull().default(0),
   createdAt: timestamp("created_at").notNull().defaultNow(),
+  analytics: jsonb("analytics").notNull().default({
+    devices: {
+      desktop: 0,
+      mobile: 0,
+      tablet: 0,
+    },
+    countries: {},
+  }),
   qrConfig: jsonb("qr_config").notNull().default({
     fgColor: "#000000",
     bgColor: "#FFFFFF",

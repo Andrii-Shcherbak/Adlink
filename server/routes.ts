@@ -4,6 +4,16 @@ import { setupAuth } from "./auth";
 import { storage } from "./storage";
 import { insertUrlSchema } from "@shared/schema";
 import { qrConfigSchema } from "@shared/schema";
+import { UAParser } from "ua-parser-js";
+
+function getDeviceType(userAgent: string): 'desktop' | 'mobile' | 'tablet' {
+  const parser = new UAParser(userAgent);
+  const device = parser.getDevice();
+
+  if (device.type === 'tablet') return 'tablet';
+  if (device.type === 'mobile') return 'mobile';
+  return 'desktop';
+}
 
 export async function registerRoutes(app: Express): Promise<Server> {
   setupAuth(app);
@@ -30,7 +40,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const url = await storage.getUrlByShortCode(req.params.shortCode);
     if (!url) return res.sendStatus(404);
 
-    await storage.incrementUrlClicks(url.id);
+    const deviceType = getDeviceType(req.headers['user-agent'] || '');
+    const countryCode = req.headers['cf-ipcountry'] as string || 'unknown';
+
+    await storage.incrementUrlClicks(url.id, deviceType, countryCode);
     res.redirect(url.originalUrl);
   });
 

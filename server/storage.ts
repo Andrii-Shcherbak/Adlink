@@ -9,10 +9,11 @@ import { nanoid } from "nanoid";
 const PostgresSessionStore = connectPg(session);
 
 export interface QrConfig {
-  // Define the structure of your QRConfig here.  Example:
   data: string;
   size: number;
 }
+
+type DeviceType = 'desktop' | 'mobile' | 'tablet';
 
 export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
@@ -21,7 +22,7 @@ export interface IStorage {
   createUrl(userId: number, url: InsertUrl): Promise<Url>;
   getUrlByShortCode(shortCode: string): Promise<Url | undefined>;
   getUserUrls(userId: number): Promise<Url[]>;
-  incrementUrlClicks(id: number): Promise<void>;
+  incrementUrlClicks(id: number, deviceType: DeviceType, countryCode: string): Promise<void>;
   sessionStore: session.Store;
   updateUrlQrConfig(id: number, userId: number, qrConfig: QrConfig): Promise<Url | undefined>;
 }
@@ -59,6 +60,7 @@ export class DatabaseStorage implements IStorage {
         userId,
         shortCode: nanoid(8),
         clicks: 0,
+        analytics: { devices: {}, countries: {} } // Initialize analytics
       })
       .returning();
     return url;
@@ -73,12 +75,23 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(urls).where(eq(urls.userId, userId));
   }
 
-  async incrementUrlClicks(id: number): Promise<void> {
+  async incrementUrlClicks(id: number, deviceType: DeviceType, countryCode: string): Promise<void> {
     const [url] = await db.select().from(urls).where(eq(urls.id, id));
     if (url) {
+      const analytics = url.analytics as { devices: Record<DeviceType, number>, countries: Record<string, number> };
+
+      // Update device count
+      analytics.devices[deviceType] = (analytics.devices[deviceType] || 0) + 1;
+
+      // Update country count
+      analytics.countries[countryCode] = (analytics.countries[countryCode] || 0) + 1;
+
       await db
         .update(urls)
-        .set({ clicks: url.clicks + 1 })
+        .set({ 
+          clicks: url.clicks + 1,
+          analytics: analytics
+        })
         .where(eq(urls.id, id));
     }
   }

@@ -86,7 +86,7 @@ export default function HomePage() {
           </Button>
         </div>
 
-        <div className="grid gap-8 grid-cols-1 lg:grid-cols-2">
+        <div className="grid gap-8 grid-cols-1 lg:grid-cols-3">
           <Card>
             <CardHeader>
               <CardTitle>Shorten a URL</CardTitle>
@@ -142,6 +142,59 @@ export default function HomePage() {
                 <YAxis />
                 <Tooltip />
                 <Bar dataKey="clicks" fill="hsl(var(--primary))" />
+              </BarChart>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Device Analytics</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <BarChart
+                width={500}
+                height={300}
+                data={urls.flatMap(url => {
+                  const analytics = url.analytics as { devices: Record<string, number> };
+                  return Object.entries(analytics.devices).map(([device, count]) => ({
+                    name: device,
+                    value: count
+                  }));
+                })}
+                margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" />
+                <YAxis />
+                <Tooltip />
+                <Bar dataKey="value" fill="hsl(var(--primary))" />
+              </BarChart>
+            </CardContent>
+          </Card>
+        </div>
+        <div className="grid gap-8 grid-cols-1 lg:grid-cols-3">
+          <Card>
+            <CardHeader>
+              <CardTitle>Country Analytics</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <BarChart
+                width={500}
+                height={300}
+                data={urls.flatMap(url => {
+                  const analytics = url.analytics as { countries: Record<string, number> };
+                  return Object.entries(analytics.countries).map(([country, count]) => ({
+                    name: country,
+                    value: count
+                  }));
+                })}
+                margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" />
+                <YAxis />
+                <Tooltip />
+                <Bar dataKey="value" fill="hsl(var(--primary))" />
               </BarChart>
             </CardContent>
           </Card>
