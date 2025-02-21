@@ -130,19 +130,21 @@ export default function HomePage() {
             <CardHeader>
               <CardTitle>Click Analytics</CardTitle>
             </CardHeader>
-            <CardContent>
-              <BarChart
-                width={500}
-                height={300}
-                data={urls}
-                margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="shortCode" />
-                <YAxis />
-                <Tooltip />
-                <Bar dataKey="clicks" fill="hsl(var(--primary))" />
-              </BarChart>
+            <CardContent className="w-full overflow-x-auto">
+              <div className="min-w-[300px] w-full">
+                <BarChart
+                  width={500}
+                  height={300}
+                  data={urls}
+                  margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="shortCode" />
+                  <YAxis />
+                  <Tooltip />
+                  <Bar dataKey="clicks" fill="hsl(var(--primary))" />
+                </BarChart>
+              </div>
             </CardContent>
           </Card>
 
@@ -150,52 +152,67 @@ export default function HomePage() {
             <CardHeader>
               <CardTitle>Device Analytics</CardTitle>
             </CardHeader>
-            <CardContent>
-              <BarChart
-                width={500}
-                height={300}
-                data={urls.flatMap(url => {
-                  const analytics = url.analytics as { devices: Record<string, number> };
-                  return Object.entries(analytics.devices).map(([device, count]) => ({
-                    name: device,
-                    value: count
-                  }));
-                })}
-                margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip />
-                <Bar dataKey="value" fill="hsl(var(--primary))" />
-              </BarChart>
+            <CardContent className="w-full overflow-x-auto">
+              <div className="min-w-[300px] w-full">
+                <BarChart
+                  width={500}
+                  height={300}
+                  data={urls.reduce((acc, url) => {
+                    const analytics = url.analytics as { devices: Record<string, number> };
+                    Object.entries(analytics.devices).forEach(([device, count]) => {
+                      const existingEntry = acc.find(entry => entry.name === device);
+                      if (existingEntry) {
+                        existingEntry.value += count;
+                      } else {
+                        acc.push({ name: device, value: count });
+                      }
+                    });
+                    return acc;
+                  }, [] as { name: string; value: number }[])}
+                  margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" />
+                  <YAxis />
+                  <Tooltip />
+                  <Bar dataKey="value" fill="hsl(var(--primary))" />
+                </BarChart>
+              </div>
             </CardContent>
           </Card>
         </div>
-        <div className="grid gap-8 grid-cols-1 lg:grid-cols-3">
+        <div className="mt-8">
           <Card>
             <CardHeader>
               <CardTitle>Country Analytics</CardTitle>
             </CardHeader>
-            <CardContent>
-              <BarChart
-                width={500}
-                height={300}
-                data={urls.flatMap(url => {
-                  const analytics = url.analytics as { countries: Record<string, number> };
-                  return Object.entries(analytics.countries).map(([country, count]) => ({
-                    name: country,
-                    value: count
-                  }));
-                })}
-                margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip />
-                <Bar dataKey="value" fill="hsl(var(--primary))" />
-              </BarChart>
+            <CardContent className="w-full overflow-x-auto">
+              <div className="min-w-[300px] w-full">
+                <BarChart
+                  width={500}
+                  height={300}
+                  data={urls.reduce((acc, url) => {
+                    const analytics = url.analytics as { countries: Record<string, number> };
+                    Object.entries(analytics.countries).forEach(([country, count]) => {
+                      const countryName = country === 'unknown' ? 'Unknown' : country.toUpperCase();
+                      const existingEntry = acc.find(entry => entry.name === countryName);
+                      if (existingEntry) {
+                        existingEntry.value += count;
+                      } else {
+                        acc.push({ name: countryName, value: count });
+                      }
+                    });
+                    return acc;
+                  }, [] as { name: string; value: number }[])}
+                  margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" />
+                  <YAxis />
+                  <Tooltip />
+                  <Bar dataKey="value" fill="hsl(var(--primary))" />
+                </BarChart>
+              </div>
             </CardContent>
           </Card>
         </div>

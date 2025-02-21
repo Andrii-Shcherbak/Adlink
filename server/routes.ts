@@ -41,7 +41,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (!url) return res.sendStatus(404);
 
     const deviceType = getDeviceType(req.headers['user-agent'] || '');
-    const countryCode = req.headers['cf-ipcountry'] as string || 'unknown';
+    const countryCode = (req.headers['cf-ipcountry'] as string || 'US').toUpperCase();
 
     await storage.incrementUrlClicks(url.id, deviceType, countryCode);
     res.redirect(url.originalUrl);
