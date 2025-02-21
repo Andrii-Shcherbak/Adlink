@@ -13,6 +13,12 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from "recharts";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Loader2, Copy, ExternalLink } from "lucide-react";
 
+// Add this helper function at the top of the file
+function truncateUrl(url: string, maxLength: number = 50): string {
+  if (url.length <= maxLength) return url;
+  return url.substring(0, maxLength - 3) + "...";
+}
+
 export default function HomePage() {
   const { user, logoutMutation } = useAuth();
   const { toast } = useToast();
@@ -151,13 +157,16 @@ export default function HomePage() {
                   key={url.id}
                   className="p-4 border rounded-lg flex flex-col md:flex-row gap-4 items-start md:items-center justify-between"
                 >
-                  <div className="flex-grow space-y-2">
+                  <div className="flex-grow space-y-2 min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="font-medium">{`${domain}/api/r/${url.shortCode}`}</span>
+                      <span className="font-medium truncate">
+                        {`${domain}/api/r/${url.shortCode}`}
+                      </span>
                       <Button
                         variant="ghost"
                         size="icon"
                         onClick={() => copyToClipboard(`${domain}/api/r/${url.shortCode}`)}
+                        className="shrink-0"
                       >
                         <Copy className="h-4 w-4" />
                       </Button>
@@ -165,14 +174,15 @@ export default function HomePage() {
                         href={`${domain}/api/r/${url.shortCode}`}
                         target="_blank"
                         rel="noopener noreferrer"
+                        className="shrink-0"
                       >
                         <Button variant="ghost" size="icon">
                           <ExternalLink className="h-4 w-4" />
                         </Button>
                       </a>
                     </div>
-                    <p className="text-sm text-muted-foreground truncate">
-                      {url.originalUrl}
+                    <p className="text-sm text-muted-foreground truncate max-w-full">
+                      Original: {truncateUrl(url.originalUrl, 70)}
                     </p>
                     <div className="text-sm text-muted-foreground">
                       Clicks: {url.clicks}
