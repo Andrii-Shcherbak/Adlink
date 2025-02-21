@@ -24,6 +24,17 @@ export function downloadQRCode(qrRef: HTMLDivElement, filename: string) {
   const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
   const url = URL.createObjectURL(svgBlob);
 
+  // Helper function to download the canvas as PNG
+  const downloadCanvas = () => {
+    const pngUrl = canvas.toDataURL('image/png');
+    const a = document.createElement('a');
+    a.href = pngUrl;
+    a.download = `${filename}.png`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
+
   img.onload = () => {
     // Fill background
     ctx.fillStyle = 'white';
@@ -32,14 +43,41 @@ export function downloadQRCode(qrRef: HTMLDivElement, filename: string) {
     // Draw SVG
     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
-    // Convert to PNG and download
-    const pngUrl = canvas.toDataURL('image/png');
-    const a = document.createElement('a');
-    a.href = pngUrl;
-    a.download = `${filename}.png`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+    // Find logo image in the SVG
+    const logoImg = svg.querySelector('image');
+    if (logoImg) {
+      // If there's a logo, wait for it to load before downloading
+      const logo = new Image();
+      logo.crossOrigin = "anonymous";
+      logo.src = logoImg.getAttribute('href') || '';
+
+      logo.onload = () => {
+        // Get logo position and size from the SVG
+        const logoX = parseFloat(logoImg.getAttribute('x') || '0');
+        const logoY = parseFloat(logoImg.getAttribute('y') || '0');
+        const logoWidth = parseFloat(logoImg.getAttribute('width') || '0');
+        const logoHeight = parseFloat(logoImg.getAttribute('height') || '0');
+
+        // Scale logo position and size to match canvas
+        const scale = canvas.width / svgSize;
+        ctx.drawImage(
+          logo,
+          logoX * scale,
+          logoY * scale,
+          logoWidth * scale,
+          logoHeight * scale
+        );
+        downloadCanvas();
+      };
+
+      logo.onerror = () => {
+        // If logo fails to load, download without it
+        downloadCanvas();
+      };
+    } else {
+      // If no logo, download immediately
+      downloadCanvas();
+    }
 
     // Cleanup
     URL.revokeObjectURL(url);
