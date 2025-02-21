@@ -1,6 +1,6 @@
 import { users, urls, type User, type InsertUser, type Url, type InsertUrl } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, sql } from "drizzle-orm";
+import { eq, desc, sql, and } from "drizzle-orm";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 import { pool } from "./db";
@@ -98,6 +98,11 @@ export class DatabaseStorage implements IStorage {
         referrers: Record<string, number>
       };
 
+      // Ensure all necessary objects exist
+      analytics.devices = analytics.devices || { desktop: 0, mobile: 0, tablet: 0 };
+      analytics.countries = analytics.countries || {};
+      analytics.referrers = analytics.referrers || {};
+
       // Update device count
       analytics.devices[deviceType] = (analytics.devices[deviceType] || 0) + 1;
 
@@ -121,8 +126,7 @@ export class DatabaseStorage implements IStorage {
     const [url] = await db
       .update(urls)
       .set({ qrConfig })
-      .where(eq(urls.id, id))
-      .where(eq(urls.userId, userId))
+      .where(and(eq(urls.id, id), eq(urls.userId, userId)))
       .returning();
     return url;
   }
