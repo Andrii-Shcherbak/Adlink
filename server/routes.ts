@@ -107,6 +107,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(url);
   });
 
+  app.delete("/api/urls/:id", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+
+    try {
+      await storage.deleteUrl(parseInt(req.params.id), req.user!.id);
+      res.sendStatus(200);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete URL" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

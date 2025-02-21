@@ -9,10 +9,11 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { useToast } from "@/hooks/use-toast";
 import { QRCodeSVG } from "qrcode.react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { Loader2, Copy, ExternalLink, LinkIcon, ChevronLeft, ChevronRight } from "lucide-react";
+import { Loader2, Copy, ExternalLink, LinkIcon, ChevronLeft, ChevronRight, Trash2 } from "lucide-react";
 import { QrCustomizer } from "@/components/qr-customizer";
 import { useState } from "react";
 import { format } from "date-fns";
+import { AlertDialog, AlertDialogTrigger, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from "@/components/ui/alert-dialog";
 
 function truncateUrl(url: string, maxLength: number = 50): string {
   if (url.length <= maxLength) return url;
@@ -30,8 +31,8 @@ export default function HomePage() {
     defaultValues: { originalUrl: "" },
   });
 
-  const { data, isLoading } = useQuery<{ 
-    urls: Url[], 
+  const { data, isLoading } = useQuery<{
+    urls: Url[];
     pagination: { total: number; page: number; totalPages: number; hasMore: boolean; }
   }>({
     queryKey: ["/api/urls", page, ITEMS_PER_PAGE],
@@ -58,6 +59,26 @@ export default function HomePage() {
     onError: (error: Error) => {
       toast({
         title: "Failed to shorten URL",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteUrlMutation = useMutation({
+    mutationFn: async (id: number) => {
+      await apiRequest("DELETE", `/api/urls/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/urls"] });
+      toast({
+        title: "URL deleted",
+        description: "The shortened URL has been deleted",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Failed to delete URL",
         description: error.message,
         variant: "destructive",
       });
@@ -199,6 +220,30 @@ export default function HomePage() {
                                   <ExternalLink className="h-4 w-4" />
                                 </Button>
                               </a>
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button variant="ghost" size="icon">
+                                    <Trash2 className="h-4 w-4 text-destructive" />
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Delete URL</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      Are you sure you want to delete this shortened URL? This action cannot be undone.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction
+                                      onClick={() => deleteUrlMutation.mutate(url.id)}
+                                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                    >
+                                      Delete
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
                             </div>
                           </div>
                           <div className="flex flex-col sm:flex-row sm:items-center gap-2 text-sm text-muted-foreground">
@@ -238,7 +283,7 @@ export default function HomePage() {
                               try {
                                 await apiRequest("PATCH", `/api/urls/${url.id}/qr-config`, newConfig);
 
-                                queryClient.setQueryData<{urls: Url[]}>(["/api/urls", page, ITEMS_PER_PAGE], (oldData) => {
+                                queryClient.setQueryData<{ urls: Url[] }>(["/api/urls", page, ITEMS_PER_PAGE], (oldData) => {
                                   if (!oldData) return oldData;
                                   return {
                                     ...oldData,

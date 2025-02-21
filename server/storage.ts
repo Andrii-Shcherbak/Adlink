@@ -21,6 +21,7 @@ export interface IStorage {
   incrementUrlClicks(id: number, deviceType: DeviceType, countryCode: string, referrer: string): Promise<void>;
   sessionStore: session.Store;
   updateUrlQrConfig(id: number, userId: number, qrConfig: any): Promise<Url | undefined>;
+  deleteUrl(id: number, userId: number): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -114,7 +115,7 @@ export class DatabaseStorage implements IStorage {
 
       await db
         .update(urls)
-        .set({ 
+        .set({
           clicks: url.clicks + 1,
           analytics: analytics
         })
@@ -129,6 +130,12 @@ export class DatabaseStorage implements IStorage {
       .where(and(eq(urls.id, id), eq(urls.userId, userId)))
       .returning();
     return url;
+  }
+
+  async deleteUrl(id: number, userId: number): Promise<void> {
+    await db
+      .delete(urls)
+      .where(and(eq(urls.id, id), eq(urls.userId, userId)));
   }
 }
 

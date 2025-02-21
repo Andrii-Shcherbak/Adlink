@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Redirect } from "wouter";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { FiLink } from "react-icons/fi";
+import { FiLink, FiBarChart2, FiGlobe, FiCode } from "react-icons/fi";
 
 export default function AuthPage() {
   const { user, loginMutation, registerMutation } = useAuth();
@@ -29,101 +29,100 @@ export default function AuthPage() {
 
   return (
     <div className="min-h-screen grid grid-cols-1 md:grid-cols-2">
-      <div className="flex items-center justify-center p-8">
-        <Card className="w-full max-w-md">
-          <CardHeader>
-            <CardTitle>Welcome to ADNOC URL Shortener</CardTitle>
-            <CardDescription>
-              Shorten, track, and share your links efficiently
+      <div className="flex items-center justify-center p-8 bg-background">
+        <Card className="w-full max-w-md border-none shadow-none">
+          <CardHeader className="space-y-4">
+            <div className="flex items-center gap-2">
+              <FiLink className="w-8 h-8 text-primary" />
+              <CardTitle className="text-2xl">URL Shortener</CardTitle>
+            </div>
+            <CardDescription className="text-base">
+              Welcome back! Please enter your details to access your account.
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Tabs defaultValue="login">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="login">Login</TabsTrigger>
-                <TabsTrigger value="register">Register</TabsTrigger>
+            <Tabs defaultValue="login" className="w-full">
+              <TabsList className="grid w-full grid-cols-2 mb-8">
+                <TabsTrigger value="login">Sign In</TabsTrigger>
+                <TabsTrigger value="register">Create Account</TabsTrigger>
               </TabsList>
 
               <TabsContent value="login">
                 <Form {...loginForm}>
-                  <form onSubmit={loginForm.handleSubmit((data) => loginMutation.mutate(data))}>
-                    <div className="space-y-4">
-                      <FormField
-                        control={loginForm.control}
-                        name="username"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Username</FormLabel>
-                            <FormControl>
-                              <Input {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={loginForm.control}
-                        name="password"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Password</FormLabel>
-                            <FormControl>
-                              <Input type="password" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <Button 
-                        type="submit" 
-                        className="w-full"
-                        disabled={loginMutation.isPending}
-                      >
-                        Login
-                      </Button>
-                    </div>
+                  <form onSubmit={loginForm.handleSubmit((data) => loginMutation.mutate(data))} className="space-y-6">
+                    <FormField
+                      control={loginForm.control}
+                      name="username"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Username</FormLabel>
+                          <FormControl>
+                            <Input className="h-11" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={loginForm.control}
+                      name="password"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Password</FormLabel>
+                          <FormControl>
+                            <Input type="password" className="h-11" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <Button
+                      type="submit"
+                      className="w-full h-11 text-base"
+                      disabled={loginMutation.isPending}
+                    >
+                      Sign In
+                    </Button>
                   </form>
                 </Form>
               </TabsContent>
 
               <TabsContent value="register">
                 <Form {...registerForm}>
-                  <form onSubmit={registerForm.handleSubmit((data) => registerMutation.mutate(data))}>
-                    <div className="space-y-4">
-                      <FormField
-                        control={registerForm.control}
-                        name="username"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Username</FormLabel>
-                            <FormControl>
-                              <Input {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={registerForm.control}
-                        name="password"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Password</FormLabel>
-                            <FormControl>
-                              <Input type="password" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <Button 
-                        type="submit" 
-                        className="w-full"
-                        disabled={registerMutation.isPending}
-                      >
-                        Register
-                      </Button>
-                    </div>
+                  <form onSubmit={registerForm.handleSubmit((data) => registerMutation.mutate(data))} className="space-y-6">
+                    <FormField
+                      control={registerForm.control}
+                      name="username"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Username</FormLabel>
+                          <FormControl>
+                            <Input className="h-11" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={registerForm.control}
+                      name="password"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Password</FormLabel>
+                          <FormControl>
+                            <Input type="password" className="h-11" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <Button
+                      type="submit"
+                      className="w-full h-11 text-base"
+                      disabled={registerMutation.isPending}
+                    >
+                      Create Account
+                    </Button>
                   </form>
                 </Form>
               </TabsContent>
@@ -132,39 +131,53 @@ export default function AuthPage() {
         </Card>
       </div>
 
-      <div className="hidden md:flex flex-col justify-center p-8 bg-primary text-primary-foreground">
-        <div className="max-w-md mx-auto">
-          <FiLink className="w-16 h-16 mb-6" />
-          <h1 className="text-4xl font-bold mb-4">
-            Professional URL Management
-          </h1>
-          <p className="text-lg mb-6">
-            Streamline your link sharing with our powerful URL shortening service. Generate QR codes, track analytics, and manage all your links in one place.
-          </p>
-          <div className="grid grid-cols-2 gap-4 text-sm">
-            <div className="flex items-center gap-2">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-              <span>URL Shortening</span>
+      <div className="hidden md:flex flex-col justify-center p-12 bg-primary text-primary-foreground">
+        <div className="max-w-md mx-auto space-y-8">
+          <div className="space-y-4">
+            <h1 className="text-4xl font-bold tracking-tight">
+              Professional URL Management Made Simple
+            </h1>
+            <p className="text-lg text-primary-foreground/80">
+              Streamline your link sharing with our powerful URL shortening service. Generate QR codes, track analytics, and manage all your links in one place.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-6">
+            <div className="space-y-3">
+              <div className="w-12 h-12 rounded-lg bg-primary-foreground/10 flex items-center justify-center">
+                <FiLink className="w-6 h-6" />
+              </div>
+              <h3 className="font-medium">URL Shortening</h3>
+              <p className="text-sm text-primary-foreground/70">
+                Create concise, memorable links that are perfect for sharing
+              </p>
             </div>
-            <div className="flex items-center gap-2">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-              <span>QR Code Generation</span>
+            <div className="space-y-3">
+              <div className="w-12 h-12 rounded-lg bg-primary-foreground/10 flex items-center justify-center">
+                <FiCode className="w-6 h-6" />
+              </div>
+              <h3 className="font-medium">QR Codes</h3>
+              <p className="text-sm text-primary-foreground/70">
+                Generate customizable QR codes for easy mobile access
+              </p>
             </div>
-            <div className="flex items-center gap-2">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-              <span>Click Analytics</span>
+            <div className="space-y-3">
+              <div className="w-12 h-12 rounded-lg bg-primary-foreground/10 flex items-center justify-center">
+                <FiBarChart2 className="w-6 h-6" />
+              </div>
+              <h3 className="font-medium">Analytics</h3>
+              <p className="text-sm text-primary-foreground/70">
+                Track link performance with detailed click analytics
+              </p>
             </div>
-            <div className="flex items-center gap-2">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-              <span>Link History</span>
+            <div className="space-y-3">
+              <div className="w-12 h-12 rounded-lg bg-primary-foreground/10 flex items-center justify-center">
+                <FiGlobe className="w-6 h-6" />
+              </div>
+              <h3 className="font-medium">Global Access</h3>
+              <p className="text-sm text-primary-foreground/70">
+                Share your links worldwide with reliable redirection
+              </p>
             </div>
           </div>
         </div>
