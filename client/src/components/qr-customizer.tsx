@@ -21,10 +21,10 @@ const colorPresets = [
 ];
 
 const patternStyles = [
-  { name: "Squares", value: "squares", previewUrl: "data:image/svg+xml,%3Csvg width='50' height='50' viewBox='0 0 50 50' xmlns='http://www.w3.org/2000/svg'%3E%3Crect x='10' y='10' width='10' height='10' fill='currentColor'/%3E%3Crect x='30' y='10' width='10' height='10' fill='currentColor'/%3E%3Crect x='10' y='30' width='10' height='10' fill='currentColor'/%3E%3Crect x='30' y='30' width='10' height='10' fill='currentColor'/%3E%3C/svg%3E" },
-  { name: "Dots", value: "dots", previewUrl: "data:image/svg+xml,%3Csvg width='50' height='50' viewBox='0 0 50 50' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='15' cy='15' r='5' fill='currentColor'/%3E%3Ccircle cx='35' cy='15' r='5' fill='currentColor'/%3E%3Ccircle cx='15' cy='35' r='5' fill='currentColor'/%3E%3Ccircle cx='35' cy='35' r='5' fill='currentColor'/%3E%3C/svg%3E" },
-  { name: "Rounded", value: "rounded", previewUrl: "data:image/svg+xml,%3Csvg width='50' height='50' viewBox='0 0 50 50' xmlns='http://www.w3.org/2000/svg'%3E%3Crect x='10' y='10' width='10' height='10' rx='2' fill='currentColor'/%3E%3Crect x='30' y='10' width='10' height='10' rx='2' fill='currentColor'/%3E%3Crect x='10' y='30' width='10' height='10' rx='2' fill='currentColor'/%3E%3Crect x='30' y='30' width='10' height='10' rx='2' fill='currentColor'/%3E%3C/svg%3E" },
-  { name: "Classy", value: "classy", previewUrl: "data:image/svg+xml,%3Csvg width='50' height='50' viewBox='0 0 50 50' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M15,10 L35,10 L35,15 L15,15 Z M10,15 L15,15 L15,35 L10,35 Z M35,15 L40,15 L40,35 L35,35 Z M15,35 L35,35 L35,40 L15,40 Z' fill='currentColor'/%3E%3C/svg%3E" },
+  { name: "Squares", value: "squares", previewUrl: "data:image/svg+xml,%3Csvg width='50' height='50' viewBox='0 0 50 50' xmlns='http://www.w3.org/2000/svg'%3E%3Crect x='10' y='10' width='30' height='30' fill='currentColor'/%3E%3C/svg%3E" },
+  { name: "Dots", value: "dots", previewUrl: "data:image/svg+xml,%3Csvg width='50' height='50' viewBox='0 0 50 50' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='25' cy='25' r='15' fill='currentColor'/%3E%3C/svg%3E" },
+  { name: "Rounded", value: "rounded", previewUrl: "data:image/svg+xml,%3Csvg width='50' height='50' viewBox='0 0 50 50' xmlns='http://www.w3.org/2000/svg'%3E%3Crect x='10' y='10' width='30' height='30' rx='5' fill='currentColor'/%3E%3C/svg%3E" },
+  { name: "Classy", value: "classy", previewUrl: "data:image/svg+xml,%3Csvg width='50' height='50' viewBox='0 0 50 50' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M10,10 L40,10 L40,15 L10,15 Z M10,15 L15,15 L15,40 L10,40 Z M35,15 L40,15 L40,40 L35,40 Z M10,35 L40,35 L40,40 L10,40 Z' fill='currentColor'/%3E%3C/svg%3E" },
   { name: "Elegant", value: "elegant", previewUrl: "data:image/svg+xml,%3Csvg width='50' height='50' viewBox='0 0 50 50' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M25,10 L40,25 L25,40 L10,25 Z' fill='currentColor'/%3E%3C/svg%3E" },
 ];
 
@@ -72,7 +72,7 @@ export function QrCustomizer({ url, config, onSave }: QrCustomizerProps) {
           maskSize: 'contain',
           WebkitMaskRepeat: 'no-repeat',
           maskRepeat: 'no-repeat',
-          backgroundColor: 'currentColor'
+          backgroundColor: localConfig.fgColor
         }} />
       </div>
       <span className="text-xs">{style.name}</span>
@@ -347,7 +347,31 @@ export function QrCustomizer({ url, config, onSave }: QrCustomizerProps) {
                     value={url}
                     size={150}
                     level="H"
-                    {...localConfig}
+                    fgColor={localConfig.fgColor}
+                    bgColor={localConfig.bgColor}
+                    includeMargin={localConfig.includeMargin}
+                    style={{
+                      width: "100%",
+                      height: "100%"
+                    }}
+                    {...{
+                      dotsOptions: {
+                        type: localConfig.pattern,
+                        color: localConfig.fgColor
+                      },
+                      cornersSquareOptions: {
+                        type: localConfig.cornerStyle,
+                        color: localConfig.cornerSquareColor
+                      },
+                      cornersDotOptions: {
+                        type: localConfig.cornerStyle,
+                        color: localConfig.cornerDotColor
+                      },
+                      frameOptions: localConfig.frameStyle !== "none" ? {
+                        style: localConfig.frameStyle,
+                        color: localConfig.frameColor
+                      } : undefined
+                    }}
                     imageSettings={
                       localConfig.logoUrl
                         ? {
