@@ -21,21 +21,21 @@ const colorPresets = [
 ];
 
 const patternStyles = [
-  { name: "Squares", value: "squares", previewUrl: "data:image/svg+xml,%3Csvg width='50' height='50' viewBox='0 0 50 50' xmlns='http://www.w3.org/2000/svg'%3E%3Crect x='10' y='10' width='30' height='30' fill='currentColor'/%3E%3C/svg%3E" },
-  { name: "Dots", value: "dots", previewUrl: "data:image/svg+xml,%3Csvg width='50' height='50' viewBox='0 0 50 50' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='25' cy='25' r='15' fill='currentColor'/%3E%3C/svg%3E" },
-  { name: "Rounded", value: "rounded", previewUrl: "data:image/svg+xml,%3Csvg width='50' height='50' viewBox='0 0 50 50' xmlns='http://www.w3.org/2000/svg'%3E%3Crect x='10' y='10' width='30' height='30' rx='5' fill='currentColor'/%3E%3C/svg%3E" },
-  { name: "Classy", value: "classy", previewUrl: "data:image/svg+xml,%3Csvg width='50' height='50' viewBox='0 0 50 50' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M10,10 L40,10 L40,15 L10,15 Z M10,15 L15,15 L15,40 L10,40 Z M35,15 L40,15 L40,40 L35,40 Z M10,35 L40,35 L40,40 L10,40 Z' fill='currentColor'/%3E%3C/svg%3E" },
-  { name: "Elegant", value: "elegant", previewUrl: "data:image/svg+xml,%3Csvg width='50' height='50' viewBox='0 0 50 50' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M25,10 L40,25 L25,40 L10,25 Z' fill='currentColor'/%3E%3C/svg%3E" },
+  { name: "Squares", value: "squares", previewUrl: "data:image/svg+xml,%3Csvg width='50' height='50' viewBox='0 0 50 50' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M5,5 h10v10h-10z M20,5 h10v10h-10z M35,5 h10v10h-10z M5,20 h10v10h-10z M20,20 h10v10h-10z M35,20 h10v10h-10z M5,35 h10v10h-10z M20,35 h10v10h-10z M35,35 h10v10h-10z' fill='currentColor'/%3E%3C/svg%3E" },
+  { name: "Dots", value: "dots", previewUrl: "data:image/svg+xml,%3Csvg width='50' height='50' viewBox='0 0 50 50' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='10' cy='10' r='4' fill='currentColor'/%3E%3Ccircle cx='25' cy='10' r='4' fill='currentColor'/%3E%3Ccircle cx='40' cy='10' r='4' fill='currentColor'/%3E%3Ccircle cx='10' cy='25' r='4' fill='currentColor'/%3E%3Ccircle cx='25' cy='25' r='4' fill='currentColor'/%3E%3Ccircle cx='40' cy='25' r='4' fill='currentColor'/%3E%3Ccircle cx='10' cy='40' r='4' fill='currentColor'/%3E%3Ccircle cx='25' cy='40' r='4' fill='currentColor'/%3E%3Ccircle cx='40' cy='40' r='4' fill='currentColor'/%3E%3C/svg%3E" },
+  { name: "Rounded", value: "rounded", previewUrl: "data:image/svg+xml,%3Csvg width='50' height='50' viewBox='0 0 50 50' xmlns='http://www.w3.org/2000/svg'%3E%3Crect x='5' y='5' width='10' height='10' rx='2' fill='currentColor'/%3E%3Crect x='20' y='5' width='10' height='10' rx='2' fill='currentColor'/%3E%3Crect x='35' y='5' width='10' height='10' rx='2' fill='currentColor'/%3E%3Crect x='5' y='20' width='10' height='10' rx='2' fill='currentColor'/%3E%3Crect x='20' y='20' width='10' height='10' rx='2' fill='currentColor'/%3E%3Crect x='35' y='20' width='10' height='10' rx='2' fill='currentColor'/%3E%3Crect x='5' y='35' width='10' height='10' rx='2' fill='currentColor'/%3E%3Crect x='20' y='35' width='10' height='10' rx='2' fill='currentColor'/%3E%3Crect x='35' y='35' width='10' height='10' rx='2' fill='currentColor'/%3E%3C/svg%3E" },
+  { name: "Classy", value: "classy", previewUrl: "data:image/svg+xml,%3Csvg width='50' height='50' viewBox='0 0 50 50' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M5,5 h40 v5 h-40z M5,10 h5 v30 h-5z M40,10 h5 v30 h-5z M5,40 h40 v5 h-40z M15,15 h5v5h-5z M25,15 h5v5h-5z M35,15 h5v5h-5z M15,25 h5v5h-5z M25,25 h5v5h-5z M35,25 h5v5h-5z M15,35 h5v5h-5z M25,35 h5v5h-5z M35,35 h5v5h-5z' fill='currentColor'/%3E%3C/svg%3E" },
+  { name: "Elegant", value: "elegant", previewUrl: "data:image/svg+xml,%3Csvg width='50' height='50' viewBox='0 0 50 50' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M10,10 l15,15 l15,-15 l-5,5 l-10,10 l-10,-10z M10,25 l15,15 l15,-15 l-5,5 l-10,10 l-10,-10z' fill='currentColor'/%3E%3C/svg%3E" },
 ];
 
 const cornerStyles = [
-  { name: "Square", value: "square", previewUrl: "data:image/svg+xml,%3Csvg width='50' height='50' viewBox='0 0 50 50' xmlns='http://www.w3.org/2000/svg'%3E%3Crect x='10' y='10' width='30' height='30' fill='currentColor'/%3E%3C/svg%3E" },
-  { name: "Dot", value: "dot", previewUrl: "data:image/svg+xml,%3Csvg width='50' height='50' viewBox='0 0 50 50' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='25' cy='25' r='15' fill='currentColor'/%3E%3C/svg%3E" },
-  { name: "Extra Rounded", value: "extra-rounded", previewUrl: "data:image/svg+xml,%3Csvg width='50' height='50' viewBox='0 0 50 50' xmlns='http://www.w3.org/2000/svg'%3E%3Crect x='10' y='10' width='30' height='30' rx='15' fill='currentColor'/%3E%3C/svg%3E" },
+  { name: "Square", value: "square", previewUrl: "data:image/svg+xml,%3Csvg width='50' height='50' viewBox='0 0 50 50' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M5,5 h15v15h-15z M30,5 h15v15h-15z M5,30 h15v15h-15z' fill='currentColor'/%3E%3C/svg%3E" },
+  { name: "Dot", value: "dot", previewUrl: "data:image/svg+xml,%3Csvg width='50' height='50' viewBox='0 0 50 50' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='12.5' cy='12.5' r='7.5' fill='currentColor'/%3E%3Ccircle cx='37.5' cy='12.5' r='7.5' fill='currentColor'/%3E%3Ccircle cx='12.5' cy='37.5' r='7.5' fill='currentColor'/%3E%3C/svg%3E" },
+  { name: "Extra Rounded", value: "extra-rounded", previewUrl: "data:image/svg+xml,%3Csvg width='50' height='50' viewBox='0 0 50 50' xmlns='http://www.w3.org/2000/svg'%3E%3Crect x='5' y='5' width='15' height='15' rx='7.5' fill='currentColor'/%3E%3Crect x='30' y='5' width='15' height='15' rx='7.5' fill='currentColor'/%3E%3Crect x='5' y='30' width='15' height='15' rx='7.5' fill='currentColor'/%3E%3C/svg%3E" },
 ];
 
 const frameStyles = [
-  { name: "None", value: "none", previewUrl: "data:image/svg+xml,%3Csvg width='50' height='50' viewBox='0 0 50 50' xmlns='http://www.w3.org/2000/svg'%3E%3Crect x='15' y='15' width='20' height='20' fill='currentColor'/%3E%3C/svg%3E" },
+  { name: "None", value: "none", previewUrl: "data:image/svg+xml,%3Csvg width='50' height='50' viewBox='0 0 50 50' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M10,10 h30v30h-30z' fill='currentColor' fill-opacity='0.2'/%3E%3C/svg%3E" },
   { name: "Simple", value: "simple", previewUrl: "data:image/svg+xml,%3Csvg width='50' height='50' viewBox='0 0 50 50' xmlns='http://www.w3.org/2000/svg'%3E%3Crect x='5' y='5' width='40' height='40' stroke='currentColor' fill='none' stroke-width='2'/%3E%3Crect x='15' y='15' width='20' height='20' fill='currentColor'/%3E%3C/svg%3E" },
   { name: "Dots", value: "dots", previewUrl: "data:image/svg+xml,%3Csvg width='50' height='50' viewBox='0 0 50 50' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='5' cy='5' r='2' fill='currentColor'/%3E%3Ccircle cx='15' cy='5' r='2' fill='currentColor'/%3E%3Ccircle cx='25' cy='5' r='2' fill='currentColor'/%3E%3Ccircle cx='35' cy='5' r='2' fill='currentColor'/%3E%3Ccircle cx='45' cy='5' r='2' fill='currentColor'/%3E%3Ccircle cx='5' cy='45' r='2' fill='currentColor'/%3E%3Ccircle cx='15' cy='45' r='2' fill='currentColor'/%3E%3Ccircle cx='25' cy='45' r='2' fill='currentColor'/%3E%3Ccircle cx='35' cy='45' r='2' fill='currentColor'/%3E%3Ccircle cx='45' cy='45' r='2' fill='currentColor'/%3E%3Ccircle cx='5' cy='15' r='2' fill='currentColor'/%3E%3Ccircle cx='5' cy='25' r='2' fill='currentColor'/%3E%3Ccircle cx='5' cy='35' r='2' fill='currentColor'/%3E%3Ccircle cx='45' cy='15' r='2' fill='currentColor'/%3E%3Ccircle cx='45' cy='25' r='2' fill='currentColor'/%3E%3Ccircle cx='45' cy='35' r='2' fill='currentColor'/%3E%3Crect x='15' y='15' width='20' height='20' fill='currentColor'/%3E%3C/svg%3E" },
 ];
@@ -104,10 +104,7 @@ export function QrCustomizer({ url, config, onSave }: QrCustomizerProps) {
                   Pattern
                 </TabsTrigger>
                 <TabsTrigger value="frame" className="flex items-center gap-2">
-                  <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                    <rect x="3" y="3" width="18" height="18" rx="2" />
-                  </svg>
-                  Frame
+                  <Layout className="h-4 w-4" /> Frame
                 </TabsTrigger>
                 <TabsTrigger value="logo" className="flex items-center gap-2">
                   <Image className="h-4 w-4" /> Logo
