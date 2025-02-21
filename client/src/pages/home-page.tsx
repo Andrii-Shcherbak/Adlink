@@ -1,7 +1,7 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { insertUrlSchema, type InsertUrl, type Url } from "@shared/schema";
+import { insertUrlSchema, type InsertUrl, type Url, type QrConfig } from "@shared/schema";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -169,100 +169,103 @@ export default function HomePage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {urls.map((url) => (
-                  <div
-                    key={url.id}
-                    className="p-4 border rounded-lg"
-                  >
-                    <div className="flex flex-col gap-4">
-                      <div className="space-y-2 w-full">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className="font-medium break-all">
-                            {`${domain}/api/r/${url.shortCode}`}
-                          </span>
-                          <div className="flex items-center gap-1 shrink-0">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => copyToClipboard(`${domain}/api/r/${url.shortCode}`)}
-                            >
-                              <Copy className="h-4 w-4" />
-                            </Button>
-                            <a
-                              href={`${domain}/api/r/${url.shortCode}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                            >
-                              <Button variant="ghost" size="icon">
-                                <ExternalLink className="h-4 w-4" />
+                {urls.map((url) => {
+                  const qrConfig = url.qrConfig as QrConfig;
+                  return (
+                    <div
+                      key={url.id}
+                      className="p-4 border rounded-lg"
+                    >
+                      <div className="flex flex-col gap-4">
+                        <div className="space-y-2 w-full">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="font-medium break-all">
+                              {`${domain}/api/r/${url.shortCode}`}
+                            </span>
+                            <div className="flex items-center gap-1 shrink-0">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => copyToClipboard(`${domain}/api/r/${url.shortCode}`)}
+                              >
+                                <Copy className="h-4 w-4" />
                               </Button>
-                            </a>
+                              <a
+                                href={`${domain}/api/r/${url.shortCode}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
+                                <Button variant="ghost" size="icon">
+                                  <ExternalLink className="h-4 w-4" />
+                                </Button>
+                              </a>
+                            </div>
                           </div>
+                          <div className="flex flex-col sm:flex-row sm:items-center gap-2 text-sm text-muted-foreground">
+                            <span>
+                              Created: {format(new Date(url.createdAt), 'MMM d, yyyy HH:mm')}
+                            </span>
+                            <span className="hidden sm:inline">•</span>
+                            <span>Clicks: {url.clicks}</span>
+                          </div>
+                          <p className="text-sm text-muted-foreground break-all">
+                            Original: {url.originalUrl}
+                          </p>
                         </div>
-                        <div className="flex flex-col sm:flex-row sm:items-center gap-2 text-sm text-muted-foreground">
-                          <span>
-                            Created: {format(new Date(url.createdAt), 'MMM d, yyyy HH:mm')}
-                          </span>
-                          <span className="hidden sm:inline">•</span>
-                          <span>Clicks: {url.clicks}</span>
-                        </div>
-                        <p className="text-sm text-muted-foreground break-all">
-                          Original: {url.originalUrl}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-2 justify-end">
-                        <QRCodeSVG
-                          value={`${domain}/api/r/${url.shortCode}`}
-                          size={100}
-                          level="H"
-                          fgColor={url.qrConfig.fgColor}
-                          bgColor={url.qrConfig.bgColor}
-                          includeMargin={url.qrConfig.includeMargin}
-                          imageSettings={
-                            url.qrConfig.logoUrl
-                              ? {
-                                  src: url.qrConfig.logoUrl,
-                                  height: 24,
-                                  width: 24,
-                                  excavate: true,
-                                }
-                              : undefined
-                          }
-                        />
-                        <QrCustomizer
-                          url={`${domain}/api/r/${url.shortCode}`}
-                          config={url.qrConfig}
-                          onSave={async (newConfig) => {
-                            try {
-                              await apiRequest("PATCH", `/api/urls/${url.id}/qr-config`, newConfig);
-
-                              queryClient.setQueryData<{urls: Url[]}>(["/api/urls"], (oldData) => {
-                                if (!oldData) return oldData;
-                                return {
-                                  ...oldData,
-                                  urls: oldData.urls.map((oldUrl) =>
-                                    oldUrl.id === url.id ? { ...oldUrl, qrConfig: newConfig } : oldUrl
-                                  )
-                                };
-                              });
-
-                              toast({
-                                title: "QR code updated",
-                                description: "Your QR code customization has been saved",
-                              });
-                            } catch (error) {
-                              toast({
-                                title: "Failed to update QR code",
-                                description: error instanceof Error ? error.message : "An error occurred",
-                                variant: "destructive",
-                              });
+                        <div className="flex items-center gap-2 justify-end">
+                          <QRCodeSVG
+                            value={`${domain}/api/r/${url.shortCode}`}
+                            size={100}
+                            level="H"
+                            fgColor={qrConfig.fgColor}
+                            bgColor={qrConfig.bgColor}
+                            includeMargin={qrConfig.includeMargin}
+                            imageSettings={
+                              qrConfig.logoUrl
+                                ? {
+                                    src: qrConfig.logoUrl,
+                                    height: 24,
+                                    width: 24,
+                                    excavate: true,
+                                  }
+                                : undefined
                             }
-                          }}
-                        />
+                          />
+                          <QrCustomizer
+                            url={`${domain}/api/r/${url.shortCode}`}
+                            config={qrConfig}
+                            onSave={async (newConfig) => {
+                              try {
+                                await apiRequest("PATCH", `/api/urls/${url.id}/qr-config`, newConfig);
+
+                                queryClient.setQueryData<{urls: Url[]}>(["/api/urls", page, ITEMS_PER_PAGE], (oldData) => {
+                                  if (!oldData) return oldData;
+                                  return {
+                                    ...oldData,
+                                    urls: oldData.urls.map((oldUrl) =>
+                                      oldUrl.id === url.id ? { ...oldUrl, qrConfig: newConfig } : oldUrl
+                                    )
+                                  };
+                                });
+
+                                toast({
+                                  title: "QR code updated",
+                                  description: "Your QR code customization has been saved",
+                                });
+                              } catch (error) {
+                                toast({
+                                  title: "Failed to update QR code",
+                                  description: error instanceof Error ? error.message : "An error occurred",
+                                  variant: "destructive",
+                                });
+                              }
+                            }}
+                          />
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
 
                 {urls.length === 0 && (
                   <div className="text-center py-8 text-muted-foreground">

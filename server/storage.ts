@@ -1,6 +1,6 @@
 import { users, urls, type User, type InsertUser, type Url, type InsertUrl } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, sql } from "drizzle-orm";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 import { pool } from "./db";
@@ -79,7 +79,7 @@ export class DatabaseStorage implements IStorage {
 
   async getUserUrlsCount(userId: number): Promise<number> {
     const [result] = await db
-      .select({ count: urls.id.count() })
+      .select({ count: sql<number>`count(*)` })
       .from(urls)
       .where(eq(urls.userId, userId));
     return Number(result?.count) || 0;
