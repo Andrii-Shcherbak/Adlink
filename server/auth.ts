@@ -1,5 +1,6 @@
 import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
+import { Strategy as MicrosoftStrategy } from "passport-microsoft";
 import { Express } from "express";
 import session from "express-session";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
@@ -41,6 +42,7 @@ export function setupAuth(app: Express) {
   app.use(passport.initialize());
   app.use(passport.session());
 
+  // Local Strategy
   passport.use(
     new LocalStrategy(async (username, password, done) => {
       const user = await storage.getUserByUsername(username);
@@ -50,6 +52,52 @@ export function setupAuth(app: Express) {
         return done(null, user);
       }
     }),
+  );
+
+  // Microsoft Strategy
+  passport.use(
+    new MicrosoftStrategy(
+      {
+        clientID: process.env.MICROSOFT_CLIENT_ID!,
+        clientSecret: process.env.MICROSOFT_CLIENT_SECRET!,
+        callbackURL: "/api/auth/microsoft/callback",
+        scope: ["user.read"],
+      },
+      async (accessToken, refreshToken, profile, done) => {
+        try {
+          // Check if user exists by email
+          const email = profile.emails?.[0]?.value;
+          if (!email) {
+            return done(new Error("No email found in Microsoft profile"));
+          }
+
+          let user = await storage.getUserByEmail(email);
+
+          if (!user) {
+            // Create new user if doesn't exist
+            const username = profile.displayName?.replace(/\s+/g, "") || email.split("@")[0];
+            const firstName = profile.name?.givenName || "";
+            const lastName = profile.name?.familyName || "";
+
+            // Generate a random password for Microsoft users
+            const randomPassword = randomBytes(32).toString("hex");
+
+            user = await storage.createUser({
+              username,
+              password: await hashPassword(randomPassword),
+              email,
+              firstName,
+              lastName,
+              company: "",
+            });
+          }
+
+          return done(null, user);
+        } catch (error) {
+          return done(error);
+        }
+      }
+    )
   );
 
   passport.serializeUser((user, done) => done(null, user.id));
@@ -78,6 +126,18 @@ export function setupAuth(app: Express) {
   app.post("/api/login", passport.authenticate("local"), (req, res) => {
     res.status(200).json(req.user);
   });
+
+  // Microsoft OAuth routes
+  app.get("/api/auth/microsoft",
+    passport.authenticate("microsoft", { prompt: "select_account" })
+  );
+
+  app.get("/api/auth/microsoft/callback",
+    passport.authenticate("microsoft", { failureRedirect: "/auth" }),
+    (req, res) => {
+      res.redirect("/");
+    }
+  );
 
   app.post("/api/logout", (req, res, next) => {
     req.logout((err) => {

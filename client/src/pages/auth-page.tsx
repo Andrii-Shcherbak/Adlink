@@ -7,8 +7,8 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Redirect } from "wouter";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { FiLink, FiBarChart2, FiGlobe, FiCode } from "react-icons/fi";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { FiLink, FiBarChart2, FiGlobe, FiCode, FiUser } from "react-icons/fi";
 
 export default function AuthPage() {
   const { user, loginMutation, registerMutation } = useAuth();
@@ -89,6 +89,25 @@ export default function AuthPage() {
                       disabled={loginMutation.isPending}
                     >
                       Sign In
+                    </Button>
+                    <div className="relative my-6">
+                      <div className="absolute inset-0 flex items-center">
+                        <span className="w-full border-t" />
+                      </div>
+                      <div className="relative flex justify-center text-xs uppercase">
+                        <span className="bg-background px-2 text-muted-foreground">
+                          Or continue with
+                        </span>
+                      </div>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full h-11 text-base"
+                      onClick={() => window.location.href = "/api/auth/microsoft"}
+                    >
+                      <FiUser className="mr-2 h-5 w-5" />
+                      Sign in with Microsoft
                     </Button>
                   </form>
                 </Form>
