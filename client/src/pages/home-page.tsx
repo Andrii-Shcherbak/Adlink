@@ -211,8 +211,16 @@ export default function HomePage() {
                       config={url.qrConfig}
                       onSave={async (newConfig) => {
                         try {
-                          await apiRequest("PATCH", `/api/urls/${url.id}/qr-config`, newConfig);
-                          queryClient.invalidateQueries({ queryKey: ["/api/urls"] });
+                          const res = await apiRequest("PATCH", `/api/urls/${url.id}/qr-config`, newConfig);
+                          const updatedUrl = await res.json();
+
+                          queryClient.setQueryData<Url[]>(["/api/urls"], (oldUrls) => {
+                            if (!oldUrls) return oldUrls;
+                            return oldUrls.map((oldUrl) =>
+                              oldUrl.id === url.id ? { ...oldUrl, qrConfig: newConfig } : oldUrl
+                            );
+                          });
+
                           toast({
                             title: "QR code updated",
                             description: "Your QR code customization has been saved",
