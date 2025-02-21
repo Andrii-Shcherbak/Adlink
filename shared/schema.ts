@@ -20,7 +20,13 @@ export const urls = pgTable("urls", {
     bgColor: "#FFFFFF",
     includeMargin: true,
     logoUrl: "",
-    qrStyle: "dots"
+    qrStyle: "dots",
+    cornerStyle: "square",
+    frameStyle: "none",
+    pattern: "squares",
+    cornerDotColor: "#000000",
+    cornerSquareColor: "#000000",
+    frameColor: "#000000",
   }),
 });
 
@@ -39,6 +45,12 @@ export const qrConfigSchema = z.object({
   includeMargin: z.boolean(),
   logoUrl: z.string(),
   qrStyle: z.enum(["dots", "squares"]),
+  cornerStyle: z.enum(["square", "dot", "extra-rounded"]),
+  frameStyle: z.enum(["none", "simple", "dots"]),
+  pattern: z.enum(["squares", "dots", "rounded", "classy", "elegant"]),
+  cornerDotColor: z.string(),
+  cornerSquareColor: z.string(),
+  frameColor: z.string(),
 });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;

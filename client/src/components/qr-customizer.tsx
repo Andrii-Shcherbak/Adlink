@@ -22,6 +22,26 @@ const colorPresets = [
   { name: "Ocean", fg: "#1565C0", bg: "#E3F2FD" },
 ];
 
+const patternStyles = [
+  { name: "Squares", value: "squares" },
+  { name: "Dots", value: "dots" },
+  { name: "Rounded", value: "rounded" },
+  { name: "Classy", value: "classy" },
+  { name: "Elegant", value: "elegant" },
+];
+
+const cornerStyles = [
+  { name: "Square", value: "square" },
+  { name: "Dot", value: "dot" },
+  { name: "Extra Rounded", value: "extra-rounded" },
+];
+
+const frameStyles = [
+  { name: "None", value: "none" },
+  { name: "Simple", value: "simple" },
+  { name: "Dots", value: "dots" },
+];
+
 interface QrCustomizerProps {
   url: string;
   config: QrConfig;
@@ -52,12 +72,21 @@ export function QrCustomizer({ url, config, onSave }: QrCustomizerProps) {
           </DialogHeader>
           <div className="grid grid-cols-[1fr,auto] gap-6">
             <Tabs defaultValue="style" className="flex-1">
-              <TabsList className="grid w-full grid-cols-3 mb-4">
+              <TabsList className="grid w-full grid-cols-4 mb-4">
                 <TabsTrigger value="style" className="flex items-center gap-2">
                   <Paintbrush className="h-4 w-4" /> Style
                 </TabsTrigger>
-                <TabsTrigger value="layout" className="flex items-center gap-2">
-                  <Layout className="h-4 w-4" /> Layout
+                <TabsTrigger value="pattern" className="flex items-center gap-2">
+                  <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M4 4h4v4H4zm6 0h4v4h-4zm6 0h4v4h-4zM4 10h4v4H4zm6 0h4v4h-4zm6 0h4v4h-4zM4 16h4v4H4zm6 0h4v4h-4zm6 0h4v4h-4z" />
+                  </svg>
+                  Pattern
+                </TabsTrigger>
+                <TabsTrigger value="frame" className="flex items-center gap-2">
+                  <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <rect x="3" y="3" width="18" height="18" rx="2" />
+                  </svg>
+                  Frame
                 </TabsTrigger>
                 <TabsTrigger value="logo" className="flex items-center gap-2">
                   <Image className="h-4 w-4" /> Logo
@@ -66,28 +95,6 @@ export function QrCustomizer({ url, config, onSave }: QrCustomizerProps) {
 
               <TabsContent value="style" className="space-y-4">
                 <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label>QR Style</Label>
-                      <RadioGroup
-                        value={localConfig.qrStyle}
-                        onValueChange={(value: "dots" | "squares") =>
-                          setLocalConfig((prev) => ({ ...prev, qrStyle: value }))
-                        }
-                        className="grid grid-cols-2 gap-2 mt-2"
-                      >
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="dots" id="dots" />
-                          <Label htmlFor="dots">Dots</Label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="squares" id="squares" />
-                          <Label htmlFor="squares">Squares</Label>
-                        </div>
-                      </RadioGroup>
-                    </div>
-                  </div>
-
                   <div>
                     <Label>Color Presets</Label>
                     <div className="grid grid-cols-5 gap-2 mt-2">
@@ -162,8 +169,137 @@ export function QrCustomizer({ url, config, onSave }: QrCustomizerProps) {
                 </div>
               </TabsContent>
 
-              <TabsContent value="layout" className="space-y-4">
+              <TabsContent value="pattern" className="space-y-4">
                 <div className="space-y-4">
+                  <div>
+                    <Label>Pattern Style</Label>
+                    <RadioGroup
+                      value={localConfig.pattern}
+                      onValueChange={(value: QrConfig["pattern"]) =>
+                        setLocalConfig((prev) => ({ ...prev, pattern: value }))
+                      }
+                      className="grid grid-cols-3 gap-2 mt-2"
+                    >
+                      {patternStyles.map((style) => (
+                        <div key={style.value} className="flex items-center space-x-2">
+                          <RadioGroupItem value={style.value} id={`pattern-${style.value}`} />
+                          <Label htmlFor={`pattern-${style.value}`}>{style.name}</Label>
+                        </div>
+                      ))}
+                    </RadioGroup>
+                  </div>
+
+                  <div>
+                    <Label>Corner Style</Label>
+                    <RadioGroup
+                      value={localConfig.cornerStyle}
+                      onValueChange={(value: QrConfig["cornerStyle"]) =>
+                        setLocalConfig((prev) => ({ ...prev, cornerStyle: value }))
+                      }
+                      className="grid grid-cols-3 gap-2 mt-2"
+                    >
+                      {cornerStyles.map((style) => (
+                        <div key={style.value} className="flex items-center space-x-2">
+                          <RadioGroupItem value={style.value} id={`corner-${style.value}`} />
+                          <Label htmlFor={`corner-${style.value}`}>{style.name}</Label>
+                        </div>
+                      ))}
+                    </RadioGroup>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="cornerDotColor">Corner Dot Color</Label>
+                    <div className="flex gap-2 mt-2">
+                      <Input
+                        id="cornerDotColor"
+                        type="color"
+                        value={localConfig.cornerDotColor}
+                        onChange={(e) =>
+                          setLocalConfig((prev) => ({ ...prev, cornerDotColor: e.target.value }))
+                        }
+                        className="w-12 h-12 p-1"
+                      />
+                      <Input
+                        type="text"
+                        value={localConfig.cornerDotColor}
+                        onChange={(e) =>
+                          setLocalConfig((prev) => ({ ...prev, cornerDotColor: e.target.value }))
+                        }
+                        className="flex-1"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="cornerSquareColor">Corner Square Color</Label>
+                    <div className="flex gap-2 mt-2">
+                      <Input
+                        id="cornerSquareColor"
+                        type="color"
+                        value={localConfig.cornerSquareColor}
+                        onChange={(e) =>
+                          setLocalConfig((prev) => ({ ...prev, cornerSquareColor: e.target.value }))
+                        }
+                        className="w-12 h-12 p-1"
+                      />
+                      <Input
+                        type="text"
+                        value={localConfig.cornerSquareColor}
+                        onChange={(e) =>
+                          setLocalConfig((prev) => ({ ...prev, cornerSquareColor: e.target.value }))
+                        }
+                        className="flex-1"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="frame" className="space-y-4">
+                <div className="space-y-4">
+                  <div>
+                    <Label>Frame Style</Label>
+                    <RadioGroup
+                      value={localConfig.frameStyle}
+                      onValueChange={(value: QrConfig["frameStyle"]) =>
+                        setLocalConfig((prev) => ({ ...prev, frameStyle: value }))
+                      }
+                      className="grid grid-cols-3 gap-2 mt-2"
+                    >
+                      {frameStyles.map((style) => (
+                        <div key={style.value} className="flex items-center space-x-2">
+                          <RadioGroupItem value={style.value} id={`frame-${style.value}`} />
+                          <Label htmlFor={`frame-${style.value}`}>{style.name}</Label>
+                        </div>
+                      ))}
+                    </RadioGroup>
+                  </div>
+
+                  {localConfig.frameStyle !== "none" && (
+                    <div>
+                      <Label htmlFor="frameColor">Frame Color</Label>
+                      <div className="flex gap-2 mt-2">
+                        <Input
+                          id="frameColor"
+                          type="color"
+                          value={localConfig.frameColor}
+                          onChange={(e) =>
+                            setLocalConfig((prev) => ({ ...prev, frameColor: e.target.value }))
+                          }
+                          className="w-12 h-12 p-1"
+                        />
+                        <Input
+                          type="text"
+                          value={localConfig.frameColor}
+                          onChange={(e) =>
+                            setLocalConfig((prev) => ({ ...prev, frameColor: e.target.value }))
+                          }
+                          className="flex-1"
+                        />
+                      </div>
+                    </div>
+                  )}
+
                   <div className="flex items-center justify-between">
                     <Label htmlFor="margin">Include Margin</Label>
                     <Switch
