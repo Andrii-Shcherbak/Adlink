@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { useToast } from "@/hooks/use-toast";
 import { QRCodeSVG } from "qrcode.react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { Loader2, Copy, ExternalLink, Link as LinkIcon } from "lucide-react";
+import { Loader2, Copy, ExternalLink, LinkIcon } from "lucide-react";
 import { QrCustomizer } from "@/components/qr-customizer";
 
 function truncateUrl(url: string, maxLength: number = 50): string {
@@ -158,83 +158,85 @@ export default function HomePage() {
                 {urls.map((url) => (
                   <div
                     key={url.id}
-                    className="p-4 border rounded-lg flex flex-col md:flex-row gap-4 items-start md:items-center justify-between"
+                    className="p-4 border rounded-lg"
                   >
-                    <div className="flex-grow space-y-2 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium truncate">
-                          {`${domain}/api/r/${url.shortCode}`}
-                        </span>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => copyToClipboard(`${domain}/api/r/${url.shortCode}`)}
-                          className="shrink-0"
-                        >
-                          <Copy className="h-4 w-4" />
-                        </Button>
-                        <a
-                          href={`${domain}/api/r/${url.shortCode}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="shrink-0"
-                        >
-                          <Button variant="ghost" size="icon">
-                            <ExternalLink className="h-4 w-4" />
-                          </Button>
-                        </a>
+                    <div className="flex flex-col gap-4">
+                      <div className="space-y-2 w-full">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="font-medium break-all">
+                            {`${domain}/api/r/${url.shortCode}`}
+                          </span>
+                          <div className="flex items-center gap-1 shrink-0">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => copyToClipboard(`${domain}/api/r/${url.shortCode}`)}
+                            >
+                              <Copy className="h-4 w-4" />
+                            </Button>
+                            <a
+                              href={`${domain}/api/r/${url.shortCode}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              <Button variant="ghost" size="icon">
+                                <ExternalLink className="h-4 w-4" />
+                              </Button>
+                            </a>
+                          </div>
+                        </div>
+                        <p className="text-sm text-muted-foreground break-all">
+                          Original: {url.originalUrl}
+                        </p>
+                        <div className="text-sm text-muted-foreground">
+                          Clicks: {url.clicks}
+                        </div>
                       </div>
-                      <p className="text-sm text-muted-foreground truncate max-w-full">
-                        Original: {truncateUrl(url.originalUrl, 70)}
-                      </p>
-                      <div className="text-sm text-muted-foreground">
-                        Clicks: {url.clicks}
-                      </div>
-                    </div>
-                    <div className="shrink-0 flex items-center gap-2">
-                      <QRCodeSVG
-                        value={`${domain}/api/r/${url.shortCode}`}
-                        size={100}
-                        level="H"
-                        {...url.qrConfig}
-                        imageSettings={
-                          url.qrConfig.logoUrl
-                            ? {
-                                src: url.qrConfig.logoUrl,
-                                height: 24,
-                                width: 24,
-                                excavate: true,
-                              }
-                            : undefined
-                        }
-                      />
-                      <QrCustomizer
-                        url={`${domain}/api/r/${url.shortCode}`}
-                        config={url.qrConfig}
-                        onSave={async (newConfig) => {
-                          try {
-                            await apiRequest("PATCH", `/api/urls/${url.id}/qr-config`, newConfig);
-
-                            queryClient.setQueryData<Url[]>(["/api/urls"], (oldUrls) => {
-                              if (!oldUrls) return oldUrls;
-                              return oldUrls.map((oldUrl) =>
-                                oldUrl.id === url.id ? { ...oldUrl, qrConfig: newConfig } : oldUrl
-                              );
-                            });
-
-                            toast({
-                              title: "QR code updated",
-                              description: "Your QR code customization has been saved",
-                            });
-                          } catch (error) {
-                            toast({
-                              title: "Failed to update QR code",
-                              description: error instanceof Error ? error.message : "An error occurred",
-                              variant: "destructive",
-                            });
+                      <div className="flex items-center gap-2 justify-end">
+                        <QRCodeSVG
+                          value={`${domain}/api/r/${url.shortCode}`}
+                          size={100}
+                          level="H"
+                          {...url.qrConfig}
+                          imageSettings={
+                            url.qrConfig.logoUrl
+                              ? {
+                                  src: url.qrConfig.logoUrl,
+                                  height: 24,
+                                  width: 24,
+                                  excavate: true,
+                                }
+                              : undefined
                           }
-                        }}
-                      />
+                        />
+                        <QrCustomizer
+                          url={`${domain}/api/r/${url.shortCode}`}
+                          config={url.qrConfig}
+                          onSave={async (newConfig) => {
+                            try {
+                              await apiRequest("PATCH", `/api/urls/${url.id}/qr-config`, newConfig);
+
+                              queryClient.setQueryData<Url[]>(["/api/urls"], (oldUrls) => {
+                                if (!oldUrls) return oldUrls;
+                                return oldUrls.map((oldUrl) =>
+                                  oldUrl.id === url.id ? { ...oldUrl, qrConfig: newConfig } : oldUrl
+                                );
+                              });
+
+                              toast({
+                                title: "QR code updated",
+                                description: "Your QR code customization has been saved",
+                              });
+                            } catch (error) {
+                              toast({
+                                title: "Failed to update QR code",
+                                description: error instanceof Error ? error.message : "An error occurred",
+                                variant: "destructive",
+                              });
+                            }
+                          }}
+                        />
+                      </div>
                     </div>
                   </div>
                 ))}

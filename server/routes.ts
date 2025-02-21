@@ -41,7 +41,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (!url) return res.sendStatus(404);
 
     const deviceType = getDeviceType(req.headers['user-agent'] || '');
-    const countryCode = (req.headers['cf-ipcountry'] as string || 'US').toUpperCase();
+
+    // Get country code from headers, default to user's locale if not available
+    let countryCode = (req.headers['cf-ipcountry'] as string)?.toUpperCase();
+    if (!countryCode) {
+      try {
+        countryCode = (req.headers['accept-language'] || 'US')
+          .split(',')[0]
+          .split('-')[1]
+          .toUpperCase();
+      } catch {
+        countryCode = 'US';
+      }
+    }
 
     await storage.incrementUrlClicks(url.id, deviceType, countryCode);
     res.redirect(url.originalUrl);
