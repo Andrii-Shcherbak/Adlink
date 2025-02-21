@@ -15,10 +15,10 @@ export interface IStorage {
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   createUrl(userId: number, url: InsertUrl): Promise<Url>;
-  getUrlByShortCode(shortCode: string): Promise<Url | undefined>;
+  getUrlByShortCode(shortCode: string, userId?: number): Promise<Url | undefined>;
   getUserUrls(userId: number, limit?: number, offset?: number): Promise<Url[]>;
   getUserUrlsCount(userId: number): Promise<number>;
-  incrementUrlClicks(id: number, deviceType: DeviceType, countryCode: string, referrer: string): Promise<void>;
+  incrementUrlClicks(id: number, userId: number, deviceType: DeviceType, countryCode: string, referrer: string): Promise<void>;
   sessionStore: session.Store;
   updateUrlQrConfig(id: number, userId: number, qrConfig: any): Promise<Url | undefined>;
   deleteUrl(id: number, userId: number): Promise<void>;
@@ -67,8 +67,15 @@ export class DatabaseStorage implements IStorage {
     return url;
   }
 
-  async getUrlByShortCode(shortCode: string): Promise<Url | undefined> {
-    const [url] = await db.select().from(urls).where(eq(urls.shortCode, shortCode));
+  async getUrlByShortCode(shortCode: string, userId?: number): Promise<Url | undefined> {
+    const query = db.select().from(urls).where(eq(urls.shortCode, shortCode));
+
+    // If userId is provided, only return URLs owned by that user
+    if (userId !== undefined) {
+      query.where(eq(urls.userId, userId));
+    }
+
+    const [url] = await query;
     return url;
   }
 
@@ -90,37 +97,44 @@ export class DatabaseStorage implements IStorage {
     return Number(result?.count) || 0;
   }
 
-  async incrementUrlClicks(id: number, deviceType: DeviceType, countryCode: string, referrer: string): Promise<void> {
-    const [url] = await db.select().from(urls).where(eq(urls.id, id));
-    if (url) {
-      const analytics = url.analytics as {
-        devices: Record<DeviceType, number>,
-        countries: Record<string, number>,
-        referrers: Record<string, number>
-      };
+  async incrementUrlClicks(id: number, userId: number, deviceType: DeviceType, countryCode: string, referrer: string): Promise<void> {
+    // First, verify that the URL belongs to the user
+    const [url] = await db
+      .select()
+      .from(urls)
+      .where(and(eq(urls.id, id), eq(urls.userId, userId)));
 
-      // Ensure all necessary objects exist
-      analytics.devices = analytics.devices || { desktop: 0, mobile: 0, tablet: 0 };
-      analytics.countries = analytics.countries || {};
-      analytics.referrers = analytics.referrers || {};
-
-      // Update device count
-      analytics.devices[deviceType] = (analytics.devices[deviceType] || 0) + 1;
-
-      // Update country count
-      analytics.countries[countryCode] = (analytics.countries[countryCode] || 0) + 1;
-
-      // Update referrer count
-      analytics.referrers[referrer] = (analytics.referrers[referrer] || 0) + 1;
-
-      await db
-        .update(urls)
-        .set({
-          clicks: url.clicks + 1,
-          analytics: analytics
-        })
-        .where(eq(urls.id, id));
+    if (!url) {
+      throw new Error("URL not found or unauthorized");
     }
+
+    const analytics = url.analytics as {
+      devices: Record<DeviceType, number>,
+      countries: Record<string, number>,
+      referrers: Record<string, number>
+    };
+
+    // Ensure all necessary objects exist
+    analytics.devices = analytics.devices || { desktop: 0, mobile: 0, tablet: 0 };
+    analytics.countries = analytics.countries || {};
+    analytics.referrers = analytics.referrers || {};
+
+    // Update device count
+    analytics.devices[deviceType] = (analytics.devices[deviceType] || 0) + 1;
+
+    // Update country count
+    analytics.countries[countryCode] = (analytics.countries[countryCode] || 0) + 1;
+
+    // Update referrer count
+    analytics.referrers[referrer] = (analytics.referrers[referrer] || 0) + 1;
+
+    await db
+      .update(urls)
+      .set({
+        clicks: url.clicks + 1,
+        analytics: analytics
+      })
+      .where(and(eq(urls.id, id), eq(urls.userId, userId)));
   }
 
   async updateUrlQrConfig(id: number, userId: number, qrConfig: any): Promise<Url | undefined> {

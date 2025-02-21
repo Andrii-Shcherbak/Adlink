@@ -47,7 +47,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const limit = parseInt(req.query.limit as string) || 10;
     const offset = (page - 1) * limit;
 
-    // Only get URLs for the current user
     const [urls, total] = await Promise.all([
       storage.getUserUrls(req.user!.id, limit, offset),
       storage.getUserUrlsCount(req.user!.id)
@@ -71,7 +70,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const deviceType = getDeviceType(req.headers['user-agent'] || '');
     const referrer = getReferrer(req.headers.referer);
 
-    // Get country code from headers, default to user's locale if not available
     let countryCode = (req.headers['cf-ipcountry'] as string)?.toUpperCase();
     if (!countryCode) {
       try {
@@ -83,8 +81,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     }
 
-    await storage.incrementUrlClicks(url.id, deviceType, countryCode, referrer);
-    res.redirect(url.originalUrl);
+    try {
+      await storage.incrementUrlClicks(url.id, url.userId, deviceType, countryCode, referrer);
+      res.redirect(url.originalUrl);
+    } catch (error) {
+      console.error('Error incrementing clicks:', error);
+      // Still redirect even if analytics fails
+      res.redirect(url.originalUrl);
+    }
   });
 
   app.patch("/api/urls/:id/qr-config", async (req, res) => {
@@ -95,7 +99,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(400).json(parseResult.error);
     }
 
-    // Only allow updating QR config for the current user's URLs
     const url = await storage.updateUrlQrConfig(
       parseInt(req.params.id),
       req.user!.id,
@@ -113,7 +116,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (!req.isAuthenticated()) return res.sendStatus(401);
 
     try {
-      // Only allow deleting the current user's URLs
       await storage.deleteUrl(parseInt(req.params.id), req.user!.id);
       res.sendStatus(200);
     } catch (error) {
