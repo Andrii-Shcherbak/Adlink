@@ -1,5 +1,4 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { useAuth } from "@/hooks/use-auth";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertUrlSchema, type InsertUrl, type Url } from "@shared/schema";
@@ -10,8 +9,10 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { useToast } from "@/hooks/use-toast";
 import { QRCodeSVG } from "qrcode.react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { Loader2, Copy, ExternalLink, LinkIcon } from "lucide-react";
+import { Loader2, Copy, ExternalLink, LinkIcon, ChevronLeft, ChevronRight } from "lucide-react";
 import { QrCustomizer } from "@/components/qr-customizer";
+import { useState } from "react";
+import { format } from "date-fns";
 
 function truncateUrl(url: string, maxLength: number = 50): string {
   if (url.length <= maxLength) return url;
@@ -21,14 +22,24 @@ function truncateUrl(url: string, maxLength: number = 50): string {
 export default function HomePage() {
   const { toast } = useToast();
   const domain = window.location.origin;
+  const [page, setPage] = useState(1);
+  const ITEMS_PER_PAGE = 5;
 
   const form = useForm<InsertUrl>({
     resolver: zodResolver(insertUrlSchema),
     defaultValues: { originalUrl: "" },
   });
 
-  const { data: urls = [], isLoading } = useQuery<Url[]>({
-    queryKey: ["/api/urls"],
+  const { data, isLoading } = useQuery<{ 
+    urls: Url[], 
+    pagination: { total: number; page: number; totalPages: number; hasMore: boolean; }
+  }>({
+    queryKey: ["/api/urls", page, ITEMS_PER_PAGE],
+    queryFn: async () => {
+      const res = await fetch(`/api/urls?page=${page}&limit=${ITEMS_PER_PAGE}`);
+      if (!res.ok) throw new Error("Failed to fetch URLs");
+      return res.json();
+    },
   });
 
   const createUrlMutation = useMutation({
@@ -60,6 +71,9 @@ export default function HomePage() {
       description: "The URL has been copied to your clipboard",
     });
   };
+
+  const urls = data?.urls || [];
+  const { total = 0, totalPages = 1 } = data?.pagination || {};
 
   if (isLoading) {
     return (
@@ -130,7 +144,7 @@ export default function HomePage() {
                       Total URLs
                     </div>
                     <div className="text-2xl font-bold mt-1">
-                      {urls.length}
+                      {total}
                     </div>
                   </div>
                   <div className="border rounded-lg p-4">
@@ -185,19 +199,25 @@ export default function HomePage() {
                             </a>
                           </div>
                         </div>
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-2 text-sm text-muted-foreground">
+                          <span>
+                            Created: {format(new Date(url.createdAt), 'MMM d, yyyy HH:mm')}
+                          </span>
+                          <span className="hidden sm:inline">•</span>
+                          <span>Clicks: {url.clicks}</span>
+                        </div>
                         <p className="text-sm text-muted-foreground break-all">
                           Original: {url.originalUrl}
                         </p>
-                        <div className="text-sm text-muted-foreground">
-                          Clicks: {url.clicks}
-                        </div>
                       </div>
                       <div className="flex items-center gap-2 justify-end">
                         <QRCodeSVG
                           value={`${domain}/api/r/${url.shortCode}`}
                           size={100}
                           level="H"
-                          {...url.qrConfig}
+                          fgColor={url.qrConfig.fgColor}
+                          bgColor={url.qrConfig.bgColor}
+                          includeMargin={url.qrConfig.includeMargin}
                           imageSettings={
                             url.qrConfig.logoUrl
                               ? {
@@ -216,11 +236,14 @@ export default function HomePage() {
                             try {
                               await apiRequest("PATCH", `/api/urls/${url.id}/qr-config`, newConfig);
 
-                              queryClient.setQueryData<Url[]>(["/api/urls"], (oldUrls) => {
-                                if (!oldUrls) return oldUrls;
-                                return oldUrls.map((oldUrl) =>
-                                  oldUrl.id === url.id ? { ...oldUrl, qrConfig: newConfig } : oldUrl
-                                );
+                              queryClient.setQueryData<{urls: Url[]}>(["/api/urls"], (oldData) => {
+                                if (!oldData) return oldData;
+                                return {
+                                  ...oldData,
+                                  urls: oldData.urls.map((oldUrl) =>
+                                    oldUrl.id === url.id ? { ...oldUrl, qrConfig: newConfig } : oldUrl
+                                  )
+                                };
                               });
 
                               toast({
@@ -240,6 +263,36 @@ export default function HomePage() {
                     </div>
                   </div>
                 ))}
+
+                {urls.length === 0 && (
+                  <div className="text-center py-8 text-muted-foreground">
+                    No shortened URLs yet. Create your first one above!
+                  </div>
+                )}
+
+                {totalPages > 1 && (
+                  <div className="flex items-center justify-center gap-2 mt-4">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => setPage(p => Math.max(1, p - 1))}
+                      disabled={page === 1}
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                    <span className="text-sm text-muted-foreground">
+                      Page {page} of {totalPages}
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                      disabled={page === totalPages}
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>

@@ -1,17 +1,12 @@
 import { users, urls, type User, type InsertUser, type Url, type InsertUrl } from "@shared/schema";
 import { db } from "./db";
-import { eq } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 import { pool } from "./db";
 import { nanoid } from "nanoid";
 
 const PostgresSessionStore = connectPg(session);
-
-export interface QrConfig {
-  data: string;
-  size: number;
-}
 
 type DeviceType = 'desktop' | 'mobile' | 'tablet';
 
@@ -21,10 +16,11 @@ export interface IStorage {
   createUser(user: InsertUser): Promise<User>;
   createUrl(userId: number, url: InsertUrl): Promise<Url>;
   getUrlByShortCode(shortCode: string): Promise<Url | undefined>;
-  getUserUrls(userId: number): Promise<Url[]>;
+  getUserUrls(userId: number, limit?: number, offset?: number): Promise<Url[]>;
+  getUserUrlsCount(userId: number): Promise<number>;
   incrementUrlClicks(id: number, deviceType: DeviceType, countryCode: string): Promise<void>;
   sessionStore: session.Store;
-  updateUrlQrConfig(id: number, userId: number, qrConfig: QrConfig): Promise<Url | undefined>;
+  updateUrlQrConfig(id: number, userId: number, qrConfig: any): Promise<Url | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -60,7 +56,7 @@ export class DatabaseStorage implements IStorage {
         userId,
         shortCode: nanoid(8),
         clicks: 0,
-        analytics: { devices: {}, countries: {} } // Initialize analytics
+        analytics: { devices: { desktop: 0, mobile: 0, tablet: 0 }, countries: {} }
       })
       .returning();
     return url;
@@ -71,8 +67,22 @@ export class DatabaseStorage implements IStorage {
     return url;
   }
 
-  async getUserUrls(userId: number): Promise<Url[]> {
-    return await db.select().from(urls).where(eq(urls.userId, userId));
+  async getUserUrls(userId: number, limit = 10, offset = 0): Promise<Url[]> {
+    return await db
+      .select()
+      .from(urls)
+      .where(eq(urls.userId, userId))
+      .orderBy(desc(urls.createdAt))
+      .limit(limit)
+      .offset(offset);
+  }
+
+  async getUserUrlsCount(userId: number): Promise<number> {
+    const [result] = await db
+      .select({ count: urls.id.count() })
+      .from(urls)
+      .where(eq(urls.userId, userId));
+    return Number(result?.count) || 0;
   }
 
   async incrementUrlClicks(id: number, deviceType: DeviceType, countryCode: string): Promise<void> {
@@ -96,7 +106,7 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async updateUrlQrConfig(id: number, userId: number, qrConfig: QrConfig): Promise<Url | undefined> {
+  async updateUrlQrConfig(id: number, userId: number, qrConfig: any): Promise<Url | undefined> {
     const [url] = await db
       .update(urls)
       .set({ qrConfig })

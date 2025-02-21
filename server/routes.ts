@@ -32,8 +32,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/urls", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
-    const urls = await storage.getUserUrls(req.user!.id);
-    res.json(urls);
+
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+    const offset = (page - 1) * limit;
+
+    const [urls, total] = await Promise.all([
+      storage.getUserUrls(req.user!.id, limit, offset),
+      storage.getUserUrlsCount(req.user!.id)
+    ]);
+
+    res.json({
+      urls,
+      pagination: {
+        total,
+        page,
+        totalPages: Math.ceil(total / limit),
+        hasMore: offset + urls.length < total
+      }
+    });
   });
 
   app.get("/api/r/:shortCode", async (req, res) => {
