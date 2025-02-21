@@ -26,13 +26,17 @@ export function downloadQRCode(qrRef: HTMLDivElement, filename: string) {
 
   // Helper function to download the canvas as PNG
   const downloadCanvas = () => {
-    const pngUrl = canvas.toDataURL('image/png');
-    const a = document.createElement('a');
-    a.href = pngUrl;
-    a.download = `${filename}.png`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+    canvas.toBlob((blob) => {
+      if (!blob) return;
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${filename}.png`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }, 'image/png');
   };
 
   img.onload = () => {
