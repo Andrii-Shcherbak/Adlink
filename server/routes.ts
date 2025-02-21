@@ -47,6 +47,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const limit = parseInt(req.query.limit as string) || 10;
     const offset = (page - 1) * limit;
 
+    // Only get URLs for the current user
     const [urls, total] = await Promise.all([
       storage.getUserUrls(req.user!.id, limit, offset),
       storage.getUserUrlsCount(req.user!.id)
@@ -94,6 +95,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(400).json(parseResult.error);
     }
 
+    // Only allow updating QR config for the current user's URLs
     const url = await storage.updateUrlQrConfig(
       parseInt(req.params.id),
       req.user!.id,
@@ -111,6 +113,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (!req.isAuthenticated()) return res.sendStatus(401);
 
     try {
+      // Only allow deleting the current user's URLs
       await storage.deleteUrl(parseInt(req.params.id), req.user!.id);
       res.sendStatus(200);
     } catch (error) {

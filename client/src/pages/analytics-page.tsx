@@ -5,10 +5,14 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { Loader2 } from "lucide-react";
 
 export default function AnalyticsPage() {
-  const { data, isLoading } = useQuery<{ urls: Url[], pagination: any }>({
+  // Update to fetch only current user's URLs with a larger limit
+  const { data, isLoading } = useQuery<{
+    urls: Url[];
+    pagination: { total: number; page: number; totalPages: number; hasMore: boolean; }
+  }>({
     queryKey: ["/api/urls"],
     queryFn: async () => {
-      const res = await fetch("/api/urls?limit=100"); // Get more URLs for analytics
+      const res = await fetch("/api/urls?limit=100&page=1"); // Get more URLs for analytics
       if (!res.ok) throw new Error("Failed to fetch URLs");
       return res.json();
     },
@@ -20,6 +24,20 @@ export default function AnalyticsPage() {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  // No data message when user has no URLs
+  if (urls.length === 0) {
+    return (
+      <div className="min-h-screen bg-background p-8">
+        <div className="max-w-6xl mx-auto">
+          <h1 className="text-3xl font-bold mb-8">Analytics Dashboard</h1>
+          <div className="text-center py-8 text-muted-foreground">
+            No URLs found. Create some shortened URLs to see analytics!
+          </div>
+        </div>
       </div>
     );
   }
