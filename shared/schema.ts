@@ -22,6 +22,7 @@ export const urls = pgTable("urls", {
       tablet: 0,
     },
     countries: {},
+    referrers: {}
   }),
   qrConfig: jsonb("qr_config").notNull().default({
     fgColor: "#000000",

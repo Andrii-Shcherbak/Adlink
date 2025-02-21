@@ -15,6 +15,16 @@ function getDeviceType(userAgent: string): 'desktop' | 'mobile' | 'tablet' {
   return 'desktop';
 }
 
+function getReferrer(referer: string | undefined): string {
+  if (!referer) return 'direct';
+  try {
+    const url = new URL(referer);
+    return url.hostname;
+  } catch {
+    return 'invalid';
+  }
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   setupAuth(app);
 
@@ -58,21 +68,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (!url) return res.sendStatus(404);
 
     const deviceType = getDeviceType(req.headers['user-agent'] || '');
+    const referrer = getReferrer(req.headers.referer);
 
     // Get country code from headers, default to user's locale if not available
     let countryCode = (req.headers['cf-ipcountry'] as string)?.toUpperCase();
     if (!countryCode) {
       try {
-        countryCode = (req.headers['accept-language'] || 'US')
-          .split(',')[0]
-          .split('-')[1]
-          .toUpperCase();
+        const acceptLanguage = req.headers['accept-language'] || '';
+        const langParts = acceptLanguage.split(',')[0].split('-');
+        countryCode = langParts.length > 1 ? langParts[1].toUpperCase() : 'UNKNOWN';
       } catch {
-        countryCode = 'US';
+        countryCode = 'UNKNOWN';
       }
     }
 
-    await storage.incrementUrlClicks(url.id, deviceType, countryCode);
+    await storage.incrementUrlClicks(url.id, deviceType, countryCode, referrer);
     res.redirect(url.originalUrl);
   });
 

@@ -18,7 +18,7 @@ export interface IStorage {
   getUrlByShortCode(shortCode: string): Promise<Url | undefined>;
   getUserUrls(userId: number, limit?: number, offset?: number): Promise<Url[]>;
   getUserUrlsCount(userId: number): Promise<number>;
-  incrementUrlClicks(id: number, deviceType: DeviceType, countryCode: string): Promise<void>;
+  incrementUrlClicks(id: number, deviceType: DeviceType, countryCode: string, referrer: string): Promise<void>;
   sessionStore: session.Store;
   updateUrlQrConfig(id: number, userId: number, qrConfig: any): Promise<Url | undefined>;
 }
@@ -56,7 +56,11 @@ export class DatabaseStorage implements IStorage {
         userId,
         shortCode: nanoid(8),
         clicks: 0,
-        analytics: { devices: { desktop: 0, mobile: 0, tablet: 0 }, countries: {} }
+        analytics: {
+          devices: { desktop: 0, mobile: 0, tablet: 0 },
+          countries: {},
+          referrers: {},
+        }
       })
       .returning();
     return url;
@@ -85,16 +89,23 @@ export class DatabaseStorage implements IStorage {
     return Number(result?.count) || 0;
   }
 
-  async incrementUrlClicks(id: number, deviceType: DeviceType, countryCode: string): Promise<void> {
+  async incrementUrlClicks(id: number, deviceType: DeviceType, countryCode: string, referrer: string): Promise<void> {
     const [url] = await db.select().from(urls).where(eq(urls.id, id));
     if (url) {
-      const analytics = url.analytics as { devices: Record<DeviceType, number>, countries: Record<string, number> };
+      const analytics = url.analytics as {
+        devices: Record<DeviceType, number>,
+        countries: Record<string, number>,
+        referrers: Record<string, number>
+      };
 
       // Update device count
       analytics.devices[deviceType] = (analytics.devices[deviceType] || 0) + 1;
 
       // Update country count
       analytics.countries[countryCode] = (analytics.countries[countryCode] || 0) + 1;
+
+      // Update referrer count
+      analytics.referrers[referrer] = (analytics.referrers[referrer] || 0) + 1;
 
       await db
         .update(urls)

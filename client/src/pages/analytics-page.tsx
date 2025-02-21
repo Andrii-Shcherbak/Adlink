@@ -82,37 +82,70 @@ export default function AnalyticsPage() {
           </Card>
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Country Analytics</CardTitle>
-          </CardHeader>
-          <CardContent className="h-[400px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart
-                data={urls.reduce((acc, url) => {
-                  const analytics = url.analytics as { countries: Record<string, number> };
-                  Object.entries(analytics.countries).forEach(([country, count]) => {
-                    const countryName = country === 'unknown' ? 'Unknown' : country.toUpperCase();
-                    const existingEntry = acc.find(entry => entry.name === countryName);
-                    if (existingEntry) {
-                      existingEntry.value += count;
-                    } else {
-                      acc.push({ name: countryName, value: count });
-                    }
-                  });
-                  return acc;
-                }, [] as { name: string; value: number }[])}
-                margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip />
-                <Bar dataKey="value" fill="hsl(var(--primary))" />
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
+        <div className="grid gap-8 grid-cols-1 lg:grid-cols-2">
+          <Card>
+            <CardHeader>
+              <CardTitle>Country Analytics</CardTitle>
+            </CardHeader>
+            <CardContent className="h-[400px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={urls.reduce((acc, url) => {
+                    const analytics = url.analytics as { countries: Record<string, number> };
+                    Object.entries(analytics.countries).forEach(([country, count]) => {
+                      const countryName = country === 'UNKNOWN' ? 'Unknown' : country;
+                      const existingEntry = acc.find(entry => entry.name === countryName);
+                      if (existingEntry) {
+                        existingEntry.value += count;
+                      } else {
+                        acc.push({ name: countryName, value: count });
+                      }
+                    });
+                    return acc;
+                  }, [] as { name: string; value: number }[]).sort((a, b) => b.value - a.value)}
+                  margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" />
+                  <YAxis />
+                  <Tooltip />
+                  <Bar dataKey="value" fill="hsl(var(--primary))" />
+                </BarChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Referrer Analytics</CardTitle>
+            </CardHeader>
+            <CardContent className="h-[400px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={urls.reduce((acc, url) => {
+                    const analytics = url.analytics as { referrers: Record<string, number> };
+                    Object.entries(analytics.referrers || {}).forEach(([referrer, count]) => {
+                      const existingEntry = acc.find(entry => entry.name === referrer);
+                      if (existingEntry) {
+                        existingEntry.value += count;
+                      } else {
+                        acc.push({ name: referrer || 'direct', value: count });
+                      }
+                    });
+                    return acc;
+                  }, [] as { name: string; value: number }[]).sort((a, b) => b.value - a.value)}
+                  margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" />
+                  <YAxis />
+                  <Tooltip />
+                  <Bar dataKey="value" fill="hsl(var(--primary))" />
+                </BarChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );
