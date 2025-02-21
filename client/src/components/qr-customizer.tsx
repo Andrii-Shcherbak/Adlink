@@ -61,35 +61,59 @@ export function QrCustomizer({ url, config, onSave }: QrCustomizerProps) {
     }
   };
 
-  const StyleButton = ({ name, value, isSelected, onClick }: { 
-    name: string;
-    value: string;
-    isSelected: boolean;
-    onClick: () => void;
+  const StyleButton = ({ style, type }: { 
+    style: { name: string; value: string };
+    type: "pattern" | "cornerStyle" | "frame";
   }) => (
     <Button
       variant="outline"
       className={cn("h-auto p-2 flex flex-col gap-1 relative", {
-        'ring-2 ring-primary': isSelected
+        'ring-2 ring-primary': 
+          type === "pattern" ? localConfig.pattern === style.value :
+          type === "cornerStyle" ? localConfig.cornerStyle === style.value :
+          localConfig.frameStyle === style.value
       })}
-      onClick={onClick}
+      onClick={() => {
+        if (type === "pattern") {
+          setLocalConfig(prev => ({ ...prev, pattern: style.value as QrConfig["pattern"] }));
+        } else if (type === "cornerStyle") {
+          setLocalConfig(prev => ({ ...prev, cornerStyle: style.value as QrConfig["cornerStyle"] }));
+        } else {
+          setLocalConfig(prev => ({ ...prev, frameStyle: style.value as QrConfig["frameStyle"] }));
+        }
+      }}
     >
       <div className="w-20 h-20 flex items-center justify-center bg-background rounded-md">
         <QRCodeSVG
-          value="Preview"
+          value={style.name}
           size={60}
           level="Q"
           fgColor={localConfig.fgColor}
           bgColor={localConfig.bgColor}
-          {...{
-            [name === 'pattern' ? 'dotsOptions' : name === 'cornerStyle' ? 'cornersSquareOptions' : 'frameOptions']: {
-              type: value,
-              color: localConfig.fgColor
-            }
-          }}
+          {...(type === "pattern" && {
+            qrStyle: style.value,
+          })}
+          {...(type === "cornerStyle" && {
+            cornersSquareOptions: {
+              type: style.value,
+              color: localConfig.cornerSquareColor,
+            },
+            cornersDotOptions: {
+              type: style.value,
+              color: localConfig.cornerDotColor,
+            },
+          })}
+          {...(type === "frame" && style.value !== "none" && {
+            frameOptions: {
+              style: style.value,
+              width: 5,
+              height: 5,
+              color: localConfig.frameColor,
+            },
+          })}
         />
       </div>
-      <span className="text-xs capitalize">{value.replace('-', ' ')}</span>
+      <span className="text-xs capitalize">{style.name}</span>
     </Button>
   );
 
@@ -147,14 +171,7 @@ export function QrCustomizer({ url, config, onSave }: QrCustomizerProps) {
                           className={cn("h-auto p-2 flex flex-col gap-1", {
                             'ring-2 ring-primary': localConfig.fgColor === preset.fg && localConfig.bgColor === preset.bg
                           })}
-                          onClick={() => setLocalConfig(prev => ({
-                            ...prev,
-                            fgColor: preset.fg,
-                            bgColor: preset.bg,
-                            cornerDotColor: preset.fg,
-                            cornerSquareColor: preset.fg,
-                            frameColor: preset.fg
-                          }))}
+                          onClick={() => updateColors(preset.fg)}
                         >
                           <div className="w-full aspect-square rounded-md" style={{ background: preset.bg }}>
                             <div className="w-1/2 h-1/2 m-auto" style={{ background: preset.fg }} />
@@ -218,10 +235,8 @@ export function QrCustomizer({ url, config, onSave }: QrCustomizerProps) {
                       {patternStyles.map((style) => (
                         <StyleButton
                           key={style.value}
-                          name="pattern"
-                          value={style.value}
-                          isSelected={localConfig.pattern === style.value}
-                          onClick={() => setLocalConfig(prev => ({ ...prev, pattern: style.value as QrConfig['pattern'] }))}
+                          style={style}
+                          type="pattern"
                         />
                       ))}
                     </div>
@@ -233,10 +248,8 @@ export function QrCustomizer({ url, config, onSave }: QrCustomizerProps) {
                       {cornerStyles.map((style) => (
                         <StyleButton
                           key={style.value}
-                          name="cornerStyle"
-                          value={style.value}
-                          isSelected={localConfig.cornerStyle === style.value}
-                          onClick={() => setLocalConfig(prev => ({ ...prev, cornerStyle: style.value as QrConfig['cornerStyle'] }))}
+                          style={style}
+                          type="cornerStyle"
                         />
                       ))}
                     </div>
@@ -252,10 +265,8 @@ export function QrCustomizer({ url, config, onSave }: QrCustomizerProps) {
                       {frameStyles.map((style) => (
                         <StyleButton
                           key={style.value}
-                          name="frameStyle"
-                          value={style.value}
-                          isSelected={localConfig.frameStyle === style.value}
-                          onClick={() => setLocalConfig(prev => ({ ...prev, frameStyle: style.value as QrConfig['frameStyle'] }))}
+                          style={style}
+                          type="frame"
                         />
                       ))}
                     </div>
@@ -306,26 +317,23 @@ export function QrCustomizer({ url, config, onSave }: QrCustomizerProps) {
                       width: "100%",
                       height: "100%"
                     }}
-                    {...{
-                      dotsOptions: {
-                        type: localConfig.pattern,
-                        color: localConfig.fgColor
-                      },
-                      cornersDotOptions: {
-                        type: localConfig.cornerStyle,
-                        color: localConfig.cornerDotColor
-                      },
-                      cornersSquareOptions: {
-                        type: localConfig.cornerStyle,
-                        color: localConfig.cornerSquareColor
-                      },
-                      ...(localConfig.frameStyle !== "none" && {
-                        frameOptions: {
-                          style: localConfig.frameStyle,
-                          color: localConfig.frameColor
-                        }
-                      })
+                    qrStyle={localConfig.pattern}
+                    cornersSquareOptions={{
+                      type: localConfig.cornerStyle,
+                      color: localConfig.cornerSquareColor,
                     }}
+                    cornersDotOptions={{
+                      type: localConfig.cornerStyle,
+                      color: localConfig.cornerDotColor,
+                    }}
+                    {...(localConfig.frameStyle !== "none" && {
+                      frameOptions: {
+                        style: localConfig.frameStyle,
+                        width: 5,
+                        height: 5,
+                        color: localConfig.frameColor,
+                      }
+                    })}
                     imageSettings={
                       localConfig.logoUrl
                         ? {

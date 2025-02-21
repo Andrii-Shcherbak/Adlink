@@ -48,9 +48,9 @@ export const qrConfigSchema = z.object({
   cornerStyle: z.enum(["square", "dot", "extra-rounded"]),
   frameStyle: z.enum(["none", "simple", "dots"]),
   pattern: z.enum(["squares", "dots", "rounded", "classy", "elegant"]),
-  cornerDotColor: z.string(),
-  cornerSquareColor: z.string(),
-  frameColor: z.string(),
+  cornerDotColor: z.string().default("#000000"),
+  cornerSquareColor: z.string().default("#000000"),
+  frameColor: z.string().default("#000000"),
 });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
