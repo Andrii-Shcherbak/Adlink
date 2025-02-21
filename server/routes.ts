@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { setupAuth } from "./auth";
 import { storage } from "./storage";
 import { insertUrlSchema } from "@shared/schema";
+import { qrConfigSchema } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   setupAuth(app);
@@ -28,9 +29,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/r/:shortCode", async (req, res) => {
     const url = await storage.getUrlByShortCode(req.params.shortCode);
     if (!url) return res.sendStatus(404);
-    
+
     await storage.incrementUrlClicks(url.id);
     res.redirect(url.originalUrl);
+  });
+
+  app.patch("/api/urls/:id/qr-config", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+
+    const parseResult = qrConfigSchema.safeParse(req.body);
+    if (!parseResult.success) {
+      return res.status(400).json(parseResult.error);
+    }
+
+    const url = await storage.updateUrlQrConfig(
+      parseInt(req.params.id),
+      req.user!.id,
+      parseResult.data
+    );
+
+    if (!url) {
+      return res.status(404).send("URL not found");
+    }
+
+    res.json(url);
   });
 
   const httpServer = createServer(app);

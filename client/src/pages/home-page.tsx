@@ -12,8 +12,9 @@ import { QRCodeSVG } from "qrcode.react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from "recharts";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Loader2, Copy, ExternalLink } from "lucide-react";
+import { QrCustomizer } from "@/components/qr-customizer";
+import type { QrConfig } from "@shared/schema";
 
-// Add this helper function at the top of the file
 function truncateUrl(url: string, maxLength: number = 50): string {
   if (url.length <= maxLength) return url;
   return url.substring(0, maxLength - 3) + "...";
@@ -188,12 +189,42 @@ export default function HomePage() {
                       Clicks: {url.clicks}
                     </div>
                   </div>
-                  <div className="shrink-0">
+                  <div className="shrink-0 flex items-center gap-2">
                     <QRCodeSVG
                       value={`${domain}/api/r/${url.shortCode}`}
                       size={100}
                       level="H"
-                      includeMargin
+                      {...url.qrConfig}
+                      imageSettings={
+                        url.qrConfig.logoUrl
+                          ? {
+                              src: url.qrConfig.logoUrl,
+                              height: 24,
+                              width: 24,
+                              excavate: true,
+                            }
+                          : undefined
+                      }
+                    />
+                    <QrCustomizer
+                      url={`${domain}/api/r/${url.shortCode}`}
+                      config={url.qrConfig}
+                      onSave={async (newConfig) => {
+                        try {
+                          await apiRequest("PATCH", `/api/urls/${url.id}/qr-config`, newConfig);
+                          queryClient.invalidateQueries({ queryKey: ["/api/urls"] });
+                          toast({
+                            title: "QR code updated",
+                            description: "Your QR code customization has been saved",
+                          });
+                        } catch (error) {
+                          toast({
+                            title: "Failed to update QR code",
+                            description: error instanceof Error ? error.message : "An error occurred",
+                            variant: "destructive",
+                          });
+                        }
+                      }}
                     />
                   </div>
                 </div>

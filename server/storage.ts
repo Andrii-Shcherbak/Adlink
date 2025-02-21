@@ -8,6 +8,12 @@ import { nanoid } from "nanoid";
 
 const PostgresSessionStore = connectPg(session);
 
+export interface QrConfig {
+  // Define the structure of your QRConfig here.  Example:
+  data: string;
+  size: number;
+}
+
 export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
@@ -17,6 +23,7 @@ export interface IStorage {
   getUserUrls(userId: number): Promise<Url[]>;
   incrementUrlClicks(id: number): Promise<void>;
   sessionStore: session.Store;
+  updateUrlQrConfig(id: number, userId: number, qrConfig: QrConfig): Promise<Url | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -74,6 +81,16 @@ export class DatabaseStorage implements IStorage {
         .set({ clicks: url.clicks + 1 })
         .where(eq(urls.id, id));
     }
+  }
+
+  async updateUrlQrConfig(id: number, userId: number, qrConfig: QrConfig): Promise<Url | undefined> {
+    const [url] = await db
+      .update(urls)
+      .set({ qrConfig })
+      .where(eq(urls.id, id))
+      .where(eq(urls.userId, userId))
+      .returning();
+    return url;
   }
 }
 
