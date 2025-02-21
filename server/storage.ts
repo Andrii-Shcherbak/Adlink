@@ -68,25 +68,29 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getUrlByShortCode(shortCode: string, userId?: number): Promise<Url | undefined> {
-    const query = db.select().from(urls).where(eq(urls.shortCode, shortCode));
-
-    // If userId is provided, only return URLs owned by that user
+    const conditions = [eq(urls.shortCode, shortCode)];
     if (userId !== undefined) {
-      query.where(eq(urls.userId, userId));
+      conditions.push(eq(urls.userId, userId));
     }
 
-    const [url] = await query;
+    const [url] = await db
+      .select()
+      .from(urls)
+      .where(and(...conditions));
+
     return url;
   }
 
   async getUserUrls(userId: number, limit = 10, offset = 0): Promise<Url[]> {
-    return await db
+    const userUrls = await db
       .select()
       .from(urls)
       .where(eq(urls.userId, userId))
       .orderBy(desc(urls.createdAt))
       .limit(limit)
       .offset(offset);
+
+    return userUrls;
   }
 
   async getUserUrlsCount(userId: number): Promise<number> {
@@ -98,7 +102,6 @@ export class DatabaseStorage implements IStorage {
   }
 
   async incrementUrlClicks(id: number, userId: number, deviceType: DeviceType, countryCode: string, referrer: string): Promise<void> {
-    // First, verify that the URL belongs to the user
     const [url] = await db
       .select()
       .from(urls)
@@ -114,18 +117,12 @@ export class DatabaseStorage implements IStorage {
       referrers: Record<string, number>
     };
 
-    // Ensure all necessary objects exist
     analytics.devices = analytics.devices || { desktop: 0, mobile: 0, tablet: 0 };
     analytics.countries = analytics.countries || {};
     analytics.referrers = analytics.referrers || {};
 
-    // Update device count
     analytics.devices[deviceType] = (analytics.devices[deviceType] || 0) + 1;
-
-    // Update country count
     analytics.countries[countryCode] = (analytics.countries[countryCode] || 0) + 1;
-
-    // Update referrer count
     analytics.referrers[referrer] = (analytics.referrers[referrer] || 0) + 1;
 
     await db
