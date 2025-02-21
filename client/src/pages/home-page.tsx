@@ -6,14 +6,12 @@ import { insertUrlSchema, type InsertUrl, type Url } from "@shared/schema";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { QRCodeSVG } from "qrcode.react";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from "recharts";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { Loader2, Copy, ExternalLink } from "lucide-react";
+import { Loader2, Copy, ExternalLink, Link as LinkIcon } from "lucide-react";
 import { QrCustomizer } from "@/components/qr-customizer";
-import type { QrConfig } from "@shared/schema";
 
 function truncateUrl(url: string, maxLength: number = 50): string {
   if (url.length <= maxLength) return url;
@@ -21,7 +19,6 @@ function truncateUrl(url: string, maxLength: number = 50): string {
 }
 
 export default function HomePage() {
-  const { user, logoutMutation } = useAuth();
   const { toast } = useToast();
   const domain = window.location.origin;
 
@@ -73,243 +70,178 @@ export default function HomePage() {
   }
 
   return (
-    <div className="min-h-screen bg-background p-8">
+    <div className="p-8">
       <div className="max-w-6xl mx-auto">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold">Welcome, {user?.username}</h1>
-          <Button
-            variant="outline"
-            onClick={() => logoutMutation.mutate()}
-            disabled={logoutMutation.isPending}
-          >
-            Logout
-          </Button>
-        </div>
-
-        <div className="grid gap-8 grid-cols-1 lg:grid-cols-3">
-          <Card>
-            <CardHeader>
-              <CardTitle>Shorten a URL</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Form {...form}>
-                <form
-                  onSubmit={form.handleSubmit((data) => createUrlMutation.mutate(data))}
-                  className="space-y-4"
-                >
-                  <FormField
-                    control={form.control}
-                    name="originalUrl"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>URL to shorten</FormLabel>
-                        <FormControl>
-                          <Input placeholder="https://example.com" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <Button
-                    type="submit"
-                    className="w-full"
-                    disabled={createUrlMutation.isPending}
+        <div className="grid gap-8 grid-cols-1 lg:grid-cols-[400px,1fr]">
+          <div className="space-y-8">
+            <Card>
+              <CardHeader>
+                <CardTitle>Shorten a URL</CardTitle>
+                <CardDescription>
+                  Enter a long URL to create a shortened version that's easier to share
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Form {...form}>
+                  <form
+                    onSubmit={form.handleSubmit((data) => createUrlMutation.mutate(data))}
+                    className="space-y-4"
                   >
-                    {createUrlMutation.isPending ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      "Shorten URL"
-                    )}
-                  </Button>
-                </form>
-              </Form>
-            </CardContent>
-          </Card>
+                    <FormField
+                      control={form.control}
+                      name="originalUrl"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>URL to shorten</FormLabel>
+                          <FormControl>
+                            <Input placeholder="https://example.com" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <Button
+                      type="submit"
+                      className="w-full"
+                      disabled={createUrlMutation.isPending}
+                    >
+                      {createUrlMutation.isPending ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <>
+                          <LinkIcon className="h-4 w-4 mr-2" />
+                          Shorten URL
+                        </>
+                      )}
+                    </Button>
+                  </form>
+                </Form>
+              </CardContent>
+            </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Click Analytics</CardTitle>
-            </CardHeader>
-            <CardContent className="w-full overflow-x-auto">
-              <div className="min-w-[300px] w-full">
-                <BarChart
-                  width={500}
-                  height={300}
-                  data={urls}
-                  margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="shortCode" />
-                  <YAxis />
-                  <Tooltip />
-                  <Bar dataKey="clicks" fill="hsl(var(--primary))" />
-                </BarChart>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Device Analytics</CardTitle>
-            </CardHeader>
-            <CardContent className="w-full overflow-x-auto">
-              <div className="min-w-[300px] w-full">
-                <BarChart
-                  width={500}
-                  height={300}
-                  data={urls.reduce((acc, url) => {
-                    const analytics = url.analytics as { devices: Record<string, number> };
-                    Object.entries(analytics.devices).forEach(([device, count]) => {
-                      const existingEntry = acc.find(entry => entry.name === device);
-                      if (existingEntry) {
-                        existingEntry.value += count;
-                      } else {
-                        acc.push({ name: device, value: count });
-                      }
-                    });
-                    return acc;
-                  }, [] as { name: string; value: number }[])}
-                  margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <Tooltip />
-                  <Bar dataKey="value" fill="hsl(var(--primary))" />
-                </BarChart>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-        <div className="mt-8">
-          <Card>
-            <CardHeader>
-              <CardTitle>Country Analytics</CardTitle>
-            </CardHeader>
-            <CardContent className="w-full overflow-x-auto">
-              <div className="min-w-[300px] w-full">
-                <BarChart
-                  width={500}
-                  height={300}
-                  data={urls.reduce((acc, url) => {
-                    const analytics = url.analytics as { countries: Record<string, number> };
-                    Object.entries(analytics.countries).forEach(([country, count]) => {
-                      const countryName = country === 'unknown' ? 'Unknown' : country.toUpperCase();
-                      const existingEntry = acc.find(entry => entry.name === countryName);
-                      if (existingEntry) {
-                        existingEntry.value += count;
-                      } else {
-                        acc.push({ name: countryName, value: count });
-                      }
-                    });
-                    return acc;
-                  }, [] as { name: string; value: number }[])}
-                  margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <Tooltip />
-                  <Bar dataKey="value" fill="hsl(var(--primary))" />
-                </BarChart>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        <Card className="mt-8">
-          <CardHeader>
-            <CardTitle>Your Shortened URLs</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {urls.map((url) => (
-                <div
-                  key={url.id}
-                  className="p-4 border rounded-lg flex flex-col md:flex-row gap-4 items-start md:items-center justify-between"
-                >
-                  <div className="flex-grow space-y-2 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium truncate">
-                        {`${domain}/api/r/${url.shortCode}`}
-                      </span>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => copyToClipboard(`${domain}/api/r/${url.shortCode}`)}
-                        className="shrink-0"
-                      >
-                        <Copy className="h-4 w-4" />
-                      </Button>
-                      <a
-                        href={`${domain}/api/r/${url.shortCode}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="shrink-0"
-                      >
-                        <Button variant="ghost" size="icon">
-                          <ExternalLink className="h-4 w-4" />
-                        </Button>
-                      </a>
+            <Card>
+              <CardHeader>
+                <CardTitle>Quick Stats</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="border rounded-lg p-4">
+                    <div className="text-sm font-medium text-muted-foreground">
+                      Total URLs
                     </div>
-                    <p className="text-sm text-muted-foreground truncate max-w-full">
-                      Original: {truncateUrl(url.originalUrl, 70)}
-                    </p>
-                    <div className="text-sm text-muted-foreground">
-                      Clicks: {url.clicks}
+                    <div className="text-2xl font-bold mt-1">
+                      {urls.length}
                     </div>
                   </div>
-                  <div className="shrink-0 flex items-center gap-2">
-                    <QRCodeSVG
-                      value={`${domain}/api/r/${url.shortCode}`}
-                      size={100}
-                      level="H"
-                      {...url.qrConfig}
-                      imageSettings={
-                        url.qrConfig.logoUrl
-                          ? {
-                              src: url.qrConfig.logoUrl,
-                              height: 24,
-                              width: 24,
-                              excavate: true,
-                            }
-                          : undefined
-                      }
-                    />
-                    <QrCustomizer
-                      url={`${domain}/api/r/${url.shortCode}`}
-                      config={url.qrConfig}
-                      onSave={async (newConfig) => {
-                        try {
-                          const res = await apiRequest("PATCH", `/api/urls/${url.id}/qr-config`, newConfig);
-                          const updatedUrl = await res.json();
-
-                          queryClient.setQueryData<Url[]>(["/api/urls"], (oldUrls) => {
-                            if (!oldUrls) return oldUrls;
-                            return oldUrls.map((oldUrl) =>
-                              oldUrl.id === url.id ? { ...oldUrl, qrConfig: newConfig } : oldUrl
-                            );
-                          });
-
-                          toast({
-                            title: "QR code updated",
-                            description: "Your QR code customization has been saved",
-                          });
-                        } catch (error) {
-                          toast({
-                            title: "Failed to update QR code",
-                            description: error instanceof Error ? error.message : "An error occurred",
-                            variant: "destructive",
-                          });
-                        }
-                      }}
-                    />
+                  <div className="border rounded-lg p-4">
+                    <div className="text-sm font-medium text-muted-foreground">
+                      Total Clicks
+                    </div>
+                    <div className="text-2xl font-bold mt-1">
+                      {urls.reduce((sum, url) => sum + url.clicks, 0)}
+                    </div>
                   </div>
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+              </CardContent>
+            </Card>
+          </div>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Your Shortened URLs</CardTitle>
+              <CardDescription>
+                Manage and track your shortened URLs
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {urls.map((url) => (
+                  <div
+                    key={url.id}
+                    className="p-4 border rounded-lg flex flex-col md:flex-row gap-4 items-start md:items-center justify-between"
+                  >
+                    <div className="flex-grow space-y-2 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium truncate">
+                          {`${domain}/api/r/${url.shortCode}`}
+                        </span>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => copyToClipboard(`${domain}/api/r/${url.shortCode}`)}
+                          className="shrink-0"
+                        >
+                          <Copy className="h-4 w-4" />
+                        </Button>
+                        <a
+                          href={`${domain}/api/r/${url.shortCode}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="shrink-0"
+                        >
+                          <Button variant="ghost" size="icon">
+                            <ExternalLink className="h-4 w-4" />
+                          </Button>
+                        </a>
+                      </div>
+                      <p className="text-sm text-muted-foreground truncate max-w-full">
+                        Original: {truncateUrl(url.originalUrl, 70)}
+                      </p>
+                      <div className="text-sm text-muted-foreground">
+                        Clicks: {url.clicks}
+                      </div>
+                    </div>
+                    <div className="shrink-0 flex items-center gap-2">
+                      <QRCodeSVG
+                        value={`${domain}/api/r/${url.shortCode}`}
+                        size={100}
+                        level="H"
+                        {...url.qrConfig}
+                        imageSettings={
+                          url.qrConfig.logoUrl
+                            ? {
+                                src: url.qrConfig.logoUrl,
+                                height: 24,
+                                width: 24,
+                                excavate: true,
+                              }
+                            : undefined
+                        }
+                      />
+                      <QrCustomizer
+                        url={`${domain}/api/r/${url.shortCode}`}
+                        config={url.qrConfig}
+                        onSave={async (newConfig) => {
+                          try {
+                            await apiRequest("PATCH", `/api/urls/${url.id}/qr-config`, newConfig);
+
+                            queryClient.setQueryData<Url[]>(["/api/urls"], (oldUrls) => {
+                              if (!oldUrls) return oldUrls;
+                              return oldUrls.map((oldUrl) =>
+                                oldUrl.id === url.id ? { ...oldUrl, qrConfig: newConfig } : oldUrl
+                              );
+                            });
+
+                            toast({
+                              title: "QR code updated",
+                              description: "Your QR code customization has been saved",
+                            });
+                          } catch (error) {
+                            toast({
+                              title: "Failed to update QR code",
+                              description: error instanceof Error ? error.message : "An error occurred",
+                              variant: "destructive",
+                            });
+                          }
+                        }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );

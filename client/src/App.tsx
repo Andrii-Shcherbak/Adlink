@@ -6,12 +6,23 @@ import { Toaster } from "@/components/ui/toaster";
 import NotFound from "@/pages/not-found";
 import HomePage from "@/pages/home-page";
 import AuthPage from "@/pages/auth-page";
+import AnalyticsPage from "@/pages/analytics-page";
 import { ProtectedRoute } from "./lib/protected-route";
+import { Layout } from "@/components/layout";
+
+function ProtectedLayout({ component: Component }: { component: () => React.JSX.Element }) {
+  return (
+    <Layout>
+      <Component />
+    </Layout>
+  );
+}
 
 function Router() {
   return (
     <Switch>
-      <ProtectedRoute path="/" component={HomePage} />
+      <ProtectedRoute path="/" component={() => <ProtectedLayout component={HomePage} />} />
+      <ProtectedRoute path="/analytics" component={() => <ProtectedLayout component={AnalyticsPage} />} />
       <Route path="/auth" component={AuthPage} />
       <Route component={NotFound} />
     </Switch>
