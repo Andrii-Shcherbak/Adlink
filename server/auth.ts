@@ -62,6 +62,10 @@ export function setupAuth(app: Express) {
         clientSecret: process.env.MICROSOFT_CLIENT_SECRET!,
         callbackURL: "/api/auth/microsoft/callback",
         scope: ["user.read"],
+        // Add tenant-specific authority URL
+        authority: "https://login.microsoftonline.com/organizations",
+        // Ensure we're using tenant-specific endpoint
+        tenant: process.env.MICROSOFT_TENANT_ID!,
       },
       async (accessToken, refreshToken, profile, done) => {
         try {
