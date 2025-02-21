@@ -1,9 +1,12 @@
-import { User, InsertUser, Url, InsertUrl } from "@shared/schema";
+import { users, urls, type User, type InsertUser, type Url, type InsertUrl } from "@shared/schema";
+import { db } from "./db";
+import { eq } from "drizzle-orm";
 import session from "express-session";
-import createMemoryStore from "memorystore";
+import connectPg from "connect-pg-simple";
+import { pool } from "./db";
 import { nanoid } from "nanoid";
 
-const MemoryStore = createMemoryStore(session);
+const PostgresSessionStore = connectPg(session);
 
 export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
@@ -16,74 +19,59 @@ export interface IStorage {
   sessionStore: session.Store;
 }
 
-export class MemStorage implements IStorage {
-  private users: Map<number, User>;
-  private urls: Map<number, Url>;
-  private currentUserId: number;
-  private currentUrlId: number;
+export class DatabaseStorage implements IStorage {
   readonly sessionStore: session.Store;
 
   constructor() {
-    this.users = new Map();
-    this.urls = new Map();
-    this.currentUserId = 1;
-    this.currentUrlId = 1;
-    this.sessionStore = new MemoryStore({
-      checkPeriod: 86400000,
+    this.sessionStore = new PostgresSessionStore({
+      pool,
+      createTableIfMissing: true,
     });
   }
 
   async getUser(id: number): Promise<User | undefined> {
-    return this.users.get(id);
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user;
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username,
-    );
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user;
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const id = this.currentUserId++;
-    const user: User = { ...insertUser, id };
-    this.users.set(id, user);
+    const [user] = await db.insert(users).values(insertUser).returning();
     return user;
   }
 
   async createUrl(userId: number, insertUrl: InsertUrl): Promise<Url> {
-    const id = this.currentUrlId++;
-    const shortCode = nanoid(8);
-    const url: Url = {
-      id,
-      userId,
-      shortCode,
-      clicks: 0,
-      createdAt: new Date(),
-      ...insertUrl,
-    };
-    this.urls.set(id, url);
+    const [url] = await db
+      .insert(urls)
+      .values({
+        ...insertUrl,
+        userId,
+        shortCode: nanoid(8),
+        clicks: 0,
+      })
+      .returning();
     return url;
   }
 
   async getUrlByShortCode(shortCode: string): Promise<Url | undefined> {
-    return Array.from(this.urls.values()).find(
-      (url) => url.shortCode === shortCode,
-    );
+    const [url] = await db.select().from(urls).where(eq(urls.shortCode, shortCode));
+    return url;
   }
 
   async getUserUrls(userId: number): Promise<Url[]> {
-    return Array.from(this.urls.values()).filter(
-      (url) => url.userId === userId,
-    );
+    return await db.select().from(urls).where(eq(urls.userId, userId));
   }
 
   async incrementUrlClicks(id: number): Promise<void> {
-    const url = this.urls.get(id);
-    if (url) {
-      url.clicks++;
-      this.urls.set(id, url);
-    }
+    await db
+      .update(urls)
+      .set({ clicks: db.raw('clicks + 1') })
+      .where(eq(urls.id, id));
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();
