@@ -22,29 +22,6 @@ async function hashPassword(password: string) {
   return `${buf.toString("hex")}.${salt}`;
 }
 
-async function createAdminUser() {
-  try {
-    const adminUser = await storage.getUserByUsername('admin');
-    if (!adminUser) {
-      const hashedPassword = await hashPassword('admin123');
-      await storage.createUser({
-        username: 'admin',
-        password: hashedPassword,
-        firstName: 'Admin',
-        lastName: 'User',
-        email: 'admin@example.com',
-        company: '',
-        role: 'admin',
-        isApproved: true,
-        isActive: true
-      });
-      console.log('Admin user created successfully');
-    }
-  } catch (error) {
-    console.error('Error creating admin user:', error);
-  }
-}
-
 async function comparePasswords(supplied: string, stored: string) {
   try {
     const [hashed, salt] = stored.split(".");
@@ -297,4 +274,28 @@ export function setupAuth(app: Express) {
       res.status(500).json({ error: "Failed to update user approval status" });
     }
   });
+}
+
+// Helper function to create admin user
+async function createAdminUser() {
+  try {
+    const adminUser = await storage.getUserByUsername('admin');
+    if (!adminUser) {
+      const hashedPassword = await hashPassword('admin123');
+      await storage.createUser({
+        username: 'admin',
+        password: hashedPassword,
+        firstName: 'Admin',
+        lastName: 'User',
+        email: 'admin@example.com',
+        company: '',
+        role: 'admin',
+        isApproved: true,
+        isActive: true
+      });
+      console.log('Admin user created successfully');
+    }
+  } catch (error) {
+    console.error('Error creating admin user:', error);
+  }
 }

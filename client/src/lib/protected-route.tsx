@@ -29,5 +29,14 @@ export function ProtectedRoute({
     );
   }
 
-  return <Component />
+  // Redirect to auth-status page if user is not approved or not active
+  if (!user.isApproved || !user.isActive) {
+    return (
+      <Route path={path}>
+        <Redirect to="/auth-status" />
+      </Route>
+    );
+  }
+
+  return <Route path={path} component={Component} />
 }

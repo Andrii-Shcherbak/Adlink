@@ -10,6 +10,7 @@ import AnalyticsPage from "@/pages/analytics-page";
 import ProfilePage from "@/pages/profile-page";
 import AdminPage from "@/pages/admin-page";
 import ActivityDashboard from "@/pages/activity-dashboard";
+import AuthStatus from "@/pages/auth-status";
 import { ProtectedRoute } from "./lib/protected-route";
 import { AdminRoute } from "./lib/admin-route";
 import { Layout } from "@/components/layout";
@@ -31,6 +32,7 @@ function Router() {
       <AdminRoute path="/admin" component={() => <ProtectedLayout component={AdminPage} />} />
       <AdminRoute path="/activities" component={() => <ProtectedLayout component={ActivityDashboard} />} />
       <Route path="/auth" component={AuthPage} />
+      <Route path="/auth-status" component={AuthStatus} />
       <Route component={NotFound} />
     </Switch>
   );
