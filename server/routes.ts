@@ -5,7 +5,7 @@ import { storage } from "./storage";
 import { insertUrlSchema } from "@shared/schema";
 import { qrConfigSchema } from "@shared/schema";
 import { UAParser } from "ua-parser-js";
-import { scrypt, timingSafeEqual } from "crypto";
+import { scrypt, timingSafeEqual, randomBytes } from "crypto";
 import { promisify } from "util";
 
 const scryptAsync = promisify(scrypt);
@@ -41,6 +41,12 @@ function getReferrer(referer: string | undefined): string {
   }
 }
 
+async function hashPassword(password: string) {
+  const salt = randomBytes(16).toString("hex");
+  const buf = (await scryptAsync(password, salt, 64)) as Buffer;
+  return `${buf.toString("hex")}.${salt}`;
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   setupAuth(app);
 
@@ -52,9 +58,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(400).json(parseResult.error);
     }
 
-    const url = await storage.createUrl(req.user!.id, parseResult.data);
+    const urlData = {
+      ...parseResult.data,
+      isPasswordProtected: !!parseResult.data.password,
+      password: parseResult.data.password
+        ? await hashPassword(parseResult.data.password)
+        : undefined
+    };
 
-    // Log URL creation activity
+    const url = await storage.createUrl(req.user!.id, urlData);
+
     await storage.logActivity({
       userId: req.user!.id,
       type: "url_created",
@@ -96,7 +109,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (!url) return res.sendStatus(404);
 
     if (url.isPasswordProtected) {
-      // If password protected, redirect to the password entry page
       return res.redirect(`/protected/${url.shortCode}`);
     }
 
@@ -147,7 +159,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(400).json(parseResult.error);
     }
 
-    // Verify the URL belongs to the current user
     const url = await storage.getUrlByShortCode(req.params.id, req.user!.id);
     if (!url) {
       return res.status(404).send("URL not found");
@@ -166,7 +177,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (!req.isAuthenticated()) return res.sendStatus(401);
 
     try {
-      // First verify the URL belongs to the current user
       const url = await storage.getUrlByShortCode(req.params.id, req.user!.id);
       if (!url) {
         return res.status(404).send("URL not found");
@@ -174,7 +184,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       await storage.deleteUrl(parseInt(req.params.id), req.user!.id);
 
-      // Log URL deletion activity
       await storage.logActivity({
         userId: req.user!.id,
         type: "url_deleted",

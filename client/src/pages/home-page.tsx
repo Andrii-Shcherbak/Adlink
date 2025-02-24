@@ -28,7 +28,10 @@ export default function HomePage() {
 
   const form = useForm<InsertUrl>({
     resolver: zodResolver(insertUrlSchema),
-    defaultValues: { originalUrl: "" },
+    defaultValues: { 
+      originalUrl: "",
+      password: "" 
+    },
   });
 
   const { data, isLoading } = useQuery<{
@@ -119,7 +122,14 @@ export default function HomePage() {
               <CardContent>
                 <Form {...form}>
                   <form
-                    onSubmit={form.handleSubmit((data) => createUrlMutation.mutate(data))}
+                    onSubmit={form.handleSubmit((data) => {
+                      // Only include password if it's not empty
+                      const formData = {
+                        ...data,
+                        password: data.password || undefined
+                      };
+                      createUrlMutation.mutate(formData);
+                    })}
                     className="space-y-4"
                   >
                     <FormField
@@ -130,6 +140,23 @@ export default function HomePage() {
                           <FormLabel>URL to shorten</FormLabel>
                           <FormControl>
                             <Input placeholder="https://example.com" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="password"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Password Protection (Optional)</FormLabel>
+                          <FormControl>
+                            <Input 
+                              type="password" 
+                              placeholder="Leave empty for no password" 
+                              {...field} 
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
