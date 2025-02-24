@@ -12,9 +12,11 @@ export function Layout({ children }: { children: ReactNode }) {
     { href: "/", label: "URLs", icon: FiLink },
     { href: "/analytics", label: "Analytics", icon: FiBarChart2 },
     { href: "/profile", label: "Profile", icon: FiUser },
-    { href: "/activities", label: "Activities", icon: FiActivity },
-    // Only show Admin link for admin users
-    ...(user?.role === "admin" ? [{ href: "/admin", label: "Admin", icon: FiUsers }] : []),
+    // Only show Admin and Activities links for admin users
+    ...(user?.role === "admin" ? [
+      { href: "/admin", label: "Admin", icon: FiUsers },
+      { href: "/activities", label: "Activities", icon: FiActivity }
+    ] : []),
   ];
 
   return (

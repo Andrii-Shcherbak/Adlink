@@ -28,8 +28,8 @@ function Router() {
       <ProtectedRoute path="/" component={() => <ProtectedLayout component={HomePage} />} />
       <ProtectedRoute path="/analytics" component={() => <ProtectedLayout component={AnalyticsPage} />} />
       <ProtectedRoute path="/profile" component={() => <ProtectedLayout component={ProfilePage} />} />
-      <ProtectedRoute path="/activities" component={() => <ProtectedLayout component={ActivityDashboard} />} />
       <AdminRoute path="/admin" component={() => <ProtectedLayout component={AdminPage} />} />
+      <AdminRoute path="/activities" component={() => <ProtectedLayout component={ActivityDashboard} />} />
       <Route path="/auth" component={AuthPage} />
       <Route component={NotFound} />
     </Switch>

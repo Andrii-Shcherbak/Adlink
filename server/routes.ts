@@ -37,6 +37,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
 
     const url = await storage.createUrl(req.user!.id, parseResult.data);
+
+    // Log URL creation activity
+    await storage.logActivity({
+      userId: req.user!.id,
+      type: "url_created",
+      metadata: {
+        urlId: url.id,
+        originalUrl: url.originalUrl,
+        shortCode: url.shortCode
+      }
+    });
+
     res.status(201).json(url);
   });
 
@@ -116,7 +128,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (!req.isAuthenticated()) return res.sendStatus(401);
 
     try {
+      // Get the URL before deleting it so we can log its details
+      const url = await storage.getUrlByShortCode(req.params.id, req.user!.id);
       await storage.deleteUrl(parseInt(req.params.id), req.user!.id);
+
+      // Log URL deletion activity
+      if (url) {
+        await storage.logActivity({
+          userId: req.user!.id,
+          type: "url_deleted",
+          metadata: {
+            urlId: url.id,
+            originalUrl: url.originalUrl,
+            shortCode: url.shortCode
+          }
+        });
+      }
+
       res.sendStatus(200);
     } catch (error) {
       res.status(500).json({ error: "Failed to delete URL" });
@@ -124,7 +152,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/activities", async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
+    if (!req.isAuthenticated() || req.user!.role !== "admin") {
+      return res.sendStatus(403);
+    }
 
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
