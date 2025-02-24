@@ -111,39 +111,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(400).json(parseResult.error);
     }
 
-    const url = await storage.updateUrlQrConfig(
+    // Verify the URL belongs to the current user
+    const url = await storage.getUrlByShortCode(req.params.id, req.user!.id);
+    if (!url) {
+      return res.status(404).send("URL not found");
+    }
+
+    const updatedUrl = await storage.updateUrlQrConfig(
       parseInt(req.params.id),
       req.user!.id,
       parseResult.data
     );
 
-    if (!url) {
-      return res.status(404).send("URL not found");
-    }
-
-    res.json(url);
+    res.json(updatedUrl);
   });
 
   app.delete("/api/urls/:id", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
 
     try {
-      // Get the URL before deleting it so we can log its details
+      // First verify the URL belongs to the current user
       const url = await storage.getUrlByShortCode(req.params.id, req.user!.id);
+      if (!url) {
+        return res.status(404).send("URL not found");
+      }
+
       await storage.deleteUrl(parseInt(req.params.id), req.user!.id);
 
       // Log URL deletion activity
-      if (url) {
-        await storage.logActivity({
-          userId: req.user!.id,
-          type: "url_deleted",
-          metadata: {
-            urlId: url.id,
-            originalUrl: url.originalUrl,
-            shortCode: url.shortCode
-          }
-        });
-      }
+      await storage.logActivity({
+        userId: req.user!.id,
+        type: "url_deleted",
+        metadata: {
+          urlId: url.id,
+          originalUrl: url.originalUrl,
+          shortCode: url.shortCode
+        }
+      });
 
       res.sendStatus(200);
     } catch (error) {
