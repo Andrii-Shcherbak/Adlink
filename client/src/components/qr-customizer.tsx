@@ -61,17 +61,17 @@ export function QrCustomizer({ url, config, onSave }: QrCustomizerProps) {
     }
   };
 
-  const StyleButton = ({ style, type }: { 
+  const StyleButton = ({ style, type }: {
     style: { name: string; value: string };
     type: "pattern" | "cornerStyle" | "frame";
   }) => (
     <Button
       variant="outline"
       className={cn("h-auto p-2 flex flex-col gap-1 relative", {
-        'ring-2 ring-primary': 
+        'ring-2 ring-primary':
           type === "pattern" ? localConfig.pattern === style.value :
-          type === "cornerStyle" ? localConfig.cornerStyle === style.value :
-          localConfig.frameStyle === style.value
+            type === "cornerStyle" ? localConfig.cornerStyle === style.value :
+              localConfig.frameStyle === style.value
       })}
       onClick={() => {
         if (type === "pattern") {
@@ -91,14 +91,19 @@ export function QrCustomizer({ url, config, onSave }: QrCustomizerProps) {
           fgColor={localConfig.fgColor}
           bgColor={localConfig.bgColor}
           {...(type === "pattern" && {
-            qrStyle: style.value,
+            style: {
+              // Apply pattern styles through CSS
+              moduleShape: style.value === "dots" ? "circle" : "square",
+              moduleSize: style.value === "rounded" ? 0.5 : 1,
+              borderRadius: style.value === "rounded" ? "50%" : "0",
+            }
           })}
           {...(type === "cornerStyle" && {
-            cornersSquareOptions: {
+            cornerSquareOptions: {
               type: style.value,
               color: localConfig.cornerSquareColor,
             },
-            cornersDotOptions: {
+            cornerDotOptions: {
               type: style.value,
               color: localConfig.cornerDotColor,
             },
@@ -315,14 +320,20 @@ export function QrCustomizer({ url, config, onSave }: QrCustomizerProps) {
                     includeMargin={localConfig.includeMargin}
                     style={{
                       width: "100%",
-                      height: "100%"
+                      height: "100%",
+                      ...(localConfig.pattern === "dots" && {
+                        moduleShape: "circle"
+                      }),
+                      ...(localConfig.pattern === "rounded" && {
+                        moduleSize: 0.5,
+                        borderRadius: "50%"
+                      })
                     }}
-                    qrStyle={localConfig.pattern}
-                    cornersSquareOptions={{
+                    cornerSquareOptions={{
                       type: localConfig.cornerStyle,
                       color: localConfig.cornerSquareColor,
                     }}
-                    cornersDotOptions={{
+                    cornerDotOptions={{
                       type: localConfig.cornerStyle,
                       color: localConfig.cornerDotColor,
                     }}
