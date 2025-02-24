@@ -182,22 +182,31 @@ export function setupAuth(app: Express) {
   );
 
   app.get("/api/auth/microsoft/callback",
-    passport.authenticate("microsoft", { 
-      failureRedirect: "/auth-status",
-      failureMessage: true 
-    }),
-    async (req, res) => {
-      if (req.user) {
-        // Log successful Microsoft login
-        await storage.logActivity({
-          userId: req.user.id,
-          type: "login",
-          metadata: {
-            method: "microsoft"
+    (req, res, next) => {
+      passport.authenticate("microsoft", (err, user, info) => {
+        if (err) {
+          return next(err);
+        }
+        if (!user) {
+          // Store the error message in the session
+          req.session.authMessage = info?.message || "Authentication failed";
+          return res.redirect("/auth-status");
+        }
+        req.logIn(user, async (err) => {
+          if (err) {
+            return next(err);
           }
+          // Log successful Microsoft login
+          await storage.logActivity({
+            userId: user.id,
+            type: "login",
+            metadata: {
+              method: "microsoft"
+            }
+          });
+          res.redirect("/");
         });
-      }
-      res.redirect("/");
+      })(req, res, next);
     }
   );
 
@@ -276,6 +285,14 @@ export function setupAuth(app: Express) {
     } catch (error) {
       res.status(500).json({ error: "Failed to update user approval status" });
     }
+  });
+
+  // Add this route to get auth status message
+  app.get("/api/auth/status", (req, res) => {
+    const message = req.session.authMessage;
+    // Clear the message after sending it
+    delete req.session.authMessage;
+    res.json({ message });
   });
 }
 
