@@ -225,6 +225,22 @@ export function setupAuth(app: Express) {
     }
   });
 
+  app.post("/api/admin/users", isAdmin, async (req, res) => {
+    try {
+      const hashedPassword = await hashPassword(req.body.password);
+      const user = await storage.createUser({
+        ...req.body,
+        password: hashedPassword,
+        role: 'user', // Always create regular users through admin interface
+        isApproved: true, // Admins can create pre-approved users
+        isActive: true,
+      });
+      res.status(201).json(user);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to create user" });
+    }
+  });
+
   app.patch("/api/admin/users/:userId/approval", isAdmin, async (req, res) => {
     try {
       const { userId } = req.params;
