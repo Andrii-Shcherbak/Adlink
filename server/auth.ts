@@ -120,7 +120,7 @@ export function setupAuth(app: Express) {
             });
           }
 
-          // Check if user is active and approved
+          // Check if user is active and approved (for both existing and new users)
           if (!user.isActive) {
             return done(null, false, { message: "Account is deactivated" });
           }
