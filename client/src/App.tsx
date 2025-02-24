@@ -8,7 +8,9 @@ import HomePage from "@/pages/home-page";
 import AuthPage from "@/pages/auth-page";
 import AnalyticsPage from "@/pages/analytics-page";
 import ProfilePage from "@/pages/profile-page";
+import AdminPage from "@/pages/admin-page";
 import { ProtectedRoute } from "./lib/protected-route";
+import { AdminRoute } from "./lib/admin-route";
 import { Layout } from "@/components/layout";
 
 function ProtectedLayout({ component: Component }: { component: () => React.JSX.Element }) {
@@ -25,6 +27,7 @@ function Router() {
       <ProtectedRoute path="/" component={() => <ProtectedLayout component={HomePage} />} />
       <ProtectedRoute path="/analytics" component={() => <ProtectedLayout component={AnalyticsPage} />} />
       <ProtectedRoute path="/profile" component={() => <ProtectedLayout component={ProfilePage} />} />
+      <AdminRoute path="/admin" component={() => <ProtectedLayout component={AdminPage} />} />
       <Route path="/auth" component={AuthPage} />
       <Route component={NotFound} />
     </Switch>
