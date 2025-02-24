@@ -16,8 +16,8 @@ export function SecurityBadge({ level, className }: SecurityBadgeProps) {
 
   const Icon = icons[level];
   const labels = {
-    high: "High Security",
-    medium: "Standard Security",
+    high: "Protected Link",
+    medium: "Public Link",
     low: "Low Security",
   };
 
