@@ -14,12 +14,10 @@ import { QrCustomizer } from "@/components/qr-customizer";
 import { useState } from "react";
 import { format } from "date-fns";
 import { AlertDialog, AlertDialogTrigger, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from "@/components/ui/alert-dialog";
-import {
-  Popover,
-  PopoverTrigger,
-  PopoverContent,
-} from "@/components/ui/popover";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { FiLock, FiUnlock } from "react-icons/fi";
+import { SecurityBadge } from "@/components/security-badge";
+import { getUrlSecurityLevel, getSecurityColorClasses, cn } from "@/lib/utils";
 
 function truncateUrl(url: string, maxLength: number = 50): string {
   if (url.length <= maxLength) return url;
@@ -34,9 +32,9 @@ export default function HomePage() {
 
   const form = useForm<InsertUrl>({
     resolver: zodResolver(insertUrlSchema),
-    defaultValues: { 
+    defaultValues: {
       originalUrl: "",
-      password: "" 
+      password: ""
     },
   });
 
@@ -178,10 +176,10 @@ export default function HomePage() {
                         <FormItem>
                           <FormLabel>Password Protection (Optional)</FormLabel>
                           <FormControl>
-                            <Input 
-                              type="password" 
-                              placeholder="Leave empty for no password" 
-                              {...field} 
+                            <Input
+                              type="password"
+                              placeholder="Leave empty for no password"
+                              {...field}
                             />
                           </FormControl>
                           <FormMessage />
@@ -245,17 +243,26 @@ export default function HomePage() {
               <div className="space-y-4">
                 {urls.map((url) => {
                   const qrConfig = url.qrConfig as QrConfig;
+                  const securityLevel = getUrlSecurityLevel(url);
+                  const securityColors = getSecurityColorClasses(securityLevel);
+
                   return (
                     <div
                       key={url.id}
-                      className="p-4 border rounded-lg"
+                      className={cn(
+                        "p-4 rounded-lg border",
+                        securityColors.border
+                      )}
                     >
                       <div className="flex flex-col gap-4">
                         <div className="space-y-2 w-full">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <span className="font-medium break-all">
-                              {`${domain}/api/r/${url.shortCode}`}
-                            </span>
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex flex-wrap items-center gap-2 flex-grow">
+                              <span className="font-medium break-all">
+                                {`${domain}/api/r/${url.shortCode}`}
+                              </span>
+                              <SecurityBadge level={securityLevel} />
+                            </div>
                             <div className="flex items-center gap-1 shrink-0">
                               <Button
                                 variant="ghost"
@@ -481,7 +488,6 @@ export default function HomePage() {
                               </div>
                             </PopoverContent>
                           </Popover>
-
                         </div>
                       </div>
                     </div>

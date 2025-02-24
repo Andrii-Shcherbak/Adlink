@@ -1,10 +1,63 @@
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
+import type { Url } from "@shared/schema";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
+// Security level type definition
+export type SecurityLevel = 'high' | 'medium' | 'low';
+
+// Function to determine URL security level
+export function getUrlSecurityLevel(url: Url): SecurityLevel {
+  if (url.isPasswordProtected) {
+    return 'high';
+  }
+
+  // Check if URL is potentially risky (you can expand this logic)
+  const riskyDomains = ['bit.ly', 'tinyurl.com', 'goo.gl'];
+  try {
+    const domain = new URL(url.originalUrl).hostname;
+    if (riskyDomains.some(d => domain.includes(d))) {
+      return 'low';
+    }
+  } catch (e) {
+    return 'low';
+  }
+
+  return 'medium';
+}
+
+// Get color classes based on security level
+export function getSecurityColorClasses(level: SecurityLevel): {
+  text: string;
+  bg: string;
+  border: string;
+} {
+  switch (level) {
+    case 'high':
+      return {
+        text: 'text-green-700 dark:text-green-400',
+        bg: 'bg-green-50 dark:bg-green-900/20',
+        border: 'border-green-200 dark:border-green-800'
+      };
+    case 'low':
+      return {
+        text: 'text-red-700 dark:text-red-400',
+        bg: 'bg-red-50 dark:bg-red-900/20',
+        border: 'border-red-200 dark:border-red-800'
+      };
+    default:
+      return {
+        text: 'text-yellow-700 dark:text-yellow-400',
+        bg: 'bg-yellow-50 dark:bg-yellow-900/20',
+        border: 'border-yellow-200 dark:border-yellow-800'
+      };
+  }
+}
+
+// Keep existing downloadQRCode function
 export function downloadQRCode(qrRef: HTMLDivElement, filename: string) {
   const svg = qrRef.querySelector('svg');
   if (!svg) return;
