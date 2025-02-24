@@ -176,17 +176,25 @@ export function setupAuth(app: Express) {
   });
 
   app.post("/api/login", (req, res, next) => {
-    passport.authenticate("local", (err, user, info) => {
+    passport.authenticate("local", async (err, user, info) => {
       if (err) {
         return next(err);
       }
       if (!user) {
         return res.status(401).json({ error: info?.message || "Authentication failed" });
       }
-      req.logIn(user, (err) => {
+      req.logIn(user, async (err) => {
         if (err) {
           return next(err);
         }
+        // Log successful login
+        await storage.logActivity({
+          userId: user.id,
+          type: "login",
+          metadata: {
+            method: "local"
+          }
+        });
         return res.status(200).json(user);
       });
     })(req, res, next);
@@ -198,14 +206,33 @@ export function setupAuth(app: Express) {
 
   app.get("/api/auth/microsoft/callback",
     passport.authenticate("microsoft", { failureRedirect: "/auth" }),
-    (req, res) => {
+    async (req, res) => {
+      if (req.user) {
+        // Log successful Microsoft login
+        await storage.logActivity({
+          userId: req.user.id,
+          type: "login",
+          metadata: {
+            method: "microsoft"
+          }
+        });
+      }
       res.redirect("/");
     }
   );
 
   app.post("/api/logout", (req, res, next) => {
-    req.logout((err) => {
+    const userId = req.user?.id;
+    req.logout(async (err) => {
       if (err) return next(err);
+      if (userId) {
+        // Log logout
+        await storage.logActivity({
+          userId,
+          type: "logout",
+          metadata: {}
+        });
+      }
       res.sendStatus(200);
     });
   });
@@ -250,6 +277,19 @@ export function setupAuth(app: Express) {
         userId: parseInt(userId),
         isApproved,
         isActive,
+      });
+
+      // Log user status change
+      await storage.logActivity({
+        userId: req.user!.id,
+        type: "user_status_update",
+        metadata: {
+          targetUserId: parseInt(userId),
+          changes: {
+            isApproved,
+            isActive
+          }
+        }
       });
 
       res.json(user);

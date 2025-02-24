@@ -2,7 +2,7 @@ import { ReactNode } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
-import { FiLink, FiBarChart2, FiLogOut, FiUser, FiUsers } from "react-icons/fi";
+import { FiLink, FiBarChart2, FiLogOut, FiUser, FiUsers, FiActivity } from "react-icons/fi";
 
 export function Layout({ children }: { children: ReactNode }) {
   const { user, logoutMutation } = useAuth();
@@ -12,6 +12,7 @@ export function Layout({ children }: { children: ReactNode }) {
     { href: "/", label: "URLs", icon: FiLink },
     { href: "/analytics", label: "Analytics", icon: FiBarChart2 },
     { href: "/profile", label: "Profile", icon: FiUser },
+    { href: "/activities", label: "Activities", icon: FiActivity },
     // Only show Admin link for admin users
     ...(user?.role === "admin" ? [{ href: "/admin", label: "Admin", icon: FiUsers }] : []),
   ];

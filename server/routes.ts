@@ -123,6 +123,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/activities", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+    const offset = (page - 1) * limit;
+
+    try {
+      const [activities, total] = await Promise.all([
+        storage.getAllActivities(limit, offset),
+        storage.getAllActivitiesCount()
+      ]);
+
+      res.json({
+        activities,
+        pagination: {
+          total,
+          page,
+          totalPages: Math.ceil(total / limit),
+          hasMore: offset + activities.length < total
+        }
+      });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch activities" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

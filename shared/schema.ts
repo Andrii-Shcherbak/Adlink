@@ -46,6 +46,14 @@ export const urls = pgTable("urls", {
   }),
 });
 
+export const activities = pgTable("activities", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  type: text("type").notNull(),
+  timestamp: timestamp("timestamp").notNull().defaultNow(),
+  metadata: jsonb("metadata").notNull().default({}),
+});
+
 export const insertUserSchema = createInsertSchema(users).extend({
   email: z.string().email("Invalid email address"),
   firstName: z.string().min(1, "First name is required"),
@@ -70,13 +78,18 @@ export const qrConfigSchema = z.object({
   frameColor: z.string(),
 });
 
+export const insertActivitySchema = createInsertSchema(activities).omit({
+  id: true,
+});
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 export type Url = typeof urls.$inferSelect;
 export type InsertUrl = z.infer<typeof insertUrlSchema>;
 export type QrConfig = z.infer<typeof qrConfigSchema>;
+export type Activity = typeof activities.$inferSelect;
+export type InsertActivity = z.infer<typeof insertActivitySchema>;
 
-// Add role and approval related types
 export type UserRole = "admin" | "user";
 
 export const userApprovalSchema = z.object({

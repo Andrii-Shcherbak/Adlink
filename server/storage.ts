@@ -1,4 +1,4 @@
-import { users, urls, type User, type InsertUser, type Url, type InsertUrl, type UserApproval } from "@shared/schema";
+import { users, urls, activities, type User, type InsertUser, type Url, type InsertUrl, type UserApproval, type Activity, type InsertActivity } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, sql, and } from "drizzle-orm";
 import session from "express-session";
@@ -23,9 +23,14 @@ export interface IStorage {
   sessionStore: session.Store;
   updateUrlQrConfig(id: number, userId: number, qrConfig: any): Promise<Url | undefined>;
   deleteUrl(id: number, userId: number): Promise<void>;
-  // Add new admin methods
   getAllUsers(): Promise<User[]>;
   updateUserApproval(approval: UserApproval): Promise<User>;
+
+  logActivity(activity: InsertActivity): Promise<Activity>;
+  getUserActivities(userId: number, limit?: number, offset?: number): Promise<Activity[]>;
+  getUserActivitiesCount(userId: number): Promise<number>;
+  getAllActivities(limit?: number, offset?: number): Promise<Activity[]>;
+  getAllActivitiesCount(): Promise<number>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -184,7 +189,6 @@ export class DatabaseStorage implements IStorage {
       .where(and(eq(urls.id, id), eq(urls.userId, userId)));
   }
 
-  // Implement new admin methods
   async getAllUsers(): Promise<User[]> {
     try {
       return await db.select().from(users);
@@ -212,6 +216,83 @@ export class DatabaseStorage implements IStorage {
       return user;
     } catch (error) {
       console.error('Error updating user approval:', error);
+      throw error;
+    }
+  }
+
+  async logActivity(activity: InsertActivity): Promise<Activity> {
+    try {
+      const [newActivity] = await db
+        .insert(activities)
+        .values(activity)
+        .returning();
+      return newActivity;
+    } catch (error) {
+      console.error('Error logging activity:', error);
+      throw error;
+    }
+  }
+
+  async getUserActivities(userId: number, limit = 10, offset = 0): Promise<Activity[]> {
+    try {
+      return await db
+        .select()
+        .from(activities)
+        .where(eq(activities.userId, userId))
+        .orderBy(desc(activities.timestamp))
+        .limit(limit)
+        .offset(offset);
+    } catch (error) {
+      console.error('Error getting user activities:', error);
+      throw error;
+    }
+  }
+
+  async getUserActivitiesCount(userId: number): Promise<number> {
+    try {
+      const [result] = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(activities)
+        .where(eq(activities.userId, userId));
+      return Number(result?.count) || 0;
+    } catch (error) {
+      console.error('Error getting user activities count:', error);
+      throw error;
+    }
+  }
+
+  async getAllActivities(limit = 10, offset = 0): Promise<Activity[]> {
+    try {
+      return await db
+        .select({
+          id: activities.id,
+          userId: activities.userId,
+          type: activities.type,
+          timestamp: activities.timestamp,
+          metadata: activities.metadata,
+          username: users.username,
+          firstName: users.firstName,
+          lastName: users.lastName,
+        })
+        .from(activities)
+        .leftJoin(users, eq(activities.userId, users.id))
+        .orderBy(desc(activities.timestamp))
+        .limit(limit)
+        .offset(offset);
+    } catch (error) {
+      console.error('Error getting all activities:', error);
+      throw error;
+    }
+  }
+
+  async getAllActivitiesCount(): Promise<number> {
+    try {
+      const [result] = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(activities);
+      return Number(result?.count) || 0;
+    } catch (error) {
+      console.error('Error getting all activities count:', error);
       throw error;
     }
   }
