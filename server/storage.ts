@@ -1,4 +1,4 @@
-import { users, urls, type User, type InsertUser, type Url, type InsertUrl } from "@shared/schema";
+import { users, urls, type User, type InsertUser, type Url, type InsertUrl, type UserApproval } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, sql, and } from "drizzle-orm";
 import session from "express-session";
@@ -23,6 +23,9 @@ export interface IStorage {
   sessionStore: session.Store;
   updateUrlQrConfig(id: number, userId: number, qrConfig: any): Promise<Url | undefined>;
   deleteUrl(id: number, userId: number): Promise<void>;
+  // Add new admin methods
+  getAllUsers(): Promise<User[]>;
+  updateUserApproval(approval: UserApproval): Promise<User>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -153,6 +156,28 @@ export class DatabaseStorage implements IStorage {
     await db
       .delete(urls)
       .where(and(eq(urls.id, id), eq(urls.userId, userId)));
+  }
+
+  // Implement new admin methods
+  async getAllUsers(): Promise<User[]> {
+    return await db.select().from(users);
+  }
+
+  async updateUserApproval(approval: UserApproval): Promise<User> {
+    const [user] = await db
+      .update(users)
+      .set({
+        isApproved: approval.isApproved,
+        isActive: approval.isActive,
+      })
+      .where(eq(users.id, approval.userId))
+      .returning();
+
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    return user;
   }
 }
 

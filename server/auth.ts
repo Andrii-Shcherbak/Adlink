@@ -29,6 +29,14 @@ async function comparePasswords(supplied: string, stored: string) {
   return timingSafeEqual(hashedBuf, suppliedBuf);
 }
 
+// Middleware to check if user is admin
+function isAdmin(req: Express.Request, res: Express.Response, next: Express.NextFunction) {
+  if (!req.isAuthenticated() || req.user.role !== "admin") {
+    return res.status(403).json({ error: "Admin access required" });
+  }
+  next();
+}
+
 export function setupAuth(app: Express) {
   const sessionSettings: session.SessionOptions = {
     secret: process.env.SESSION_SECRET!,
@@ -48,9 +56,15 @@ export function setupAuth(app: Express) {
       const user = await storage.getUserByUsername(username);
       if (!user || !(await comparePasswords(password, user.password))) {
         return done(null, false);
-      } else {
-        return done(null, user);
       }
+      // Check if user is active and approved
+      if (!user.isActive) {
+        return done(null, false, { message: "Account is deactivated" });
+      }
+      if (!user.isApproved && user.role !== "admin") {
+        return done(null, false, { message: "Account pending approval" });
+      }
+      return done(null, user);
     }),
   );
 
@@ -97,6 +111,14 @@ export function setupAuth(app: Express) {
             });
           }
 
+          // Check if user is active and approved
+          if (!user.isActive) {
+            return done(null, false, { message: "Account is deactivated" });
+          }
+          if (!user.isApproved && user.role !== "admin") {
+            return done(null, false, { message: "Account pending approval" });
+          }
+
           return done(null, user);
         } catch (error) {
           return done(error);
@@ -111,22 +133,8 @@ export function setupAuth(app: Express) {
     done(null, user);
   });
 
-  app.post("/api/register", async (req, res, next) => {
-    const existingUser = await storage.getUserByUsername(req.body.username);
-    if (existingUser) {
-      return res.status(400).send("Username already exists");
-    }
-
-    const user = await storage.createUser({
-      ...req.body,
-      password: await hashPassword(req.body.password),
-    });
-
-    req.login(user, (err) => {
-      if (err) return next(err);
-      res.status(201).json(user);
-    });
-  });
+  // Remove regular registration route as per requirements
+  // app.post("/api/register", async (req, res, next) => { ... });
 
   app.post("/api/login", passport.authenticate("local"), (req, res) => {
     res.status(200).json(req.user);
@@ -154,5 +162,32 @@ export function setupAuth(app: Express) {
   app.get("/api/user", (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
     res.json(req.user);
+  });
+
+  // Admin routes for user management
+  app.get("/api/admin/users", isAdmin, async (req, res) => {
+    try {
+      const users = await storage.getAllUsers();
+      res.json(users);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch users" });
+    }
+  });
+
+  app.patch("/api/admin/users/:userId/approval", isAdmin, async (req, res) => {
+    try {
+      const { userId } = req.params;
+      const { isApproved, isActive } = req.body;
+
+      const user = await storage.updateUserApproval({
+        userId: parseInt(userId),
+        isApproved,
+        isActive,
+      });
+
+      res.json(user);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to update user approval status" });
+    }
   });
 }

@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, timestamp, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, timestamp, jsonb, boolean } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -10,6 +10,10 @@ export const users = pgTable("users", {
   lastName: text("last_name").notNull(),
   email: text("email").notNull(),
   company: text("company"),
+  role: text("role").notNull().default("user"),
+  isApproved: boolean("is_approved").notNull().default(false),
+  isActive: boolean("is_active").notNull().default(true),
+  microsoftId: text("microsoft_id").unique(),
 });
 
 export const urls = pgTable("urls", {
@@ -71,3 +75,14 @@ export type User = typeof users.$inferSelect;
 export type Url = typeof urls.$inferSelect;
 export type InsertUrl = z.infer<typeof insertUrlSchema>;
 export type QrConfig = z.infer<typeof qrConfigSchema>;
+
+// Add role and approval related types
+export type UserRole = "admin" | "user";
+
+export const userApprovalSchema = z.object({
+  userId: z.number(),
+  isApproved: z.boolean(),
+  isActive: z.boolean(),
+});
+
+export type UserApproval = z.infer<typeof userApprovalSchema>;
