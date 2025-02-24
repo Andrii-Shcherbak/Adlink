@@ -177,13 +177,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (!req.isAuthenticated()) return res.sendStatus(401);
 
     try {
-      const url = await storage.getUrlByShortCode(req.params.id, req.user!.id);
-      if (!url) {
+      // Get the URL before deleting it so we can log its details
+      const url = await storage.getUrl(parseInt(req.params.id));
+      if (!url || url.userId !== req.user!.id) {
         return res.status(404).send("URL not found");
       }
 
       await storage.deleteUrl(parseInt(req.params.id), req.user!.id);
 
+      // Log URL deletion activity
       await storage.logActivity({
         userId: req.user!.id,
         type: "url_deleted",
@@ -196,6 +198,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.sendStatus(200);
     } catch (error) {
+      console.error('Error deleting URL:', error);
       res.status(500).json({ error: "Failed to delete URL" });
     }
   });

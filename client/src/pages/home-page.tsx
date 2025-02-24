@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { useToast } from "@/hooks/use-toast";
 import { QRCodeSVG } from "qrcode.react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { Loader2, Copy, ExternalLink, LinkIcon, ChevronLeft, ChevronRight, Trash2 } from "lucide-react";
+import { Loader2, Copy, ExternalLink, LinkIcon, ChevronLeft, ChevronRight, Trash2, Download } from "lucide-react";
 import { QrCustomizer } from "@/components/qr-customizer";
 import { useState } from "react";
 import { format } from "date-fns";
@@ -311,24 +311,58 @@ export default function HomePage() {
                           </p>
                         </div>
                         <div className="flex items-center gap-2 justify-end">
-                          <QRCodeSVG
-                            value={`${domain}/api/r/${url.shortCode}`}
-                            size={100}
-                            level="H"
-                            fgColor={qrConfig.fgColor}
-                            bgColor={qrConfig.bgColor}
-                            includeMargin={qrConfig.includeMargin}
-                            imageSettings={
-                              qrConfig.logoUrl
-                                ? {
-                                    src: qrConfig.logoUrl,
-                                    height: 24,
-                                    width: 24,
-                                    excavate: true,
-                                  }
-                                : undefined
-                            }
-                          />
+                          <div className="flex items-center gap-2">
+                            <QRCodeSVG
+                              id={`qr-${url.id}`}
+                              value={`${domain}/api/r/${url.shortCode}`}
+                              size={100}
+                              level="H"
+                              fgColor={qrConfig.fgColor}
+                              bgColor={qrConfig.bgColor}
+                              includeMargin={qrConfig.includeMargin}
+                              imageSettings={
+                                qrConfig.logoUrl
+                                  ? {
+                                      src: qrConfig.logoUrl,
+                                      height: 24,
+                                      width: 24,
+                                      excavate: true,
+                                    }
+                                  : undefined
+                              }
+                            />
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                const canvas = document.createElement("canvas");
+                                const svgElement = document.getElementById(`qr-${url.id}`);
+                                if (svgElement) {
+                                  const svgData = new XMLSerializer().serializeToString(svgElement);
+                                  const img = new Image();
+                                  img.onload = () => {
+                                    canvas.width = img.width;
+                                    canvas.height = img.height;
+                                    const ctx = canvas.getContext("2d");
+                                    if (ctx) {
+                                      ctx.fillStyle = qrConfig.bgColor;
+                                      ctx.fillRect(0, 0, canvas.width, canvas.height);
+                                      ctx.drawImage(img, 0, 0);
+                                      const pngFile = canvas.toDataURL("image/png");
+                                      const downloadLink = document.createElement("a");
+                                      downloadLink.download = `qr-${url.shortCode}.png`;
+                                      downloadLink.href = pngFile;
+                                      downloadLink.click();
+                                    }
+                                  };
+                                  img.src = `data:image/svg+xml;base64,${btoa(svgData)}`;
+                                }
+                              }}
+                            >
+                              <Download className="h-4 w-4 mr-2" />
+                              Download QR
+                            </Button>
+                          </div>
                           <QrCustomizer
                             url={`${domain}/api/r/${url.shortCode}`}
                             config={qrConfig}
