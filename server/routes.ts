@@ -243,14 +243,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     try {
       // Verify the URL belongs to the current user
-      const url = await storage.getUrlByShortCode(req.params.id, req.user!.id);
+      const urlId = parseInt(req.params.id);
+      const urls = await storage.getUserUrls(req.user!.id, 1, 0, urlId);
+      const url = urls[0];
       if (!url) {
         return res.status(404).send("URL not found");
       }
 
       // If password is undefined, we're removing password protection
       const updatedUrl = await storage.updateUrlPassword(
-        parseInt(req.params.id),
+        urlId,
         req.user!.id,
         password ? await hashPassword(password) : null
       );
