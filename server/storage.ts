@@ -35,27 +35,53 @@ export class DatabaseStorage implements IStorage {
     this.sessionStore = new PostgresSessionStore({
       pool,
       createTableIfMissing: true,
+      tableName: 'session'
     });
   }
 
   async getUser(id: number): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.id, id));
-    return user;
+    try {
+      const [user] = await db.select().from(users).where(eq(users.id, id));
+      return user;
+    } catch (error) {
+      console.error('Error getting user:', error);
+      return undefined;
+    }
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.username, username));
-    return user;
+    try {
+      const [user] = await db.select().from(users).where(eq(users.username, username));
+      return user;
+    } catch (error) {
+      console.error('Error getting user by username:', error);
+      return undefined;
+    }
   }
 
   async getUserByEmail(email: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.email, email));
-    return user;
+    try {
+      const [user] = await db.select().from(users).where(eq(users.email, email));
+      return user;
+    } catch (error) {
+      console.error('Error getting user by email:', error);
+      return undefined;
+    }
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const [user] = await db.insert(users).values(insertUser).returning();
-    return user;
+    try {
+      const [user] = await db.insert(users).values({
+        ...insertUser,
+        role: 'user',
+        isApproved: false,
+        isActive: true
+      }).returning();
+      return user;
+    } catch (error) {
+      console.error('Error creating user:', error);
+      throw error;
+    }
   }
 
   async createUrl(userId: number, insertUrl: InsertUrl): Promise<Url> {
@@ -160,24 +186,34 @@ export class DatabaseStorage implements IStorage {
 
   // Implement new admin methods
   async getAllUsers(): Promise<User[]> {
-    return await db.select().from(users);
+    try {
+      return await db.select().from(users);
+    } catch (error) {
+      console.error('Error getting all users:', error);
+      throw error;
+    }
   }
 
   async updateUserApproval(approval: UserApproval): Promise<User> {
-    const [user] = await db
-      .update(users)
-      .set({
-        isApproved: approval.isApproved,
-        isActive: approval.isActive,
-      })
-      .where(eq(users.id, approval.userId))
-      .returning();
+    try {
+      const [user] = await db
+        .update(users)
+        .set({
+          isApproved: approval.isApproved,
+          isActive: approval.isActive,
+        })
+        .where(eq(users.id, approval.userId))
+        .returning();
 
-    if (!user) {
-      throw new Error("User not found");
+      if (!user) {
+        throw new Error("User not found");
+      }
+
+      return user;
+    } catch (error) {
+      console.error('Error updating user approval:', error);
+      throw error;
     }
-
-    return user;
   }
 }
 
