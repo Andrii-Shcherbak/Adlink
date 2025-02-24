@@ -229,6 +229,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.patch("/api/urls/:id/password", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+
+    const { password } = req.body;
+
+    try {
+      // Verify the URL belongs to the current user
+      const url = await storage.getUrlByShortCode(req.params.id, req.user!.id);
+      if (!url) {
+        return res.status(404).send("URL not found");
+      }
+
+      // If password is undefined, we're removing password protection
+      const updatedUrl = await storage.updateUrlPassword(
+        parseInt(req.params.id),
+        req.user!.id,
+        password ? await hashPassword(password) : null
+      );
+
+      // Log password protection change
+      await storage.logActivity({
+        userId: req.user!.id,
+        type: "url_password_update",
+        metadata: {
+          urlId: updatedUrl.id,
+          action: password ? "added_or_updated" : "removed"
+        }
+      });
+
+      res.json(updatedUrl);
+    } catch (error) {
+      console.error('Error updating URL password:', error);
+      res.status(500).json({ error: "Failed to update URL password" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

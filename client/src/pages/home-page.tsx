@@ -14,6 +14,12 @@ import { QrCustomizer } from "@/components/qr-customizer";
 import { useState } from "react";
 import { format } from "date-fns";
 import { AlertDialog, AlertDialogTrigger, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from "@/components/ui/alert-dialog";
+import {
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+} from "@/components/ui/popover";
+import { FiLock, FiUnlock } from "react-icons/fi";
 
 function truncateUrl(url: string, maxLength: number = 50): string {
   if (url.length <= maxLength) return url;
@@ -88,6 +94,27 @@ export default function HomePage() {
     },
   });
 
+  const updatePasswordMutation = useMutation({
+    mutationFn: async ({ id, password }: { id: number; password?: string }) => {
+      const res = await apiRequest("PATCH", `/api/urls/${id}/password`, { password });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/urls"] });
+      toast({
+        title: "Password updated",
+        description: "The URL password protection has been updated",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Failed to update password",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   const copyToClipboard = async (text: string) => {
     await navigator.clipboard.writeText(text);
     toast({
@@ -123,7 +150,6 @@ export default function HomePage() {
                 <Form {...form}>
                   <form
                     onSubmit={form.handleSubmit((data) => {
-                      // Only include password if it's not empty
                       const formData = {
                         ...data,
                         password: data.password || undefined
@@ -333,6 +359,102 @@ export default function HomePage() {
                               }
                             }}
                           />
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="flex items-center gap-2"
+                              >
+                                {url.isPasswordProtected ? (
+                                  <>
+                                    <FiLock className="h-4 w-4" />
+                                    Password Protected
+                                  </>
+                                ) : (
+                                  <>
+                                    <FiUnlock className="h-4 w-4" />
+                                    Add Password
+                                  </>
+                                )}
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-80">
+                              <div className="space-y-4">
+                                <div className="font-medium">Password Protection</div>
+                                {url.isPasswordProtected ? (
+                                  <>
+                                    <Input
+                                      type="password"
+                                      placeholder="Enter new password"
+                                      className="mb-2"
+                                      onChange={(e) => {
+                                        (e.target as HTMLInputElement).dataset.newPassword = e.target.value;
+                                      }}
+                                    />
+                                    <div className="flex justify-between gap-2">
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="flex-1"
+                                        onClick={() => {
+                                          updatePasswordMutation.mutate({
+                                            id: url.id,
+                                            password: undefined,
+                                          });
+                                        }}
+                                      >
+                                        Remove Password
+                                      </Button>
+                                      <Button
+                                        variant="default"
+                                        size="sm"
+                                        className="flex-1"
+                                        onClick={(e) => {
+                                          const input = e.currentTarget.parentElement?.parentElement?.querySelector('input');
+                                          const newPassword = input?.dataset.newPassword;
+                                          if (newPassword) {
+                                            updatePasswordMutation.mutate({
+                                              id: url.id,
+                                              password: newPassword,
+                                            });
+                                          }
+                                        }}
+                                      >
+                                        Update Password
+                                      </Button>
+                                    </div>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Input
+                                      type="password"
+                                      placeholder="Enter password"
+                                      className="mb-2"
+                                      onChange={(e) => {
+                                        (e.target as HTMLInputElement).dataset.newPassword = e.target.value;
+                                      }}
+                                    />
+                                    <Button
+                                      className="w-full"
+                                      onClick={(e) => {
+                                        const input = e.currentTarget.parentElement?.querySelector('input');
+                                        const newPassword = input?.dataset.newPassword;
+                                        if (newPassword) {
+                                          updatePasswordMutation.mutate({
+                                            id: url.id,
+                                            password: newPassword,
+                                          });
+                                        }
+                                      }}
+                                    >
+                                      Add Password Protection
+                                    </Button>
+                                  </>
+                                )}
+                              </div>
+                            </PopoverContent>
+                          </Popover>
                         </div>
                       </div>
                     </div>
