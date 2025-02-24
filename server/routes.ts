@@ -81,6 +81,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.status(201).json(url);
   });
 
+  app.delete("/api/urls/:id", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+
+    try {
+      // First get the URL details to verify ownership and for logging
+      const urlId = parseInt(req.params.id);
+      const urls = await storage.getUserUrls(req.user!.id, 1, 0, urlId);
+      const url = urls[0];
+
+      if (!url || url.userId !== req.user!.id) {
+        return res.status(404).send("URL not found");
+      }
+
+      await storage.deleteUrl(urlId, req.user!.id);
+
+      // Log URL deletion activity
+      await storage.logActivity({
+        userId: req.user!.id,
+        type: "url_deleted",
+        metadata: {
+          urlId: url.id,
+          originalUrl: url.originalUrl,
+          shortCode: url.shortCode
+        }
+      });
+
+      res.sendStatus(200);
+    } catch (error) {
+      console.error('Error deleting URL:', error);
+      res.status(500).json({ error: "Failed to delete URL" });
+    }
+  });
+
   app.get("/api/urls", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
 
@@ -173,35 +206,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(updatedUrl);
   });
 
-  app.delete("/api/urls/:id", async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
-
-    try {
-      // Get the URL before deleting it so we can log its details
-      const url = await storage.getUrl(parseInt(req.params.id));
-      if (!url || url.userId !== req.user!.id) {
-        return res.status(404).send("URL not found");
-      }
-
-      await storage.deleteUrl(parseInt(req.params.id), req.user!.id);
-
-      // Log URL deletion activity
-      await storage.logActivity({
-        userId: req.user!.id,
-        type: "url_deleted",
-        metadata: {
-          urlId: url.id,
-          originalUrl: url.originalUrl,
-          shortCode: url.shortCode
-        }
-      });
-
-      res.sendStatus(200);
-    } catch (error) {
-      console.error('Error deleting URL:', error);
-      res.status(500).json({ error: "Failed to delete URL" });
-    }
-  });
 
   app.get("/api/activities", async (req, res) => {
     if (!req.isAuthenticated() || req.user!.role !== "admin") {
