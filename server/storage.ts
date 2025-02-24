@@ -22,6 +22,7 @@ export interface IStorage {
   incrementUrlClicks(id: number, userId: number, deviceType: DeviceType, countryCode: string, referrer: string): Promise<void>;
   sessionStore: session.Store;
   updateUrlQrConfig(id: number, userId: number, qrConfig: any): Promise<Url | undefined>;
+  updateUrl(id: number, userId: number, update: Partial<Url>): Promise<Url>;
   deleteUrl(id: number, userId: number): Promise<void>;
   getAllUsers(): Promise<User[]>;
   updateUserApproval(approval: UserApproval): Promise<User>;
@@ -293,6 +294,24 @@ export class DatabaseStorage implements IStorage {
       return Number(result?.count) || 0;
     } catch (error) {
       console.error('Error getting all activities count:', error);
+      throw error;
+    }
+  }
+  async updateUrl(id: number, userId: number, update: Partial<Url>): Promise<Url> {
+    try {
+      const [url] = await db
+        .update(urls)
+        .set(update)
+        .where(and(eq(urls.id, id), eq(urls.userId, userId)))
+        .returning();
+
+      if (!url) {
+        throw new Error("URL not found");
+      }
+
+      return url;
+    } catch (error) {
+      console.error('Error updating URL:', error);
       throw error;
     }
   }

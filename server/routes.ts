@@ -22,25 +22,6 @@ async function comparePasswords(supplied: string, stored: string) {
   }
 }
 
-function getDeviceType(userAgent: string): 'desktop' | 'mobile' | 'tablet' {
-  const parser = new UAParser(userAgent);
-  const device = parser.getDevice();
-
-  if (device.type === 'tablet') return 'tablet';
-  if (device.type === 'mobile') return 'mobile';
-  return 'desktop';
-}
-
-function getReferrer(referer: string | undefined): string {
-  if (!referer) return 'direct';
-  try {
-    const url = new URL(referer);
-    return url.hostname;
-  } catch {
-    return 'invalid';
-  }
-}
-
 async function hashPassword(password: string) {
   const salt = randomBytes(16).toString("hex");
   const buf = (await scryptAsync(password, salt, 64)) as Buffer;
@@ -206,6 +187,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(updatedUrl);
   });
 
+  app.patch("/api/urls/:id/password", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+
+    const { password } = req.body;
+
+    try {
+      // Verify the URL belongs to the current user
+      const urlId = parseInt(req.params.id);
+      const urls = await storage.getUserUrls(req.user!.id, 1, 0, urlId);
+      const url = urls[0];
+      if (!url) {
+        return res.status(404).send("URL not found");
+      }
+
+      // Update URL with new password settings
+      const updatedUrl = await storage.updateUrl(urlId, req.user!.id, {
+        password: password ? await hashPassword(password) : null,
+        isPasswordProtected: !!password
+      });
+
+      // Log password protection change
+      await storage.logActivity({
+        userId: req.user!.id,
+        type: "url_password_update",
+        metadata: {
+          urlId: updatedUrl.id,
+          action: password ? "added_or_updated" : "removed"
+        }
+      });
+
+      res.json(updatedUrl);
+    } catch (error) {
+      console.error('Error updating URL password:', error);
+      res.status(500).json({ error: "Failed to update URL password" });
+    }
+  });
 
   app.get("/api/activities", async (req, res) => {
     if (!req.isAuthenticated() || req.user!.role !== "admin") {
@@ -236,44 +253,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch("/api/urls/:id/password", async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
-
-    const { password } = req.body;
-
-    try {
-      // Verify the URL belongs to the current user
-      const urlId = parseInt(req.params.id);
-      const urls = await storage.getUserUrls(req.user!.id, 1, 0, urlId);
-      const url = urls[0];
-      if (!url) {
-        return res.status(404).send("URL not found");
-      }
-
-      // If password is undefined, we're removing password protection
-      const updatedUrl = await storage.updateUrlPassword(
-        urlId,
-        req.user!.id,
-        password ? await hashPassword(password) : null
-      );
-
-      // Log password protection change
-      await storage.logActivity({
-        userId: req.user!.id,
-        type: "url_password_update",
-        metadata: {
-          urlId: updatedUrl.id,
-          action: password ? "added_or_updated" : "removed"
-        }
-      });
-
-      res.json(updatedUrl);
-    } catch (error) {
-      console.error('Error updating URL password:', error);
-      res.status(500).json({ error: "Failed to update URL password" });
-    }
-  });
-
   const httpServer = createServer(app);
   return httpServer;
+}
+
+function getDeviceType(userAgent: string): 'desktop' | 'mobile' | 'tablet' {
+  const parser = new UAParser(userAgent);
+  const device = parser.getDevice();
+
+  if (device.type === 'tablet') return 'tablet';
+  if (device.type === 'mobile') return 'mobile';
+  return 'desktop';
+}
+
+function getReferrer(referer: string | undefined): string {
+  if (!referer) return 'direct';
+  try {
+    const url = new URL(referer);
+    return url.hostname;
+  } catch {
+    return 'invalid';
+  }
 }
