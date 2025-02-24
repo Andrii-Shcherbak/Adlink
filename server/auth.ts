@@ -60,6 +60,7 @@ export function setupAuth(app: Express) {
       {
         clientID: process.env.MICROSOFT_CLIENT_ID!,
         clientSecret: process.env.MICROSOFT_CLIENT_SECRET!,
+        // Ensure the callback URL matches exactly with what's configured in Azure AD
         callbackURL: "/api/auth/microsoft/callback",
         scope: ["user.read"],
         // Add tenant-specific authority URL
