@@ -332,8 +332,8 @@ export default function HomePage() {
                               }
                             />
                             <Button
-                              variant="outline"
-                              size="sm"
+                              variant="ghost"
+                              size="icon"
                               onClick={() => {
                                 const canvas = document.createElement("canvas");
                                 const svgElement = document.getElementById(`qr-${url.id}`);
@@ -359,8 +359,7 @@ export default function HomePage() {
                                 }
                               }}
                             >
-                              <Download className="h-4 w-4 mr-2" />
-                              Download QR
+                              <Download className="h-4 w-4" />
                             </Button>
                           </div>
                           <QrCustomizer
@@ -396,20 +395,13 @@ export default function HomePage() {
                           <Popover>
                             <PopoverTrigger asChild>
                               <Button
-                                variant="outline"
-                                size="sm"
-                                className="flex items-center gap-2"
+                                variant="ghost"
+                                size="icon"
                               >
                                 {url.isPasswordProtected ? (
-                                  <>
-                                    <FiLock className="h-4 w-4" />
-                                    Password Protected
-                                  </>
+                                  <FiLock className="h-4 w-4" />
                                 ) : (
-                                  <>
-                                    <FiUnlock className="h-4 w-4" />
-                                    Add Password
-                                  </>
+                                  <FiUnlock className="h-4 w-4" />
                                 )}
                               </Button>
                             </PopoverTrigger>
@@ -489,6 +481,7 @@ export default function HomePage() {
                               </div>
                             </PopoverContent>
                           </Popover>
+
                         </div>
                       </div>
                     </div>
