@@ -49,6 +49,9 @@ interface QrCustomizerProps {
 export function QrCustomizer({ url, config, onSave }: QrCustomizerProps) {
   const [localConfig, setLocalConfig] = useState<QrConfig>({
     ...config,
+    cornerStyle: config.cornerStyle || "square", // Ensure cornerStyle has a default value
+    pattern: config.pattern || "squares",
+    frameStyle: config.frameStyle || "none",
     cornerDotColor: config.cornerDotColor || config.fgColor,
     cornerSquareColor: config.cornerSquareColor || config.fgColor,
     frameColor: config.frameColor || config.fgColor,
@@ -130,6 +133,20 @@ export function QrCustomizer({ url, config, onSave }: QrCustomizerProps) {
       cornerSquareColor: color,
       frameColor: color,
     }));
+  };
+
+  const handleSave = () => {
+    // Ensure all required properties are set before saving
+    const configToSave: QrConfig = {
+      ...localConfig,
+      cornerStyle: localConfig.cornerStyle || "square",
+      pattern: localConfig.pattern || "squares",
+      frameStyle: localConfig.frameStyle || "none",
+      cornerDotColor: localConfig.cornerDotColor || localConfig.fgColor,
+      cornerSquareColor: localConfig.cornerSquareColor || localConfig.fgColor,
+      frameColor: localConfig.frameColor || localConfig.fgColor,
+    };
+    onSave(configToSave);
   };
 
   return (
@@ -348,17 +365,17 @@ export function QrCustomizer({ url, config, onSave }: QrCustomizerProps) {
                     imageSettings={
                       localConfig.logoUrl
                         ? {
-                            src: localConfig.logoUrl,
-                            height: 24,
-                            width: 24,
-                            excavate: true,
-                          }
+                          src: localConfig.logoUrl,
+                          height: 24,
+                          width: 24,
+                          excavate: true,
+                        }
                         : undefined
                     }
                   />
                 </div>
                 <div className="flex flex-col gap-2">
-                  <Button onClick={() => onSave(localConfig)}>Save Changes</Button>
+                  <Button onClick={handleSave}>Save Changes</Button>
                   <Button onClick={handleDownload} variant="outline">
                     <Download className="h-4 w-4 mr-2" />
                     Download
