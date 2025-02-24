@@ -60,8 +60,8 @@ export function setupAuth(app: Express) {
       {
         clientID: process.env.MICROSOFT_CLIENT_ID!,
         clientSecret: process.env.MICROSOFT_CLIENT_SECRET!,
-        // Ensure the callback URL matches exactly with what's configured in Azure AD
-        callbackURL: "/api/auth/microsoft/callback",
+        // Use the full callback URL as configured in Azure AD
+        callbackURL: "https://210439ba-2384-47f3-899d-fb76ff3d8138-00-3pp9yxr5bhzhm.kirk.replit.dev/api/auth/microsoft/callback",
         scope: ["user.read"],
         // Add tenant-specific authority URL
         authority: "https://login.microsoftonline.com/organizations",
