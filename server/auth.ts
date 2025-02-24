@@ -182,7 +182,10 @@ export function setupAuth(app: Express) {
   );
 
   app.get("/api/auth/microsoft/callback",
-    passport.authenticate("microsoft", { failureRedirect: "/auth" }),
+    passport.authenticate("microsoft", { 
+      failureRedirect: "/auth-status",
+      failureMessage: true 
+    }),
     async (req, res) => {
       if (req.user) {
         // Log successful Microsoft login
