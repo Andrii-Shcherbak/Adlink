@@ -14,6 +14,7 @@ import AuthStatus from "@/pages/auth-status";
 import { ProtectedRoute } from "./lib/protected-route";
 import { AdminRoute } from "./lib/admin-route";
 import { Layout } from "@/components/layout";
+import ProtectedUrl from "@/pages/protected-url";
 
 function ProtectedLayout({ component: Component }: { component: () => React.JSX.Element }) {
   return (
@@ -33,6 +34,7 @@ function Router() {
       <AdminRoute path="/activities" component={() => <ProtectedLayout component={ActivityDashboard} />} />
       <Route path="/auth" component={AuthPage} />
       <Route path="/auth-status" component={AuthStatus} />
+      <Route path="/protected/:shortCode" component={ProtectedUrl} />
       <Route component={NotFound} />
     </Switch>
   );

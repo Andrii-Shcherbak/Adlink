@@ -44,6 +44,8 @@ export const urls = pgTable("urls", {
     cornerSquareColor: "#000000",
     frameColor: "#000000",
   }),
+  password: text("password"),
+  isPasswordProtected: boolean("is_password_protected").notNull().default(false),
 });
 
 export const activities = pgTable("activities", {
@@ -63,6 +65,8 @@ export const insertUserSchema = createInsertSchema(users).extend({
 
 export const insertUrlSchema = createInsertSchema(urls).pick({
   originalUrl: true,
+}).extend({
+  password: z.string().optional(),
 });
 
 export const qrConfigSchema = z.object({

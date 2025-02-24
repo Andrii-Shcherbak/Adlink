@@ -5,6 +5,22 @@ import { storage } from "./storage";
 import { insertUrlSchema } from "@shared/schema";
 import { qrConfigSchema } from "@shared/schema";
 import { UAParser } from "ua-parser-js";
+import { scrypt, timingSafeEqual } from "crypto";
+import { promisify } from "util";
+
+const scryptAsync = promisify(scrypt);
+
+async function comparePasswords(supplied: string, stored: string) {
+  try {
+    const [hashed, salt] = stored.split(".");
+    const hashedBuf = Buffer.from(hashed, "hex");
+    const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
+    return timingSafeEqual(hashedBuf, suppliedBuf);
+  } catch (error) {
+    console.error('Error comparing passwords:', error);
+    return false;
+  }
+}
 
 function getDeviceType(userAgent: string): 'desktop' | 'mobile' | 'tablet' {
   const parser = new UAParser(userAgent);
@@ -79,27 +95,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const url = await storage.getUrlByShortCode(req.params.shortCode);
     if (!url) return res.sendStatus(404);
 
+    if (url.isPasswordProtected) {
+      // If password protected, redirect to the password entry page
+      return res.redirect(`/protected/${url.shortCode}`);
+    }
+
     const deviceType = getDeviceType(req.headers['user-agent'] || '');
     const referrer = getReferrer(req.headers.referer);
-
-    let countryCode = (req.headers['cf-ipcountry'] as string)?.toUpperCase();
-    if (!countryCode) {
-      try {
-        const acceptLanguage = req.headers['accept-language'] || '';
-        const langParts = acceptLanguage.split(',')[0].split('-');
-        countryCode = langParts.length > 1 ? langParts[1].toUpperCase() : 'UNKNOWN';
-      } catch {
-        countryCode = 'UNKNOWN';
-      }
-    }
+    let countryCode = (req.headers['cf-ipcountry'] as string)?.toUpperCase() || 'UNKNOWN';
 
     try {
       await storage.incrementUrlClicks(url.id, url.userId, deviceType, countryCode, referrer);
       res.redirect(url.originalUrl);
     } catch (error) {
       console.error('Error incrementing clicks:', error);
-      // Still redirect even if analytics fails
       res.redirect(url.originalUrl);
+    }
+  });
+
+  app.post("/api/r/:shortCode/verify", async (req, res) => {
+    const url = await storage.getUrlByShortCode(req.params.shortCode);
+    if (!url) return res.sendStatus(404);
+
+    if (!url.isPasswordProtected || !url.password) {
+      return res.status(400).json({ error: "URL is not password protected" });
+    }
+
+    const isValid = await comparePasswords(req.body.password, url.password);
+    if (!isValid) {
+      return res.status(401).json({ error: "Invalid password" });
+    }
+
+    const deviceType = getDeviceType(req.headers['user-agent'] || '');
+    const referrer = getReferrer(req.headers.referer);
+    let countryCode = (req.headers['cf-ipcountry'] as string)?.toUpperCase() || 'UNKNOWN';
+
+    try {
+      await storage.incrementUrlClicks(url.id, url.userId, deviceType, countryCode, referrer);
+      res.json({ redirectUrl: url.originalUrl });
+    } catch (error) {
+      console.error('Error incrementing clicks:', error);
+      res.json({ redirectUrl: url.originalUrl });
     }
   });
 
