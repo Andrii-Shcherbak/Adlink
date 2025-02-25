@@ -85,7 +85,8 @@ export function setupAuth(app: Express) {
         clientSecret: process.env.MICROSOFT_CLIENT_SECRET!,
         callbackURL: "/api/auth/microsoft/callback",
         scope: ["user.read"],
-        tenant: "common",
+        // Remove tenant: "common" and use organization-specific authority
+        authority: "https://login.microsoftonline.com/organizations",
       },
       async (accessToken, refreshToken, profile, done) => {
         try {
@@ -179,10 +180,32 @@ export function setupAuth(app: Express) {
   );
 
   app.get("/api/auth/microsoft/callback",
-    passport.authenticate("microsoft", {
-      successRedirect: "/",
-      failureRedirect: "/auth"
-    })
+    (req, res, next) => {
+      passport.authenticate("microsoft", (err, user, info) => {
+        if (err) {
+          console.error('Microsoft callback error:', err);
+          return res.redirect('/auth?error=' + encodeURIComponent('Authentication failed. Please try again.'));
+        }
+        if (!user) {
+          return res.redirect('/auth?error=' + encodeURIComponent(info?.message || 'Authentication failed'));
+        }
+        req.logIn(user, async (err) => {
+          if (err) {
+            console.error('Microsoft login session error:', err);
+            return res.redirect('/auth?error=' + encodeURIComponent('Failed to establish session'));
+          }
+          // Log successful Microsoft login
+          await storage.logActivity({
+            userId: user.id,
+            type: "login",
+            metadata: {
+              method: "microsoft"
+            }
+          });
+          res.redirect("/");
+        });
+      })(req, res, next);
+    }
   );
 
   app.post("/api/logout", (req, res, next) => {
