@@ -259,7 +259,7 @@ export default function HomePage() {
                           <div className="flex items-center justify-between gap-2">
                             <div className="flex flex-wrap items-center gap-2 flex-grow">
                               <span className="font-medium break-all">
-                                {`${domain}/${url.shortCode}`}
+                                {`${domain}/api/r/${url.shortCode}`}
                               </span>
                               <SecurityBadge level={securityLevel} />
                             </div>
@@ -267,12 +267,12 @@ export default function HomePage() {
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                onClick={() => copyToClipboard(`${domain}/${url.shortCode}`)}
+                                onClick={() => copyToClipboard(`${domain}/api/r/${url.shortCode}`)}
                               >
                                 <Copy className="h-4 w-4" />
                               </Button>
                               <a
-                                href={`${domain}/${url.shortCode}`}
+                                href={`${domain}/api/r/${url.shortCode}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
                               >
@@ -321,7 +321,7 @@ export default function HomePage() {
                           <div className="flex items-center gap-2">
                             <QRCodeSVG
                               id={`qr-${url.id}`}
-                              value={`${domain}/${url.shortCode}`}
+                              value={`${domain}/api/r/${url.shortCode}`}
                               size={100}
                               level="H"
                               fgColor={qrConfig.fgColor}
@@ -370,7 +370,7 @@ export default function HomePage() {
                             </Button>
                           </div>
                           <QrCustomizer
-                            url={`${domain}/${url.shortCode}`}
+                            url={`${domain}/api/r/${url.shortCode}`}
                             config={qrConfig}
                             onSave={async (newConfig) => {
                               try {

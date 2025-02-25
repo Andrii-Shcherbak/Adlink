@@ -34,6 +34,14 @@ async function comparePasswords(supplied: string, stored: string) {
   }
 }
 
+// Middleware to check if user is admin
+function isAdmin(req: Express.Request, res: Express.Response, next: Express.NextFunction) {
+  if (!req.isAuthenticated() || req.user.role !== "admin") {
+    return res.status(403).json({ error: "Admin access required" });
+  }
+  next();
+}
+
 export function setupAuth(app: Express) {
   const sessionSettings: session.SessionOptions = {
     secret: process.env.SESSION_SECRET!,
@@ -71,7 +79,6 @@ export function setupAuth(app: Express) {
         }
         return done(null, user);
       } catch (error) {
-        console.error('Local auth error:', error);
         return done(error);
       }
     }),
@@ -83,10 +90,10 @@ export function setupAuth(app: Express) {
       {
         clientID: process.env.MICROSOFT_CLIENT_ID!,
         clientSecret: process.env.MICROSOFT_CLIENT_SECRET!,
-        callbackURL: "/api/auth/microsoft/callback",
+        callbackURL: "https://210439ba-2384-47f3-899d-fb76ff3d8138-00-3pp9yxr5bhzhm.kirk.replit.dev/api/auth/microsoft/callback",
         scope: ["user.read"],
-        // Configure for single-tenant organization
-        authority: `https://login.microsoftonline.com/${process.env.MICROSOFT_TENANT_ID!}`,
+        authority: "https://login.microsoftonline.com/organizations",
+        tenant: process.env.MICROSOFT_TENANT_ID!,
       },
       async (accessToken, refreshToken, profile, done) => {
         try {
@@ -110,20 +117,19 @@ export function setupAuth(app: Express) {
               firstName,
               lastName,
               company: "",
-              role: "user",
-              isApproved: true,
-              isActive: true
             });
           }
 
-          // Check if user is active
+          // Check if user is active and approved (for both existing and new users)
           if (!user.isActive) {
             return done(null, false, { message: "Account is deactivated" });
+          }
+          if (!user.isApproved && user.role !== "admin") {
+            return done(null, false, { message: "Account pending approval" });
           }
 
           return done(null, user);
         } catch (error) {
-          console.error('Microsoft auth error:', error);
           return done(error);
         }
       }
@@ -142,26 +148,22 @@ export function setupAuth(app: Express) {
       }
       done(null, user);
     } catch (error) {
-      console.error('Deserialize error:', error);
       done(error, null);
     }
   });
 
   app.post("/api/login", (req, res, next) => {
-    passport.authenticate("local", (err, user, info) => {
+    passport.authenticate("local", async (err, user, info) => {
       if (err) {
-        console.error('Login error:', err);
-        return res.status(500).json({ error: "Authentication failed" });
+        return next(err);
       }
       if (!user) {
-        return res.status(401).json({ error: info?.message || "Invalid credentials" });
+        return res.status(401).json({ error: info?.message || "Authentication failed" });
       }
       req.logIn(user, async (err) => {
         if (err) {
-          console.error('Login session error:', err);
-          return res.status(500).json({ error: "Failed to establish session" });
+          return next(err);
         }
-
         // Log successful login
         await storage.logActivity({
           userId: user.id,
@@ -179,32 +181,21 @@ export function setupAuth(app: Express) {
     passport.authenticate("microsoft", { prompt: "select_account" })
   );
 
-  // Update Microsoft callback handler
   app.get("/api/auth/microsoft/callback",
     (req, res, next) => {
-      passport.authenticate("microsoft", async (err, user, info) => {
+      passport.authenticate("microsoft", (err, user, info) => {
         if (err) {
-          console.error('Microsoft callback error:', err);
-          if (err.message?.includes('AADSTS50194')) {
-            return res.redirect('/auth?error=' + encodeURIComponent('Microsoft authentication is not properly configured. Please contact support.'));
-          }
-          return res.redirect('/auth?error=' + encodeURIComponent('Authentication failed. Please try again.'));
+          return next(err);
         }
-
         if (!user) {
-          const errorMessage = info?.message || 'Authentication failed';
-          console.error('Microsoft auth failed:', errorMessage);
-          return res.redirect('/auth?error=' + encodeURIComponent(errorMessage));
+          // Store the error message in the session
+          req.session.authMessage = info?.message || "Authentication failed";
+          return res.redirect("/auth-status");
         }
-
-        try {
-          await new Promise((resolve, reject) => {
-            req.logIn(user, (err) => {
-              if (err) reject(err);
-              else resolve(undefined);
-            });
-          });
-
+        req.logIn(user, async (err) => {
+          if (err) {
+            return next(err);
+          }
           // Log successful Microsoft login
           await storage.logActivity({
             userId: user.id,
@@ -213,30 +204,23 @@ export function setupAuth(app: Express) {
               method: "microsoft"
             }
           });
-
-          return res.redirect("/");
-        } catch (error) {
-          console.error('Microsoft login session error:', error);
-          return res.redirect('/auth?error=' + encodeURIComponent('Failed to establish session'));
-        }
+          res.redirect("/");
+        });
       })(req, res, next);
     }
   );
 
   app.post("/api/logout", (req, res, next) => {
     const userId = req.user?.id;
-    req.logout((err) => {
-      if (err) {
-        console.error('Logout error:', err);
-        return res.status(500).json({ error: "Logout failed" });
-      }
+    req.logout(async (err) => {
+      if (err) return next(err);
       if (userId) {
         // Log logout
-        storage.logActivity({
+        await storage.logActivity({
           userId,
           type: "logout",
           metadata: {}
-        }).catch(console.error);
+        });
       }
       res.sendStatus(200);
     });
@@ -245,6 +229,70 @@ export function setupAuth(app: Express) {
   app.get("/api/user", (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
     res.json(req.user);
+  });
+
+  // Admin routes for user management
+  app.get("/api/admin/users", isAdmin, async (req, res) => {
+    try {
+      const users = await storage.getAllUsers();
+      res.json(users);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch users" });
+    }
+  });
+
+  app.post("/api/admin/users", isAdmin, async (req, res) => {
+    try {
+      const hashedPassword = await hashPassword(req.body.password);
+      const user = await storage.createUser({
+        ...req.body,
+        password: hashedPassword,
+        role: 'user', // Always create regular users through admin interface
+        isApproved: true, // Admins can create pre-approved users
+        isActive: true,
+      });
+      res.status(201).json(user);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to create user" });
+    }
+  });
+
+  app.patch("/api/admin/users/:userId/approval", isAdmin, async (req, res) => {
+    try {
+      const { userId } = req.params;
+      const { isApproved, isActive } = req.body;
+
+      const user = await storage.updateUserApproval({
+        userId: parseInt(userId),
+        isApproved,
+        isActive,
+      });
+
+      // Log user status change
+      await storage.logActivity({
+        userId: req.user!.id,
+        type: "user_status_update",
+        metadata: {
+          targetUserId: parseInt(userId),
+          changes: {
+            isApproved,
+            isActive
+          }
+        }
+      });
+
+      res.json(user);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to update user approval status" });
+    }
+  });
+
+  // Add this route to get auth status message
+  app.get("/api/auth/status", (req, res) => {
+    const message = req.session.authMessage;
+    // Clear the message after sending it
+    delete req.session.authMessage;
+    res.json({ message });
   });
 }
 
