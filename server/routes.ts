@@ -118,7 +118,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
-  app.get("/api/r/:shortCode", async (req, res) => {
+  app.get("/:shortCode", async (req, res) => {
     const url = await storage.getUrlByShortCode(req.params.shortCode);
     if (!url) return res.sendStatus(404);
 
@@ -139,7 +139,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/r/:shortCode/verify", async (req, res) => {
+  app.post("/:shortCode/verify", async (req, res) => {
     const url = await storage.getUrlByShortCode(req.params.shortCode);
     if (!url) return res.sendStatus(404);
 
