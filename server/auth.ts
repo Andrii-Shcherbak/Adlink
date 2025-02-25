@@ -147,7 +147,7 @@ export function setupAuth(app: Express) {
   });
 
   app.post("/api/login", (req, res, next) => {
-    passport.authenticate("local", async (err, user, info) => {
+    passport.authenticate("local", (err, user, info) => {
       if (err) {
         console.error('Login error:', err);
         return res.status(500).json({ error: "Authentication failed" });
@@ -160,6 +160,7 @@ export function setupAuth(app: Express) {
           console.error('Login session error:', err);
           return res.status(500).json({ error: "Failed to establish session" });
         }
+
         // Log successful login
         await storage.logActivity({
           userId: user.id,
@@ -178,35 +179,10 @@ export function setupAuth(app: Express) {
   );
 
   app.get("/api/auth/microsoft/callback",
-    (req, res, next) => {
-      passport.authenticate("microsoft", (err, user, info) => {
-        if (err) {
-          console.error('Microsoft callback error:', err);
-          req.session.authMessage = "Authentication failed";
-          return res.redirect("/auth");
-        }
-        if (!user) {
-          req.session.authMessage = info?.message || "Authentication failed";
-          return res.redirect("/auth");
-        }
-        req.logIn(user, async (err) => {
-          if (err) {
-            console.error('Microsoft login session error:', err);
-            req.session.authMessage = "Failed to establish session";
-            return res.redirect("/auth");
-          }
-          // Log successful Microsoft login
-          await storage.logActivity({
-            userId: user.id,
-            type: "login",
-            metadata: {
-              method: "microsoft"
-            }
-          });
-          res.redirect("/");
-        });
-      })(req, res, next);
-    }
+    passport.authenticate("microsoft", {
+      successRedirect: "/",
+      failureRedirect: "/auth"
+    })
   );
 
   app.post("/api/logout", (req, res, next) => {
