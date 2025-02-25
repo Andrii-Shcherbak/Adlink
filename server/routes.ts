@@ -29,8 +29,10 @@ async function hashPassword(password: string) {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Set up authentication first
   setupAuth(app);
 
+  // API routes
   app.post("/api/urls", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
 
@@ -66,9 +68,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (!req.isAuthenticated()) return res.sendStatus(401);
 
     try {
-      // First get the URL details to verify ownership and for logging
       const urlId = parseInt(req.params.id);
-      const urls = await storage.getUserUrls(req.user!.id, 1, 0, urlId);
+      const urls = await storage.getUserUrls(req.user!.id, 1, 0);
       const url = urls[0];
 
       if (!url || url.userId !== req.user!.id) {
@@ -77,7 +78,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       await storage.deleteUrl(urlId, req.user!.id);
 
-      // Log URL deletion activity
       await storage.logActivity({
         userId: req.user!.id,
         type: "url_deleted",
@@ -118,53 +118,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
-  app.get("/:shortCode", async (req, res) => {
-    const url = await storage.getUrlByShortCode(req.params.shortCode);
-    if (!url) return res.sendStatus(404);
-
-    if (url.isPasswordProtected) {
-      return res.redirect(`/protected/${url.shortCode}`);
-    }
-
-    const deviceType = getDeviceType(req.headers['user-agent'] || '');
-    const referrer = getReferrer(req.headers.referer);
-    let countryCode = (req.headers['cf-ipcountry'] as string)?.toUpperCase() || 'UNKNOWN';
-
-    try {
-      await storage.incrementUrlClicks(url.id, url.userId, deviceType, countryCode, referrer);
-      res.redirect(url.originalUrl);
-    } catch (error) {
-      console.error('Error incrementing clicks:', error);
-      res.redirect(url.originalUrl);
-    }
-  });
-
-  app.post("/:shortCode/verify", async (req, res) => {
-    const url = await storage.getUrlByShortCode(req.params.shortCode);
-    if (!url) return res.sendStatus(404);
-
-    if (!url.isPasswordProtected || !url.password) {
-      return res.status(400).json({ error: "URL is not password protected" });
-    }
-
-    const isValid = await comparePasswords(req.body.password, url.password);
-    if (!isValid) {
-      return res.status(401).json({ error: "Invalid password" });
-    }
-
-    const deviceType = getDeviceType(req.headers['user-agent'] || '');
-    const referrer = getReferrer(req.headers.referer);
-    let countryCode = (req.headers['cf-ipcountry'] as string)?.toUpperCase() || 'UNKNOWN';
-
-    try {
-      await storage.incrementUrlClicks(url.id, url.userId, deviceType, countryCode, referrer);
-      res.json({ redirectUrl: url.originalUrl });
-    } catch (error) {
-      console.error('Error incrementing clicks:', error);
-      res.json({ redirectUrl: url.originalUrl });
-    }
-  });
-
   app.patch("/api/urls/:id/qr-config", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
 
@@ -193,21 +146,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const { password } = req.body;
 
     try {
-      // Verify the URL belongs to the current user
       const urlId = parseInt(req.params.id);
-      const urls = await storage.getUserUrls(req.user!.id, 1, 0, urlId);
+      const urls = await storage.getUserUrls(req.user!.id, 1, 0);
       const url = urls[0];
       if (!url) {
         return res.status(404).send("URL not found");
       }
 
-      // Update URL with new password settings
       const updatedUrl = await storage.updateUrl(urlId, req.user!.id, {
         password: password ? await hashPassword(password) : null,
         isPasswordProtected: !!password
       });
 
-      // Log password protection change
       await storage.logActivity({
         userId: req.user!.id,
         type: "url_password_update",
@@ -250,6 +200,68 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch activities" });
+    }
+  });
+
+  // URL shortener routes - must be after API routes to prevent catching everything
+  app.get("/:shortCode", async (req, res) => {
+    // Skip API routes and auth routes
+    if (req.params.shortCode.startsWith('api') || 
+        req.params.shortCode === 'auth' || 
+        req.params.shortCode === 'protected') {
+      return res.sendStatus(404);
+    }
+
+    const url = await storage.getUrlByShortCode(req.params.shortCode);
+    if (!url) return res.sendStatus(404);
+
+    if (url.isPasswordProtected) {
+      return res.redirect(`/protected/${url.shortCode}`);
+    }
+
+    const deviceType = getDeviceType(req.headers['user-agent'] || '');
+    const referrer = getReferrer(req.headers.referer);
+    let countryCode = (req.headers['cf-ipcountry'] as string)?.toUpperCase() || 'UNKNOWN';
+
+    try {
+      await storage.incrementUrlClicks(url.id, url.userId, deviceType, countryCode, referrer);
+      res.redirect(url.originalUrl);
+    } catch (error) {
+      console.error('Error incrementing clicks:', error);
+      res.redirect(url.originalUrl);
+    }
+  });
+
+  app.post("/:shortCode/verify", async (req, res) => {
+    // Skip API routes and auth routes
+    if (req.params.shortCode.startsWith('api') || 
+        req.params.shortCode === 'auth' || 
+        req.params.shortCode === 'protected') {
+      return res.sendStatus(404);
+    }
+
+    const url = await storage.getUrlByShortCode(req.params.shortCode);
+    if (!url) return res.sendStatus(404);
+
+    if (!url.isPasswordProtected || !url.password) {
+      return res.status(400).json({ error: "URL is not password protected" });
+    }
+
+    const isValid = await comparePasswords(req.body.password, url.password);
+    if (!isValid) {
+      return res.status(401).json({ error: "Invalid password" });
+    }
+
+    const deviceType = getDeviceType(req.headers['user-agent'] || '');
+    const referrer = getReferrer(req.headers.referer);
+    let countryCode = (req.headers['cf-ipcountry'] as string)?.toUpperCase() || 'UNKNOWN';
+
+    try {
+      await storage.incrementUrlClicks(url.id, url.userId, deviceType, countryCode, referrer);
+      res.json({ redirectUrl: url.originalUrl });
+    } catch (error) {
+      console.error('Error incrementing clicks:', error);
+      res.json({ redirectUrl: url.originalUrl });
     }
   });
 
