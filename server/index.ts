@@ -1,6 +1,7 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import path from "path";
 
 const app = express();
 app.use(express.json());
@@ -37,6 +38,15 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // importantly set up vite/static serving first in development
+  // so the frontend routes work correctly
+  if (app.get("env") === "development") {
+    await setupVite(app);
+  } else {
+    serveStatic(app);
+  }
+
+  // Then set up all the API and URL shortener routes
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
@@ -47,14 +57,19 @@ app.use((req, res, next) => {
     throw err;
   });
 
-  // importantly only setup vite in development and after
-  // setting up all the other routes so the catch-all route
-  // doesn't interfere with the other routes
-  if (app.get("env") === "development") {
-    await setupVite(app, server);
-  } else {
-    serveStatic(app);
-  }
+  // Add catch-all route to serve index.html for client-side routing
+  app.get("*", (req, res, next) => {
+    // Skip API routes and URL shortener routes
+    if (req.path.startsWith("/api")) {
+      return next();
+    }
+    // Serve the frontend app for all other routes
+    if (app.get("env") === "development") {
+      res.sendFile(path.resolve("client", "index.html"));
+    } else {
+      res.sendFile(path.resolve("dist", "client", "index.html"));
+    }
+  });
 
   // ALWAYS serve the app on port 5000
   // this serves both the API and the client

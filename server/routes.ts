@@ -204,16 +204,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // URL shortener routes - must be after API routes to prevent catching everything
-  app.get("/:shortCode", async (req, res) => {
+  app.get("/:shortCode", async (req, res, next) => {
     // Skip API routes and auth routes
     if (req.params.shortCode.startsWith('api') || 
         req.params.shortCode === 'auth' || 
         req.params.shortCode === 'protected') {
-      return res.sendStatus(404);
+      return next();
     }
 
     const url = await storage.getUrlByShortCode(req.params.shortCode);
-    if (!url) return res.sendStatus(404);
+    if (!url) return next();
 
     if (url.isPasswordProtected) {
       return res.redirect(`/protected/${url.shortCode}`);
@@ -232,16 +232,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/:shortCode/verify", async (req, res) => {
+  app.post("/:shortCode/verify", async (req, res, next) => {
     // Skip API routes and auth routes
     if (req.params.shortCode.startsWith('api') || 
         req.params.shortCode === 'auth' || 
         req.params.shortCode === 'protected') {
-      return res.sendStatus(404);
+      return next();
     }
 
     const url = await storage.getUrlByShortCode(req.params.shortCode);
-    if (!url) return res.sendStatus(404);
+    if (!url) return next();
 
     if (!url.isPasswordProtected || !url.password) {
       return res.status(400).json({ error: "URL is not password protected" });
