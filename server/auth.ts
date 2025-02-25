@@ -34,14 +34,6 @@ async function comparePasswords(supplied: string, stored: string) {
   }
 }
 
-// Middleware to check if user is admin
-function isAdmin(req: Express.Request, res: Express.Response, next: Express.NextFunction) {
-  if (!req.isAuthenticated() || req.user.role !== "admin") {
-    return res.status(403).json({ error: "Admin access required" });
-  }
-  next();
-}
-
 export function setupAuth(app: Express) {
   const sessionSettings: session.SessionOptions = {
     secret: process.env.SESSION_SECRET!,
@@ -79,6 +71,7 @@ export function setupAuth(app: Express) {
         }
         return done(null, user);
       } catch (error) {
+        console.error('Local auth error:', error);
         return done(error);
       }
     }),
@@ -90,10 +83,9 @@ export function setupAuth(app: Express) {
       {
         clientID: process.env.MICROSOFT_CLIENT_ID!,
         clientSecret: process.env.MICROSOFT_CLIENT_SECRET!,
-        callbackURL: "https://210439ba-2384-47f3-899d-fb76ff3d8138-00-3pp9yxr5bhzhm.kirk.replit.dev/api/auth/microsoft/callback",
+        callbackURL: "/api/auth/microsoft/callback",
         scope: ["user.read"],
-        authority: "https://login.microsoftonline.com/organizations",
-        tenant: process.env.MICROSOFT_TENANT_ID!,
+        tenant: "common",
       },
       async (accessToken, refreshToken, profile, done) => {
         try {
@@ -117,19 +109,20 @@ export function setupAuth(app: Express) {
               firstName,
               lastName,
               company: "",
+              role: "user",
+              isApproved: true,
+              isActive: true
             });
           }
 
-          // Check if user is active and approved (for both existing and new users)
+          // Check if user is active
           if (!user.isActive) {
             return done(null, false, { message: "Account is deactivated" });
-          }
-          if (!user.isApproved && user.role !== "admin") {
-            return done(null, false, { message: "Account pending approval" });
           }
 
           return done(null, user);
         } catch (error) {
+          console.error('Microsoft auth error:', error);
           return done(error);
         }
       }
@@ -148,6 +141,7 @@ export function setupAuth(app: Express) {
       }
       done(null, user);
     } catch (error) {
+      console.error('Deserialize error:', error);
       done(error, null);
     }
   });
@@ -155,14 +149,16 @@ export function setupAuth(app: Express) {
   app.post("/api/login", (req, res, next) => {
     passport.authenticate("local", async (err, user, info) => {
       if (err) {
-        return next(err);
+        console.error('Login error:', err);
+        return res.status(500).json({ error: "Authentication failed" });
       }
       if (!user) {
-        return res.status(401).json({ error: info?.message || "Authentication failed" });
+        return res.status(401).json({ error: info?.message || "Invalid credentials" });
       }
       req.logIn(user, async (err) => {
         if (err) {
-          return next(err);
+          console.error('Login session error:', err);
+          return res.status(500).json({ error: "Failed to establish session" });
         }
         // Log successful login
         await storage.logActivity({
@@ -185,16 +181,19 @@ export function setupAuth(app: Express) {
     (req, res, next) => {
       passport.authenticate("microsoft", (err, user, info) => {
         if (err) {
-          return next(err);
+          console.error('Microsoft callback error:', err);
+          req.session.authMessage = "Authentication failed";
+          return res.redirect("/auth");
         }
         if (!user) {
-          // Store the error message in the session
           req.session.authMessage = info?.message || "Authentication failed";
-          return res.redirect("/auth-status");
+          return res.redirect("/auth");
         }
         req.logIn(user, async (err) => {
           if (err) {
-            return next(err);
+            console.error('Microsoft login session error:', err);
+            req.session.authMessage = "Failed to establish session";
+            return res.redirect("/auth");
           }
           // Log successful Microsoft login
           await storage.logActivity({
@@ -212,15 +211,18 @@ export function setupAuth(app: Express) {
 
   app.post("/api/logout", (req, res, next) => {
     const userId = req.user?.id;
-    req.logout(async (err) => {
-      if (err) return next(err);
+    req.logout((err) => {
+      if (err) {
+        console.error('Logout error:', err);
+        return res.status(500).json({ error: "Logout failed" });
+      }
       if (userId) {
         // Log logout
-        await storage.logActivity({
+        storage.logActivity({
           userId,
           type: "logout",
           metadata: {}
-        });
+        }).catch(console.error);
       }
       res.sendStatus(200);
     });
@@ -229,70 +231,6 @@ export function setupAuth(app: Express) {
   app.get("/api/user", (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
     res.json(req.user);
-  });
-
-  // Admin routes for user management
-  app.get("/api/admin/users", isAdmin, async (req, res) => {
-    try {
-      const users = await storage.getAllUsers();
-      res.json(users);
-    } catch (error) {
-      res.status(500).json({ error: "Failed to fetch users" });
-    }
-  });
-
-  app.post("/api/admin/users", isAdmin, async (req, res) => {
-    try {
-      const hashedPassword = await hashPassword(req.body.password);
-      const user = await storage.createUser({
-        ...req.body,
-        password: hashedPassword,
-        role: 'user', // Always create regular users through admin interface
-        isApproved: true, // Admins can create pre-approved users
-        isActive: true,
-      });
-      res.status(201).json(user);
-    } catch (error) {
-      res.status(500).json({ error: "Failed to create user" });
-    }
-  });
-
-  app.patch("/api/admin/users/:userId/approval", isAdmin, async (req, res) => {
-    try {
-      const { userId } = req.params;
-      const { isApproved, isActive } = req.body;
-
-      const user = await storage.updateUserApproval({
-        userId: parseInt(userId),
-        isApproved,
-        isActive,
-      });
-
-      // Log user status change
-      await storage.logActivity({
-        userId: req.user!.id,
-        type: "user_status_update",
-        metadata: {
-          targetUserId: parseInt(userId),
-          changes: {
-            isApproved,
-            isActive
-          }
-        }
-      });
-
-      res.json(user);
-    } catch (error) {
-      res.status(500).json({ error: "Failed to update user approval status" });
-    }
-  });
-
-  // Add this route to get auth status message
-  app.get("/api/auth/status", (req, res) => {
-    const message = req.session.authMessage;
-    // Clear the message after sending it
-    delete req.session.authMessage;
-    res.json({ message });
   });
 }
 
