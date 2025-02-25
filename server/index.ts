@@ -38,32 +38,37 @@ app.use((req, res, next) => {
 });
 
 (async () => {
-  // importantly set up vite/static serving first in development
-  // so the frontend routes work correctly
+  // Set up Vite middleware first
   if (app.get("env") === "development") {
     await setupVite(app);
   } else {
     serveStatic(app);
   }
 
-  // Then set up all the API and URL shortener routes
+  // Then set up all the API routes
   const server = await registerRoutes(app);
 
+  // Error handling middleware
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
-
     res.status(status).json({ message });
     throw err;
   });
 
-  // Add catch-all route to serve index.html for client-side routing
+  // Catch-all route for client-side routing
   app.get("*", (req, res, next) => {
-    // Skip API routes and URL shortener routes
+    // Skip API routes
     if (req.path.startsWith("/api")) {
       return next();
     }
-    // Serve the frontend app for all other routes
+
+    // Skip direct URL shortener access
+    if (req.path.length <= 8 && req.path !== "/") { // Simple heuristic for shortcodes
+      return next();
+    }
+
+    // Serve the frontend app
     if (app.get("env") === "development") {
       res.sendFile(path.resolve("client", "index.html"));
     } else {
@@ -71,8 +76,7 @@ app.use((req, res, next) => {
     }
   });
 
-  // ALWAYS serve the app on port 5000
-  // this serves both the API and the client
+  // Start the server
   const port = 5000;
   server.listen({
     port,
