@@ -85,8 +85,8 @@ export function setupAuth(app: Express) {
         clientSecret: process.env.MICROSOFT_CLIENT_SECRET!,
         callbackURL: "/api/auth/microsoft/callback",
         scope: ["user.read"],
-        // Remove tenant: "common" and use organization-specific authority
-        authority: "https://login.microsoftonline.com/organizations",
+        // Configure for single-tenant organization
+        authority: `https://login.microsoftonline.com/${process.env.MICROSOFT_TENANT_ID!}`,
       },
       async (accessToken, refreshToken, profile, done) => {
         try {
@@ -179,21 +179,32 @@ export function setupAuth(app: Express) {
     passport.authenticate("microsoft", { prompt: "select_account" })
   );
 
+  // Update Microsoft callback handler
   app.get("/api/auth/microsoft/callback",
     (req, res, next) => {
-      passport.authenticate("microsoft", (err, user, info) => {
+      passport.authenticate("microsoft", async (err, user, info) => {
         if (err) {
           console.error('Microsoft callback error:', err);
+          if (err.message?.includes('AADSTS50194')) {
+            return res.redirect('/auth?error=' + encodeURIComponent('Microsoft authentication is not properly configured. Please contact support.'));
+          }
           return res.redirect('/auth?error=' + encodeURIComponent('Authentication failed. Please try again.'));
         }
+
         if (!user) {
-          return res.redirect('/auth?error=' + encodeURIComponent(info?.message || 'Authentication failed'));
+          const errorMessage = info?.message || 'Authentication failed';
+          console.error('Microsoft auth failed:', errorMessage);
+          return res.redirect('/auth?error=' + encodeURIComponent(errorMessage));
         }
-        req.logIn(user, async (err) => {
-          if (err) {
-            console.error('Microsoft login session error:', err);
-            return res.redirect('/auth?error=' + encodeURIComponent('Failed to establish session'));
-          }
+
+        try {
+          await new Promise((resolve, reject) => {
+            req.logIn(user, (err) => {
+              if (err) reject(err);
+              else resolve(undefined);
+            });
+          });
+
           // Log successful Microsoft login
           await storage.logActivity({
             userId: user.id,
@@ -202,8 +213,12 @@ export function setupAuth(app: Express) {
               method: "microsoft"
             }
           });
-          res.redirect("/");
-        });
+
+          return res.redirect("/");
+        } catch (error) {
+          console.error('Microsoft login session error:', error);
+          return res.redirect('/auth?error=' + encodeURIComponent('Failed to establish session'));
+        }
       })(req, res, next);
     }
   );
