@@ -196,20 +196,37 @@ export function QrCustomizer({ url, config, onSave }: QrCustomizerProps) {
                     <Label htmlFor="pattern" className="block mb-2">QR Pattern Style</Label>
                     <div className="grid grid-cols-5 gap-2">
                       {[
-                        { value: "squares", label: "Squares" },
-                        { value: "dots", label: "Dots" },
-                        { value: "rounded", label: "Rounded" },
-                        { value: "classy", label: "Classy" },
-                        { value: "elegant", label: "Elegant" }
+                        { value: "squares", label: "Squares", img: "/patterns/squares.png" },
+                        { value: "dots", label: "Dots", img: "/patterns/dots.png" },
+                        { value: "rounded", label: "Rounded", img: "/patterns/rounded.png" },
+                        { value: "classy", label: "Classy", img: "/patterns/classy.png" },
+                        { value: "elegant", label: "Elegant", img: "/patterns/elegant.png" }
                       ].map(pattern => (
                         <Button
                           key={pattern.value}
                           type="button"
                           variant={localConfig.pattern === pattern.value ? "default" : "outline"}
                           onClick={() => setLocalConfig(prev => ({ ...prev, pattern: pattern.value as any }))}
-                          className="h-auto py-2"
+                          className={cn(
+                            "h-auto p-2 flex flex-col items-center gap-1",
+                            localConfig.pattern === pattern.value 
+                              ? "border-primary bg-primary/10" 
+                              : "hover:bg-muted/50"
+                          )}
                         >
-                          {pattern.label}
+                          <div 
+                            className="relative w-full aspect-square mb-1 rounded overflow-hidden border" 
+                            style={{ 
+                              borderColor: localConfig.pattern === pattern.value ? "var(--primary)" : "transparent"
+                            }}
+                          >
+                            <img 
+                              src={pattern.img} 
+                              alt={pattern.label} 
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                          <span className="text-xs font-medium">{pattern.label}</span>
                         </Button>
                       ))}
                     </div>
@@ -219,18 +236,24 @@ export function QrCustomizer({ url, config, onSave }: QrCustomizerProps) {
                     <Label htmlFor="cornerStyle" className="block mb-2">Corner Style</Label>
                     <div className="grid grid-cols-3 gap-2">
                       {[
-                        { value: "square", label: "Square" },
-                        { value: "dot", label: "Dot" },
-                        { value: "extra-rounded", label: "Rounded" }
+                        { value: "square", label: "Square", icon: "■" },
+                        { value: "dot", label: "Dot", icon: "●" },
+                        { value: "extra-rounded", label: "Rounded", icon: "◉" }
                       ].map(style => (
                         <Button
                           key={style.value}
                           type="button"
                           variant={localConfig.cornerStyle === style.value ? "default" : "outline"}
                           onClick={() => setLocalConfig(prev => ({ ...prev, cornerStyle: style.value as any }))}
-                          className="h-auto py-2"
+                          className={cn(
+                            "h-auto py-3 flex flex-col items-center",
+                            localConfig.cornerStyle === style.value 
+                              ? "border-primary bg-primary/10" 
+                              : "hover:bg-muted/50"
+                          )}
                         >
-                          {style.label}
+                          <span className="text-xl mb-1 leading-none">{style.icon}</span>
+                          <span className="text-xs">{style.label}</span>
                         </Button>
                       ))}
                     </div>
@@ -240,18 +263,24 @@ export function QrCustomizer({ url, config, onSave }: QrCustomizerProps) {
                     <Label htmlFor="frameStyle" className="block mb-2">Frame Style</Label>
                     <div className="grid grid-cols-3 gap-2">
                       {[
-                        { value: "none", label: "None" },
-                        { value: "simple", label: "Simple" },
-                        { value: "dots", label: "Dots" }
+                        { value: "none", label: "None", preview: "◻" },
+                        { value: "simple", label: "Simple", preview: "⬚" },
+                        { value: "dots", label: "Dots", preview: "⬞" }
                       ].map(style => (
                         <Button
                           key={style.value}
                           type="button"
                           variant={localConfig.frameStyle === style.value ? "default" : "outline"}
                           onClick={() => setLocalConfig(prev => ({ ...prev, frameStyle: style.value as any }))}
-                          className="h-auto py-2"
+                          className={cn(
+                            "h-auto py-3 flex flex-col items-center",
+                            localConfig.frameStyle === style.value 
+                              ? "border-primary bg-primary/10" 
+                              : "hover:bg-muted/50"
+                          )}
                         >
-                          {style.label}
+                          <span className="text-2xl mb-1 leading-none">{style.preview}</span>
+                          <span className="text-xs">{style.label}</span>
                         </Button>
                       ))}
                     </div>
