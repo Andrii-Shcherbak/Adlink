@@ -34,7 +34,14 @@ export function QrCustomizer({ url, config, onSave }: QrCustomizerProps) {
     fgColor: config.fgColor || "#000000",
     bgColor: config.bgColor || "#FFFFFF",
     includeMargin: config.includeMargin || false,
-    logoUrl: config.logoUrl || ""
+    logoUrl: config.logoUrl || "",
+    // Add required fields that were missing
+    pattern: config.pattern || "squares",
+    cornerStyle: config.cornerStyle || "square",
+    frameStyle: config.frameStyle || "none",
+    cornerDotColor: config.cornerDotColor || config.fgColor || "#000000",
+    cornerSquareColor: config.cornerSquareColor || config.fgColor || "#000000",
+    frameColor: config.frameColor || config.fgColor || "#000000"
   });
   
   const qrRef = useRef<HTMLDivElement>(null);
@@ -48,7 +55,11 @@ export function QrCustomizer({ url, config, onSave }: QrCustomizerProps) {
   const updateColors = (color: string) => {
     setLocalConfig(prev => ({
       ...prev,
-      fgColor: color
+      fgColor: color,
+      // Keep these colors in sync with the main color
+      cornerDotColor: color,
+      cornerSquareColor: color,
+      frameColor: color
     }));
   };
   
@@ -105,7 +116,11 @@ export function QrCustomizer({ url, config, onSave }: QrCustomizerProps) {
                             setLocalConfig(prev => ({
                               ...prev, 
                               fgColor: preset.fg,
-                              bgColor: preset.bg
+                              bgColor: preset.bg,
+                              // Keep these colors in sync
+                              cornerDotColor: preset.fg,
+                              cornerSquareColor: preset.fg,
+                              frameColor: preset.fg
                             }));
                           }}
                         >
