@@ -69,7 +69,7 @@ export default function AuthPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Tabs defaultValue="login" className="w-full text-white">
+            <Tabs defaultValue="login" className="w-full text-white [&_label]:text-white">
               <TabsList className="grid w-full grid-cols-2 mb-8">
                 <TabsTrigger value="login" className="text-sm font-medium data-[state=active]:bg-primary/30">Sign In</TabsTrigger>
                 <TabsTrigger value="register" className="text-sm font-medium data-[state=active]:bg-primary/30">Create Account</TabsTrigger>
@@ -112,14 +112,14 @@ export default function AuthPage() {
                     />
                     <Button
                       type="submit"
-                      className="w-full h-11 text-base font-medium"
+                      className="w-full h-11 text-base font-medium bg-primary/80 hover:bg-primary/90"
                       disabled={loginMutation.isPending}
                     >
                       {loginMutation.isPending ? "Signing in..." : "Sign In"}
                     </Button>
                     <div className="relative my-6">
                       <div className="absolute inset-0 flex items-center">
-                        <span className="w-full border-t" />
+                        <span className="w-full border-t border-white/20" />
                       </div>
                       <div className="relative flex justify-center text-xs uppercase">
                         <span className="bg-transparent px-2 text-white">
@@ -130,7 +130,7 @@ export default function AuthPage() {
                     <Button
                       type="button"
                       variant="outline"
-                      className="w-full h-11 text-base"
+                      className="w-full h-11 text-base text-white border-white/20 bg-white/10 hover:bg-white/20"
                       onClick={() => window.location.href = "/api/auth/microsoft"}
                     >
                       <FiUser className="mr-2 h-5 w-5" />
@@ -224,8 +224,8 @@ export default function AuthPage() {
                           <FormLabel className="text-sm font-medium">Password</FormLabel>
                           <FormControl>
                             <div className="relative">
-                              <FiLock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
-                              <Input type="password" className="h-11 pl-10" {...field} placeholder="Choose a strong password" />
+                              <FiLock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/70" />
+                              <Input type="password" className="h-11 pl-10 bg-white/10 border-white/20 text-white placeholder:text-white/50" {...field} placeholder="Choose a strong password" />
                             </div>
                           </FormControl>
                           <FormMessage />
@@ -234,7 +234,7 @@ export default function AuthPage() {
                     />
                     <Button
                       type="submit"
-                      className="w-full h-11 text-base font-medium"
+                      className="w-full h-11 text-base font-medium bg-primary/80 hover:bg-primary/90"
                       disabled={registerMutation.isPending}
                     >
                       {registerMutation.isPending ? "Creating account..." : "Create Account"}
