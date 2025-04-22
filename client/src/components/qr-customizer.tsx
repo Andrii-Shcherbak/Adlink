@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,26 +20,6 @@ const colorPresets = [
   { name: "Ocean", fg: "#1565C0", bg: "#E3F2FD" },
 ];
 
-const patternStyles = [
-  { name: "Squares", value: "squares" },
-  { name: "Dots", value: "dots" },
-  { name: "Rounded", value: "rounded" },
-  { name: "Classy", value: "classy" },
-  { name: "Elegant", value: "elegant" },
-];
-
-const cornerStyles = [
-  { name: "Square", value: "square" },
-  { name: "Dot", value: "dot" },
-  { name: "Extra Rounded", value: "extra-rounded" },
-];
-
-const frameStyles = [
-  { name: "None", value: "none" },
-  { name: "Simple", value: "simple" },
-  { name: "Dots", value: "dots" },
-];
-
 interface QrCustomizerProps {
   url: string;
   config: QrConfig;
@@ -47,193 +27,59 @@ interface QrCustomizerProps {
 }
 
 export function QrCustomizer({ url, config, onSave }: QrCustomizerProps) {
-  const [localConfig, setLocalConfig] = useState<QrConfig>({
-    ...config,
-    cornerStyle: config.cornerStyle || "square", // Ensure cornerStyle has a default value
-    pattern: config.pattern || "squares",
-    frameStyle: config.frameStyle || "none",
-    cornerDotColor: config.cornerDotColor || config.fgColor,
-    cornerSquareColor: config.cornerSquareColor || config.fgColor,
-    frameColor: config.frameColor || config.fgColor,
-  });
   const [isOpen, setIsOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [localConfig, setLocalConfig] = useState<QrConfig>({
+    ...config,
+    fgColor: config.fgColor || "#000000",
+    bgColor: config.bgColor || "#FFFFFF",
+    includeMargin: config.includeMargin || false,
+    logoUrl: config.logoUrl || ""
+  });
+  
   const qrRef = useRef<HTMLDivElement>(null);
-  
-  // Track original config to detect changes
-  const [hasChanges, setHasChanges] = useState(false);
-  
-  // Effect to compare current config with original
-  useEffect(() => {
-    const configKeys = Object.keys(localConfig) as Array<keyof QrConfig>;
-    const changed = configKeys.some(key => localConfig[key] !== config[key]);
-    setHasChanges(changed);
-  }, [localConfig, config]);
   
   const handleDownload = () => {
     if (qrRef.current) {
       downloadQRCode(qrRef.current, `qr-${url.split('/').pop()}`);
     }
   };
-
-  const StyleButton = ({ style, type }: {
-    style: { name: string; value: string };
-    type: "pattern" | "cornerStyle" | "frame";
-  }) => (
-    <Button
-      variant="outline"
-      className={cn("h-auto p-2 flex flex-col gap-1 relative", {
-        'ring-2 ring-primary':
-          type === "pattern" ? localConfig.pattern === style.value :
-            type === "cornerStyle" ? localConfig.cornerStyle === style.value :
-              localConfig.frameStyle === style.value
-      })}
-      onClick={() => {
-        if (type === "pattern") {
-          setLocalConfig(prev => ({ ...prev, pattern: style.value as QrConfig["pattern"] }));
-        } else if (type === "cornerStyle") {
-          setLocalConfig(prev => ({ ...prev, cornerStyle: style.value as QrConfig["cornerStyle"] }));
-        } else {
-          setLocalConfig(prev => ({ ...prev, frameStyle: style.value as QrConfig["frameStyle"] }));
-        }
-      }}
-    >
-      <div className="w-20 h-20 flex items-center justify-center bg-background rounded-md">
-        <QRCodeSVG
-          value={style.name}
-          size={60}
-          level="Q"
-          fgColor={localConfig.fgColor}
-          bgColor={localConfig.bgColor}
-          {...(type === "pattern" && {
-            style: {
-              // Apply pattern styles through CSS
-              moduleShape: style.value === "dots" ? "circle" : "square",
-              moduleSize: style.value === "rounded" ? 0.5 : 1,
-              borderRadius: style.value === "rounded" ? "50%" : "0",
-            }
-          })}
-          {...(type === "cornerStyle" && {
-            cornerSquareOptions: {
-              type: style.value,
-              color: localConfig.cornerSquareColor,
-            },
-            cornerDotOptions: {
-              type: style.value,
-              color: localConfig.cornerDotColor,
-            },
-          })}
-          {...(type === "frame" && style.value !== "none" && {
-            frameOptions: {
-              style: style.value,
-              width: 5,
-              height: 5,
-              color: localConfig.frameColor,
-            },
-          })}
-        />
-      </div>
-      <span className="text-xs capitalize">{style.name}</span>
-    </Button>
-  );
-
+  
   const updateColors = (color: string) => {
     setLocalConfig(prev => ({
       ...prev,
-      fgColor: color,
-      cornerDotColor: color,
-      cornerSquareColor: color,
-      frameColor: color,
+      fgColor: color
     }));
   };
-
+  
   const handleSave = () => {
-    // Ensure all required properties are set before saving
-    const configToSave: QrConfig = {
-      ...localConfig,
-      cornerStyle: localConfig.cornerStyle || "square",
-      pattern: localConfig.pattern || "squares",
-      frameStyle: localConfig.frameStyle || "none",
-      cornerDotColor: localConfig.cornerDotColor || localConfig.fgColor,
-      cornerSquareColor: localConfig.cornerSquareColor || localConfig.fgColor,
-      frameColor: localConfig.frameColor || localConfig.fgColor,
-    };
-    onSave(configToSave);
-  };
-
-  // Modified function to make QR Code render with correct pattern settings
-  const renderQRCode = (value: string, size: number, options: any = {}) => {
-    const qrProps: any = {
-      value,
-      size,
-      level: "H",
-      fgColor: localConfig.fgColor,
-      bgColor: localConfig.bgColor,
-      includeMargin: localConfig.includeMargin,
-    };
-    
-    // Add logo if provided
-    if (localConfig.logoUrl) {
-      qrProps.imageSettings = {
-        src: localConfig.logoUrl,
-        height: size * 0.2,
-        width: size * 0.2,
-        excavate: true,
-      };
+    setIsSaving(true);
+    try {
+      onSave(localConfig);
+      setIsOpen(false);
+    } finally {
+      setIsSaving(false);
     }
-    
-    // Apply pattern styling
-    if (localConfig.pattern) {
-      if (localConfig.pattern === "dots") {
-        // Handle dots pattern
-        return (
-          <QRCodeSVG
-            {...qrProps}
-            style={{ 
-              borderRadius: "50%",
-            }}
-          />
-        );
-      } else if (localConfig.pattern === "rounded") {
-        // Handle rounded pattern
-        return (
-          <QRCodeSVG
-            {...qrProps}
-            style={{ 
-              borderRadius: "10%",
-            }}
-          />
-        );
-      }
-    }
-    
-    // Default pattern (squares and others)
-    return <QRCodeSVG {...qrProps} />;
   };
 
   return (
     <div className="flex items-center gap-2">
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogTrigger asChild>
-          <Button variant="ghost" size="icon" className="hover:bg-primary/10">
+          <Button variant="ghost" size="icon" className="hover:bg-primary/10 transition-colors">
             <Settings2 className="h-4 w-4" />
           </Button>
         </DialogTrigger>
-        <DialogContent className="sm:max-w-[680px] p-6 rounded-xl border-0 shadow-lg">
+        <DialogContent className="sm:max-w-[650px] p-6 rounded-lg shadow-lg">
           <DialogHeader className="pb-4 border-b">
             <DialogTitle className="text-xl font-semibold">Customize QR Code</DialogTitle>
           </DialogHeader>
+          
           <div className="grid grid-cols-[1fr,auto] gap-6 pt-4">
             <Tabs defaultValue="style">
-              <TabsList className="grid w-full grid-cols-4 mb-4">
+              <TabsList className="grid w-full grid-cols-3 mb-4">
                 <TabsTrigger value="style" className="flex items-center gap-2">
                   <Paintbrush className="h-4 w-4" /> Style
-                </TabsTrigger>
-                <TabsTrigger value="pattern" className="flex items-center gap-2">
-                  <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                    <path d="M4 4h4v4H4zm6 0h4v4h-4zm6 0h4v4h-4zM4 10h4v4H4zm6 0h4v4h-4zm6 0h4v4h-4zM4 16h4v4H4zm6 0h4v4h-4zm6 0h4v4h-4z" />
-                  </svg>
-                  Pattern
                 </TabsTrigger>
                 <TabsTrigger value="frame" className="flex items-center gap-2">
                   <Layout className="h-4 w-4" /> Frame
@@ -255,7 +101,13 @@ export function QrCustomizer({ url, config, onSave }: QrCustomizerProps) {
                           className={cn("h-auto p-2 flex flex-col gap-1", {
                             'ring-2 ring-primary': localConfig.fgColor === preset.fg && localConfig.bgColor === preset.bg
                           })}
-                          onClick={() => updateColors(preset.fg)}
+                          onClick={() => {
+                            setLocalConfig(prev => ({
+                              ...prev, 
+                              fgColor: preset.fg,
+                              bgColor: preset.bg
+                            }));
+                          }}
                         >
                           <div className="w-full aspect-square rounded-md" style={{ background: preset.bg }}>
                             <div className="w-1/2 h-1/2 m-auto" style={{ background: preset.fg }} />
@@ -311,51 +163,8 @@ export function QrCustomizer({ url, config, onSave }: QrCustomizerProps) {
                 </div>
               </TabsContent>
 
-              <TabsContent value="pattern" className="space-y-4">
-                <div className="space-y-4">
-                  <div>
-                    <Label>Pattern Style</Label>
-                    <div className="grid grid-cols-3 gap-2 mt-2">
-                      {patternStyles.map((style) => (
-                        <StyleButton
-                          key={style.value}
-                          style={style}
-                          type="pattern"
-                        />
-                      ))}
-                    </div>
-                  </div>
-
-                  <div>
-                    <Label>Corner Style</Label>
-                    <div className="grid grid-cols-3 gap-2 mt-2">
-                      {cornerStyles.map((style) => (
-                        <StyleButton
-                          key={style.value}
-                          style={style}
-                          type="cornerStyle"
-                        />
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </TabsContent>
-
               <TabsContent value="frame" className="space-y-4">
                 <div className="space-y-4">
-                  <div>
-                    <Label>Frame Style</Label>
-                    <div className="grid grid-cols-3 gap-2 mt-2">
-                      {frameStyles.map((style) => (
-                        <StyleButton
-                          key={style.value}
-                          style={style}
-                          type="frame"
-                        />
-                      ))}
-                    </div>
-                  </div>
-
                   <div className="flex items-center justify-between">
                     <Label htmlFor="margin">Include Margin</Label>
                     <Switch
@@ -387,49 +196,25 @@ export function QrCustomizer({ url, config, onSave }: QrCustomizerProps) {
               </TabsContent>
             </Tabs>
 
-            <Card className="w-[200px] p-4 bg-muted">
+            <Card className="w-[220px] p-5 bg-muted/50 border rounded-lg">
               <div className="space-y-4">
-                <div className="flex justify-center p-4 bg-background rounded-lg" ref={qrRef}>
+                <div 
+                  className="flex justify-center p-4 bg-background rounded-lg shadow-sm" 
+                  ref={qrRef}
+                >
                   <QRCodeSVG
                     value={url}
-                    size={150}
+                    size={170}
                     level="H"
                     fgColor={localConfig.fgColor}
                     bgColor={localConfig.bgColor}
                     includeMargin={localConfig.includeMargin}
-                    style={{
-                      width: "100%",
-                      height: "100%",
-                      ...(localConfig.pattern === "dots" && {
-                        moduleShape: "circle"
-                      }),
-                      ...(localConfig.pattern === "rounded" && {
-                        moduleSize: 0.5,
-                        borderRadius: "50%"
-                      })
-                    }}
-                    cornerSquareOptions={{
-                      type: localConfig.cornerStyle,
-                      color: localConfig.cornerSquareColor,
-                    }}
-                    cornerDotOptions={{
-                      type: localConfig.cornerStyle,
-                      color: localConfig.cornerDotColor,
-                    }}
-                    {...(localConfig.frameStyle !== "none" && {
-                      frameOptions: {
-                        style: localConfig.frameStyle,
-                        width: 5,
-                        height: 5,
-                        color: localConfig.frameColor,
-                      }
-                    })}
                     imageSettings={
                       localConfig.logoUrl
                         ? {
                           src: localConfig.logoUrl,
-                          height: 24,
-                          width: 24,
+                          height: 30,
+                          width: 30,
                           excavate: true,
                         }
                         : undefined
@@ -437,8 +222,28 @@ export function QrCustomizer({ url, config, onSave }: QrCustomizerProps) {
                   />
                 </div>
                 <div className="flex flex-col gap-2">
-                  <Button onClick={handleSave}>Save Changes</Button>
-                  <Button onClick={handleDownload} variant="outline">
+                  <Button 
+                    onClick={handleSave} 
+                    className="w-full"
+                    disabled={isSaving}
+                  >
+                    {isSaving ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Saving...
+                      </>
+                    ) : (
+                      <>
+                        <Check className="h-4 w-4 mr-2" />
+                        Save Changes
+                      </>
+                    )}
+                  </Button>
+                  <Button 
+                    onClick={handleDownload} 
+                    variant="outline" 
+                    className="w-full"
+                  >
                     <Download className="h-4 w-4 mr-2" />
                     Download
                   </Button>
@@ -446,10 +251,27 @@ export function QrCustomizer({ url, config, onSave }: QrCustomizerProps) {
               </div>
             </Card>
           </div>
+          
+          <DialogFooter className="pt-4 border-t mt-6">
+            <Button variant="outline" onClick={() => setIsOpen(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleSave}
+              disabled={isSaving}
+            >
+              {isSaving ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              ) : (
+                <Check className="h-4 w-4 mr-2" />
+              )}
+              Save Changes
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      <Button variant="ghost" size="icon" onClick={handleDownload}>
+      <Button variant="ghost" size="icon" onClick={handleDownload} className="hover:bg-primary/10 transition-colors">
         <Download className="h-4 w-4" />
       </Button>
     </div>
