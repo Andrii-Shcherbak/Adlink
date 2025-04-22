@@ -1,5 +1,5 @@
-import { useState, useRef } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { useState, useRef, useEffect } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
 import { QRCodeSVG } from "qrcode.react";
 import type { QrConfig } from "@shared/schema";
-import { Settings2, Download, Paintbrush, Layout, Image } from "lucide-react";
+import { Settings2, Download, Paintbrush, Layout, Image, Check, Loader2 } from "lucide-react";
 import { downloadQRCode } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 
@@ -56,8 +56,20 @@ export function QrCustomizer({ url, config, onSave }: QrCustomizerProps) {
     cornerSquareColor: config.cornerSquareColor || config.fgColor,
     frameColor: config.frameColor || config.fgColor,
   });
+  const [isOpen, setIsOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const qrRef = useRef<HTMLDivElement>(null);
-
+  
+  // Track original config to detect changes
+  const [hasChanges, setHasChanges] = useState(false);
+  
+  // Effect to compare current config with original
+  useEffect(() => {
+    const configKeys = Object.keys(localConfig) as Array<keyof QrConfig>;
+    const changed = configKeys.some(key => localConfig[key] !== config[key]);
+    setHasChanges(changed);
+  }, [localConfig, config]);
+  
   const handleDownload = () => {
     if (qrRef.current) {
       downloadQRCode(qrRef.current, `qr-${url.split('/').pop()}`);
@@ -149,19 +161,69 @@ export function QrCustomizer({ url, config, onSave }: QrCustomizerProps) {
     onSave(configToSave);
   };
 
+  // Modified function to make QR Code render with correct pattern settings
+  const renderQRCode = (value: string, size: number, options: any = {}) => {
+    const qrProps: any = {
+      value,
+      size,
+      level: "H",
+      fgColor: localConfig.fgColor,
+      bgColor: localConfig.bgColor,
+      includeMargin: localConfig.includeMargin,
+    };
+    
+    // Add logo if provided
+    if (localConfig.logoUrl) {
+      qrProps.imageSettings = {
+        src: localConfig.logoUrl,
+        height: size * 0.2,
+        width: size * 0.2,
+        excavate: true,
+      };
+    }
+    
+    // Apply pattern styling
+    if (localConfig.pattern) {
+      if (localConfig.pattern === "dots") {
+        // Handle dots pattern
+        return (
+          <QRCodeSVG
+            {...qrProps}
+            style={{ 
+              borderRadius: "50%",
+            }}
+          />
+        );
+      } else if (localConfig.pattern === "rounded") {
+        // Handle rounded pattern
+        return (
+          <QRCodeSVG
+            {...qrProps}
+            style={{ 
+              borderRadius: "10%",
+            }}
+          />
+        );
+      }
+    }
+    
+    // Default pattern (squares and others)
+    return <QRCodeSVG {...qrProps} />;
+  };
+
   return (
     <div className="flex items-center gap-2">
-      <Dialog>
+      <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogTrigger asChild>
-          <Button variant="ghost" size="icon">
+          <Button variant="ghost" size="icon" className="hover:bg-primary/10">
             <Settings2 className="h-4 w-4" />
           </Button>
         </DialogTrigger>
-        <DialogContent className="sm:max-w-[680px]">
-          <DialogHeader>
-            <DialogTitle>Customize QR Code</DialogTitle>
+        <DialogContent className="sm:max-w-[680px] p-6 rounded-xl border-0 shadow-lg">
+          <DialogHeader className="pb-4 border-b">
+            <DialogTitle className="text-xl font-semibold">Customize QR Code</DialogTitle>
           </DialogHeader>
-          <div className="grid grid-cols-[1fr,auto] gap-6">
+          <div className="grid grid-cols-[1fr,auto] gap-6 pt-4">
             <Tabs defaultValue="style">
               <TabsList className="grid w-full grid-cols-4 mb-4">
                 <TabsTrigger value="style" className="flex items-center gap-2">
