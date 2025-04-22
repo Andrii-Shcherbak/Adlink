@@ -68,8 +68,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       // First get the URL details to verify ownership and for logging
       const urlId = parseInt(req.params.id);
-      const urls = await storage.getUserUrls(req.user!.id, 1, 0, urlId);
-      const url = urls[0];
+      const urls = await storage.getUserUrls(req.user!.id, 1, 0);
+      const url = urls.find(u => u.id === urlId);
 
       if (!url || url.userId !== req.user!.id) {
         return res.status(404).send("URL not found");
@@ -255,8 +255,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       // Verify the URL belongs to the current user
       const urlId = parseInt(req.params.id);
-      const urls = await storage.getUserUrls(req.user!.id, 1, 0, urlId);
-      const url = urls[0];
+      const urls = await storage.getUserUrls(req.user!.id, 1, 0);
+      const url = urls.find(u => u.id === urlId);
       if (!url) {
         return res.status(404).send("URL not found");
       }
