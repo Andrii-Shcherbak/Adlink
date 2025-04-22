@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Redirect } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { FiLink, FiBarChart2, FiGlobe, FiCode, FiUser } from "react-icons/fi";
+import { FiLink, FiBarChart2, FiGlobe, FiCode, FiUser, FiLock } from "react-icons/fi";
 
 export default function AuthPage() {
   const { user, loginMutation, registerMutation } = useAuth();
@@ -35,25 +35,44 @@ export default function AuthPage() {
   }
 
   return (
-    <div className="min-h-screen grid grid-cols-1 md:grid-cols-2">
-      <div className="flex items-center justify-center p-8 bg-background">
-        <Card className="w-full max-w-md border-none shadow-none">
+    <div className="min-h-screen flex flex-col md:flex-row">
+      {/* Background Image - Full screen on mobile, half screen on desktop */}
+      <div 
+        className="absolute inset-0 z-0 bg-cover bg-center md:w-1/2 md:right-0 md:left-auto"
+        style={{ 
+          backgroundImage: "url('/images/aerial-background.png')",
+          backgroundPosition: "center",
+          backgroundSize: "cover",
+          backgroundRepeat: "no-repeat"
+        }}
+      >
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/80 to-primary/60 md:bg-primary/60 backdrop-blur-sm"></div>
+      </div>
+      
+      {/* Mobile background overlay */}
+      <div className="absolute inset-0 z-0 md:hidden bg-gradient-to-b from-background/95 to-background/80 backdrop-blur-sm"></div>
+      
+      {/* Login Panel */}
+      <div className="relative z-10 flex items-center justify-center p-8 w-full md:w-1/2">
+        <Card className="w-full max-w-md border-none shadow-xl bg-white/95 backdrop-blur-md">
           <CardHeader className="space-y-4">
             <div className="flex items-center gap-2">
-              <FiLink className="w-10 h-10 text-primary" />
+              <div className="flex items-center justify-center w-12 h-12 rounded-full bg-primary text-primary-foreground">
+                <FiLink className="w-6 h-6" />
+              </div>
               <CardTitle className="text-3xl">
-                <span className="bg-gradient-to-r from-primary to-indigo-500 text-transparent bg-clip-text">ADLink</span>
+                <span className="bg-gradient-to-r from-primary to-indigo-500 text-transparent bg-clip-text font-bold">ADLink</span>
               </CardTitle>
             </div>
             <CardDescription className="text-base">
-              Welcome back! Please enter your details to access your account.
+              Welcome to ADLink! Please enter your details to access your account.
             </CardDescription>
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="login" className="w-full">
               <TabsList className="grid w-full grid-cols-2 mb-8">
-                <TabsTrigger value="login">Sign In</TabsTrigger>
-                <TabsTrigger value="register">Create Account</TabsTrigger>
+                <TabsTrigger value="login" className="text-sm font-medium">Sign In</TabsTrigger>
+                <TabsTrigger value="register" className="text-sm font-medium">Create Account</TabsTrigger>
               </TabsList>
 
               <TabsContent value="login">
@@ -64,9 +83,12 @@ export default function AuthPage() {
                       name="username"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Username</FormLabel>
+                          <FormLabel className="text-sm font-medium">Username</FormLabel>
                           <FormControl>
-                            <Input className="h-11" {...field} />
+                            <div className="relative">
+                              <FiUser className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
+                              <Input className="h-11 pl-10" {...field} placeholder="Enter your username" />
+                            </div>
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -77,9 +99,12 @@ export default function AuthPage() {
                       name="password"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Password</FormLabel>
+                          <FormLabel className="text-sm font-medium">Password</FormLabel>
                           <FormControl>
-                            <Input type="password" className="h-11" {...field} />
+                            <div className="relative">
+                              <FiLock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
+                              <Input type="password" className="h-11 pl-10" {...field} placeholder="Enter your password" />
+                            </div>
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -87,17 +112,17 @@ export default function AuthPage() {
                     />
                     <Button
                       type="submit"
-                      className="w-full h-11 text-base"
+                      className="w-full h-11 text-base font-medium"
                       disabled={loginMutation.isPending}
                     >
-                      Sign In
+                      {loginMutation.isPending ? "Signing in..." : "Sign In"}
                     </Button>
                     <div className="relative my-6">
                       <div className="absolute inset-0 flex items-center">
                         <span className="w-full border-t" />
                       </div>
                       <div className="relative flex justify-center text-xs uppercase">
-                        <span className="bg-background px-2 text-muted-foreground">
+                        <span className="bg-white px-2 text-muted-foreground">
                           Or continue with
                         </span>
                       </div>
@@ -124,9 +149,9 @@ export default function AuthPage() {
                         name="firstName"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>First Name</FormLabel>
+                            <FormLabel className="text-sm font-medium">First Name</FormLabel>
                             <FormControl>
-                              <Input className="h-11" {...field} />
+                              <Input className="h-11" {...field} placeholder="John" />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -137,9 +162,9 @@ export default function AuthPage() {
                         name="lastName"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Last Name</FormLabel>
+                            <FormLabel className="text-sm font-medium">Last Name</FormLabel>
                             <FormControl>
-                              <Input className="h-11" {...field} />
+                              <Input className="h-11" {...field} placeholder="Doe" />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -151,9 +176,11 @@ export default function AuthPage() {
                       name="email"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Email</FormLabel>
+                          <FormLabel className="text-sm font-medium">Email</FormLabel>
                           <FormControl>
-                            <Input type="email" className="h-11" {...field} />
+                            <div className="relative">
+                              <Input type="email" className="h-11" {...field} placeholder="you@example.com" />
+                            </div>
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -164,9 +191,9 @@ export default function AuthPage() {
                       name="company"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Company (Optional)</FormLabel>
+                          <FormLabel className="text-sm font-medium">Company (Optional)</FormLabel>
                           <FormControl>
-                            <Input className="h-11" {...field} />
+                            <Input className="h-11" {...field} placeholder="Your company" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -177,9 +204,12 @@ export default function AuthPage() {
                       name="username"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Username</FormLabel>
+                          <FormLabel className="text-sm font-medium">Username</FormLabel>
                           <FormControl>
-                            <Input className="h-11" {...field} />
+                            <div className="relative">
+                              <FiUser className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
+                              <Input className="h-11 pl-10" {...field} placeholder="Choose a username" />
+                            </div>
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -190,9 +220,12 @@ export default function AuthPage() {
                       name="password"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Password</FormLabel>
+                          <FormLabel className="text-sm font-medium">Password</FormLabel>
                           <FormControl>
-                            <Input type="password" className="h-11" {...field} />
+                            <div className="relative">
+                              <FiLock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
+                              <Input type="password" className="h-11 pl-10" {...field} placeholder="Choose a strong password" />
+                            </div>
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -200,10 +233,10 @@ export default function AuthPage() {
                     />
                     <Button
                       type="submit"
-                      className="w-full h-11 text-base"
+                      className="w-full h-11 text-base font-medium"
                       disabled={registerMutation.isPending}
                     >
-                      Create Account
+                      {registerMutation.isPending ? "Creating account..." : "Create Account"}
                     </Button>
                   </form>
                 </Form>
@@ -213,51 +246,52 @@ export default function AuthPage() {
         </Card>
       </div>
 
-      <div className="hidden md:flex flex-col justify-center p-12 bg-primary text-primary-foreground">
-        <div className="max-w-md mx-auto space-y-8">
+      {/* Feature Highlights - Visible on desktop only */}
+      <div className="hidden md:flex md:w-1/2 relative z-10 flex-col justify-center px-12 py-16 text-white">
+        <div className="max-w-md mx-auto space-y-8 backdrop-blur-sm bg-primary/20 p-8 rounded-2xl border border-white/10 shadow-xl">
           <div className="space-y-4">
             <h1 className="text-4xl font-bold tracking-tight">
               Professional URL Management Made Simple
             </h1>
-            <p className="text-lg text-primary-foreground/80">
+            <p className="text-lg text-white/90">
               Streamline your link sharing with our powerful URL shortening service. Generate QR codes, track analytics, and manage all your links in one place.
             </p>
           </div>
 
           <div className="grid grid-cols-2 gap-6">
             <div className="space-y-3">
-              <div className="w-12 h-12 rounded-lg bg-primary-foreground/10 flex items-center justify-center">
+              <div className="w-12 h-12 rounded-lg bg-white/10 flex items-center justify-center">
                 <FiLink className="w-6 h-6" />
               </div>
               <h3 className="font-medium">URL Shortening</h3>
-              <p className="text-sm text-primary-foreground/70">
+              <p className="text-sm text-white/80">
                 Create concise, memorable links that are perfect for sharing
               </p>
             </div>
             <div className="space-y-3">
-              <div className="w-12 h-12 rounded-lg bg-primary-foreground/10 flex items-center justify-center">
+              <div className="w-12 h-12 rounded-lg bg-white/10 flex items-center justify-center">
                 <FiCode className="w-6 h-6" />
               </div>
               <h3 className="font-medium">QR Codes</h3>
-              <p className="text-sm text-primary-foreground/70">
+              <p className="text-sm text-white/80">
                 Generate customizable QR codes for easy mobile access
               </p>
             </div>
             <div className="space-y-3">
-              <div className="w-12 h-12 rounded-lg bg-primary-foreground/10 flex items-center justify-center">
+              <div className="w-12 h-12 rounded-lg bg-white/10 flex items-center justify-center">
                 <FiBarChart2 className="w-6 h-6" />
               </div>
               <h3 className="font-medium">Analytics</h3>
-              <p className="text-sm text-primary-foreground/70">
+              <p className="text-sm text-white/80">
                 Track link performance with detailed click analytics
               </p>
             </div>
             <div className="space-y-3">
-              <div className="w-12 h-12 rounded-lg bg-primary-foreground/10 flex items-center justify-center">
+              <div className="w-12 h-12 rounded-lg bg-white/10 flex items-center justify-center">
                 <FiGlobe className="w-6 h-6" />
               </div>
               <h3 className="font-medium">Global Access</h3>
-              <p className="text-sm text-primary-foreground/70">
+              <p className="text-sm text-white/80">
                 Share your links worldwide with reliable redirection
               </p>
             </div>
