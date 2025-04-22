@@ -1,4 +1,5 @@
 import type { Express } from "express";
+import express from "express";
 import { createServer, type Server } from "http";
 import { setupAuth } from "./auth";
 import { storage } from "./storage";
@@ -8,6 +9,9 @@ import { UAParser } from "ua-parser-js";
 import { scrypt, timingSafeEqual, randomBytes } from "crypto";
 import { promisify } from "util";
 import { openAiService } from "./services/openai-service";
+import multer from "multer";
+import path from "path";
+import fs from "fs";
 
 const scryptAsync = promisify(scrypt);
 
