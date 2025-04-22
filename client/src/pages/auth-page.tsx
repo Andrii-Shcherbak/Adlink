@@ -54,7 +54,7 @@ export default function AuthPage() {
       
       {/* Login Panel */}
       <div className="relative z-10 flex items-center justify-center p-8 w-full md:w-1/2">
-        <Card className="w-full max-w-md border-none shadow-xl bg-white/95 backdrop-blur-md">
+        <Card className="w-full max-w-md border-none shadow-xl bg-black/20 text-white backdrop-blur-md rounded-xl border border-white/10">
           <CardHeader className="space-y-4">
             <div className="flex items-center gap-2">
               <div className="flex items-center justify-center w-12 h-12 rounded-full bg-primary text-primary-foreground">
@@ -64,15 +64,15 @@ export default function AuthPage() {
                 <span className="bg-gradient-to-r from-primary to-indigo-500 text-transparent bg-clip-text font-bold">ADLink</span>
               </CardTitle>
             </div>
-            <CardDescription className="text-base">
+            <CardDescription className="text-base text-white/90">
               Welcome to ADLink! Please enter your details to access your account.
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Tabs defaultValue="login" className="w-full">
+            <Tabs defaultValue="login" className="w-full text-white">
               <TabsList className="grid w-full grid-cols-2 mb-8">
-                <TabsTrigger value="login" className="text-sm font-medium">Sign In</TabsTrigger>
-                <TabsTrigger value="register" className="text-sm font-medium">Create Account</TabsTrigger>
+                <TabsTrigger value="login" className="text-sm font-medium data-[state=active]:bg-primary/30">Sign In</TabsTrigger>
+                <TabsTrigger value="register" className="text-sm font-medium data-[state=active]:bg-primary/30">Create Account</TabsTrigger>
               </TabsList>
 
               <TabsContent value="login">
@@ -86,8 +86,8 @@ export default function AuthPage() {
                           <FormLabel className="text-sm font-medium">Username</FormLabel>
                           <FormControl>
                             <div className="relative">
-                              <FiUser className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
-                              <Input className="h-11 pl-10" {...field} placeholder="Enter your username" />
+                              <FiUser className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/70" />
+                              <Input className="h-11 pl-10 bg-white/10 border-white/20 text-white placeholder:text-white/50" {...field} placeholder="Enter your username" />
                             </div>
                           </FormControl>
                           <FormMessage />
@@ -103,7 +103,7 @@ export default function AuthPage() {
                           <FormControl>
                             <div className="relative">
                               <FiLock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
-                              <Input type="password" className="h-11 pl-10" {...field} placeholder="Enter your password" />
+                              <Input type="password" className="h-11 pl-10 bg-white/10 border-white/20 text-white placeholder:text-white/50" {...field} placeholder="Enter your password" />
                             </div>
                           </FormControl>
                           <FormMessage />
@@ -122,7 +122,7 @@ export default function AuthPage() {
                         <span className="w-full border-t" />
                       </div>
                       <div className="relative flex justify-center text-xs uppercase">
-                        <span className="bg-white px-2 text-muted-foreground">
+                        <span className="bg-transparent px-2 text-white">
                           Or continue with
                         </span>
                       </div>
@@ -143,6 +143,16 @@ export default function AuthPage() {
               <TabsContent value="register">
                 <Form {...registerForm}>
                   <form onSubmit={registerForm.handleSubmit((data) => registerMutation.mutate(data))} className="space-y-6">
+                    <style jsx>{`
+                      input {
+                        background-color: rgba(255, 255, 255, 0.1);
+                        border-color: rgba(255, 255, 255, 0.2);
+                        color: white;
+                      }
+                      input::placeholder {
+                        color: rgba(255, 255, 255, 0.5);
+                      }
+                    `}</style>
                     <div className="grid grid-cols-2 gap-4">
                       <FormField
                         control={registerForm.control}
