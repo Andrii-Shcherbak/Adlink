@@ -82,12 +82,12 @@ export function QrCustomizer({ url, config, onSave }: QrCustomizerProps) {
             <Settings2 className="h-4 w-4" />
           </Button>
         </DialogTrigger>
-        <DialogContent className="sm:max-w-[650px] p-6 rounded-lg shadow-lg">
+        <DialogContent className="sm:max-w-[850px] p-6 rounded-lg shadow-lg">
           <DialogHeader className="pb-4 border-b">
             <DialogTitle className="text-xl font-semibold">Customize QR Code</DialogTitle>
           </DialogHeader>
           
-          <div className="grid grid-cols-[1fr,auto] gap-6 pt-4">
+          <div className="grid grid-cols-[1fr,320px] gap-6 pt-4">
             <Tabs defaultValue="style">
               <TabsList className="grid w-full grid-cols-3 mb-4">
                 <TabsTrigger value="style" className="flex items-center gap-2">
@@ -387,11 +387,12 @@ export function QrCustomizer({ url, config, onSave }: QrCustomizerProps) {
               </TabsContent>
             </Tabs>
 
-            <Card className="w-[220px] p-5 bg-muted/50 border rounded-lg">
-              <div className="space-y-4">
+            <Card className="w-full h-full bg-muted/30 border rounded-lg flex flex-col">
+              <div className="flex-1 flex flex-col p-4">
+                <h3 className="font-medium text-sm mb-3 text-center">Preview</h3>
                 <div 
                   className={cn(
-                    "flex justify-center p-4 bg-background rounded-lg shadow-sm overflow-hidden",
+                    "flex-1 flex justify-center items-center p-4 bg-background rounded-lg shadow-sm overflow-hidden",
                     `qr-pattern-${localConfig.pattern}`,
                     `qr-corner-${localConfig.cornerStyle}`,
                     `qr-frame-${localConfig.frameStyle}`,
@@ -406,7 +407,7 @@ export function QrCustomizer({ url, config, onSave }: QrCustomizerProps) {
                   <div className="qr-code-wrapper">
                     <QRCodeSVG
                       value={url}
-                      size={170}
+                      size={250}
                       level="H"
                       fgColor={localConfig.fgColor}
                       bgColor={localConfig.bgColor}
@@ -415,8 +416,8 @@ export function QrCustomizer({ url, config, onSave }: QrCustomizerProps) {
                         localConfig.logoUrl
                           ? {
                             src: localConfig.logoUrl,
-                            height: 40,
-                            width: 40,
+                            height: 60,
+                            width: 60,
                             excavate: true,
                           }
                           : undefined
@@ -424,33 +425,42 @@ export function QrCustomizer({ url, config, onSave }: QrCustomizerProps) {
                     />
                   </div>
                 </div>
-                <div className="flex flex-col gap-2">
+                <div className="mt-4 flex justify-center">
                   <Button 
-                    onClick={handleSave} 
-                    className="w-full"
-                    disabled={isSaving}
-                  >
-                    {isSaving ? (
-                      <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Saving...
-                      </>
-                    ) : (
-                      <>
-                        <Check className="h-4 w-4 mr-2" />
-                        Save Changes
-                      </>
-                    )}
-                  </Button>
-                  <Button 
-                    onClick={handleDownload} 
                     variant="outline" 
-                    className="w-full"
+                    size="sm"
+                    onClick={() => setLocalConfig(defaultConfig)}
+                    className="text-xs"
                   >
-                    <Download className="h-4 w-4 mr-2" />
-                    Download
+                    <RotateCcw className="h-3 w-3 mr-1" />
+                    Reset to default
                   </Button>
                 </div>
+              </div>
+              <div className="p-4 border-t flex gap-2">
+                <Button 
+                  onClick={handleSave} 
+                  className="flex-1"
+                  disabled={isSaving}
+                >
+                  {isSaving ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <Check className="h-4 w-4 mr-2" />
+                      Save Changes
+                    </>
+                  )}
+                </Button>
+                <Button 
+                  onClick={handleDownload} 
+                  variant="outline" 
+                >
+                  <Download className="h-4 w-4" />
+                </Button>
               </div>
             </Card>
           </div>
