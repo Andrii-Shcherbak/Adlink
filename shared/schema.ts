@@ -21,6 +21,7 @@ export const urls = pgTable("urls", {
   userId: integer("user_id").notNull(),
   originalUrl: text("original_url").notNull(),
   shortCode: text("short_code").notNull().unique(),
+  title: text("title"),
   clicks: integer("clicks").notNull().default(0),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   analytics: jsonb("analytics").notNull().default({

@@ -15,13 +15,266 @@ import { useState } from "react";
 import { format } from "date-fns";
 import { AlertDialog, AlertDialogTrigger, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from "@/components/ui/alert-dialog";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
-import { FiLock, FiUnlock, FiBarChart2 } from "react-icons/fi";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { FiLock, FiUnlock, FiBarChart2, FiEdit2, FiEdit3, FiRefreshCw, FiArrowRight, FiCheck } from "react-icons/fi";
 import { SecurityBadge } from "@/components/security-badge";
 import { getUrlSecurityLevel, getSecurityColorClasses, cn } from "@/lib/utils";
+import { Label } from "@/components/ui/label";
 
 function truncateUrl(url: string, maxLength: number = 50): string {
   if (url.length <= maxLength) return url;
   return url.substring(0, maxLength - 3) + "...";
+}
+
+// Title Edit Dialog Component
+function TitleEditDialog({ url }: { url: Url }) {
+  const { toast } = useToast();
+  const [isOpen, setIsOpen] = useState(false);
+  const [title, setTitle] = useState(url.title || "");
+  const [isGenerating, setIsGenerating] = useState(false);
+  
+  const updateTitleMutation = useMutation({
+    mutationFn: async ({ id, title }: { id: number; title: string }) => {
+      const res = await apiRequest("PATCH", `/api/urls/${id}/title`, { title });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/urls"] });
+      setIsOpen(false);
+      toast({
+        title: "Title updated",
+        description: "The URL title has been updated successfully"
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Failed to update title",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  });
+  
+  const generateTitle = async () => {
+    try {
+      setIsGenerating(true);
+      const res = await apiRequest("POST", "/api/ai/generate-title", { 
+        url: url.originalUrl 
+      });
+      const data = await res.json();
+      setTitle(data.title);
+    } catch (error) {
+      toast({
+        title: "Failed to generate title",
+        description: error instanceof Error ? error.message : "An error occurred",
+        variant: "destructive"
+      });
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+  
+  return (
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger asChild>
+        <Button variant="ghost" size="sm">
+          <FiEdit2 className="h-4 w-4" />
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>Edit Title</DialogTitle>
+          <DialogDescription>
+            Update the title for your shortened URL or generate one using AI.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="grid gap-4 py-4">
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="title" className="col-span-4">
+              Title
+            </Label>
+            <div className="col-span-4 flex gap-2">
+              <Input
+                id="title"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                className="flex-1"
+                placeholder="Enter a descriptive title"
+              />
+              <Button 
+                variant="outline" 
+                size="icon" 
+                onClick={generateTitle}
+                disabled={isGenerating}
+              >
+                {isGenerating ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <FiRefreshCw className="h-4 w-4" />
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button 
+            variant="outline" 
+            onClick={() => setIsOpen(false)}
+          >
+            Cancel
+          </Button>
+          <Button 
+            onClick={() => updateTitleMutation.mutate({ id: url.id, title })}
+            disabled={updateTitleMutation.isPending}
+          >
+            {updateTitleMutation.isPending ? (
+              <Loader2 className="h-4 w-4 animate-spin mr-2" />
+            ) : (
+              <FiCheck className="h-4 w-4 mr-2" />
+            )}
+            Save
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// Shortcode Edit Dialog Component
+function ShortcodeEditDialog({ url }: { url: Url }) {
+  const { toast } = useToast();
+  const [isOpen, setIsOpen] = useState(false);
+  const [shortCode, setShortCode] = useState(url.shortCode);
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [isGenerating, setIsGenerating] = useState(false);
+  
+  const updateShortcodeMutation = useMutation({
+    mutationFn: async ({ id, shortCode }: { id: number; shortCode: string }) => {
+      const res = await apiRequest("PATCH", `/api/urls/${id}/shortcode`, { shortCode });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/urls"] });
+      setIsOpen(false);
+      toast({
+        title: "Shortcode updated",
+        description: "The URL shortcode has been updated successfully"
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Failed to update shortcode",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  });
+  
+  const generateShortcodes = async () => {
+    try {
+      setIsGenerating(true);
+      const res = await apiRequest("POST", "/api/ai/generate-shortcodes", { 
+        url: url.originalUrl,
+        title: url.title || undefined,
+        count: 5
+      });
+      const data = await res.json();
+      setSuggestions(data.shortcodes || []);
+    } catch (error) {
+      toast({
+        title: "Failed to generate shortcodes",
+        description: error instanceof Error ? error.message : "An error occurred",
+        variant: "destructive"
+      });
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+  
+  return (
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger asChild>
+        <Button variant="ghost" size="sm">
+          <FiEdit3 className="h-4 w-4" />
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>Customize Shortcode</DialogTitle>
+          <DialogDescription>
+            Update the shortcode for your URL or get AI-generated suggestions.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="grid gap-4 py-4">
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="shortcode" className="col-span-4">
+              Custom Shortcode
+            </Label>
+            <div className="col-span-4 flex gap-2">
+              <Input
+                id="shortcode"
+                value={shortCode}
+                onChange={(e) => setShortCode(e.target.value)}
+                className="flex-1"
+                placeholder="Enter a custom shortcode"
+              />
+              <Button 
+                variant="outline" 
+                size="icon" 
+                onClick={generateShortcodes}
+                disabled={isGenerating}
+              >
+                {isGenerating ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <FiRefreshCw className="h-4 w-4" />
+                )}
+              </Button>
+            </div>
+          </div>
+          
+          {suggestions.length > 0 && (
+            <div className="space-y-2">
+              <Label>AI Suggestions</Label>
+              <div className="flex flex-wrap gap-2">
+                {suggestions.map((suggestion, index) => (
+                  <Button
+                    key={index}
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShortCode(suggestion)}
+                    className="flex gap-1 items-center"
+                  >
+                    {suggestion}
+                    <FiArrowRight className="h-3 w-3" />
+                  </Button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+        <DialogFooter>
+          <Button 
+            variant="outline" 
+            onClick={() => setIsOpen(false)}
+          >
+            Cancel
+          </Button>
+          <Button 
+            onClick={() => updateShortcodeMutation.mutate({ id: url.id, shortCode })}
+            disabled={updateShortcodeMutation.isPending}
+          >
+            {updateShortcodeMutation.isPending ? (
+              <Loader2 className="h-4 w-4 animate-spin mr-2" />
+            ) : (
+              <FiCheck className="h-4 w-4 mr-2" />
+            )}
+            Save
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
 }
 
 export default function HomePage() {
@@ -327,9 +580,30 @@ export default function HomePage() {
                             <span className="hidden sm:inline">•</span>
                             <span>Clicks: {url.clicks}</span>
                           </div>
+                          
+                          {/* Title display with edit option */}
+                          <div className="flex items-center justify-between">
+                            <p className="text-sm font-medium">
+                              {url.title ? (
+                                <span>{url.title}</span>
+                              ) : (
+                                <span className="text-muted-foreground italic">No title</span>
+                              )}
+                            </p>
+                            <TitleEditDialog url={url} />
+                          </div>
+                          
                           <p className="text-sm text-muted-foreground break-all">
                             Original: {url.originalUrl}
                           </p>
+                          
+                          {/* Custom Shortcode Edit */}
+                          <div className="flex items-center justify-between">
+                            <p className="text-sm text-muted-foreground">
+                              <span className="font-medium">Short Code:</span> {url.shortCode}
+                            </p>
+                            <ShortcodeEditDialog url={url} />
+                          </div>
                         </div>
                         <div className="flex items-center gap-2 justify-end">
                           <div className="flex items-center gap-2">

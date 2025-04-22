@@ -7,6 +7,7 @@ import { qrConfigSchema } from "@shared/schema";
 import { UAParser } from "ua-parser-js";
 import { scrypt, timingSafeEqual, randomBytes } from "crypto";
 import { promisify } from "util";
+import { openAiService } from "./services/openai-service";
 
 const scryptAsync = promisify(scrypt);
 
@@ -47,8 +48,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         : undefined
     };
 
+    // Create the URL
     const url = await storage.createUrl(req.user!.id, urlData);
 
+    // Log activity 
     await storage.logActivity({
       userId: req.user!.id,
       type: "url_created",
@@ -58,6 +61,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         shortCode: url.shortCode
       }
     });
+
+    // Generate a title asynchronously - don't block the response
+    try {
+      const title = await openAiService.generateTitle({ url: url.originalUrl });
+      if (title) {
+        await storage.updateUrl(url.id, req.user!.id, { title });
+      }
+    } catch (error) {
+      console.error("Error generating title for new URL:", error);
+      // Don't block the response or fail if title generation fails
+    }
 
     res.status(201).json(url);
   });
@@ -310,6 +324,126 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch activities" });
+    }
+  });
+  
+  // AI endpoints for title and shortcode generation
+  
+  app.post("/api/ai/generate-title", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    const { url } = req.body;
+    if (!url) {
+      return res.status(400).json({ error: "URL is required" });
+    }
+    
+    try {
+      const title = await openAiService.generateTitle({ url });
+      res.json({ title });
+    } catch (error) {
+      console.error("Error generating title:", error);
+      res.status(500).json({ error: "Failed to generate title" });
+    }
+  });
+  
+  app.post("/api/ai/generate-shortcodes", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    const { url, title, count = 3 } = req.body;
+    if (!url) {
+      return res.status(400).json({ error: "URL is required" });
+    }
+    
+    try {
+      const shortcodes = await openAiService.generateShortcodeSuggestions({ 
+        url, 
+        title, 
+        count: Math.min(5, Math.max(1, count)) // Limit between 1-5
+      });
+      res.json({ shortcodes });
+    } catch (error) {
+      console.error("Error generating shortcodes:", error);
+      res.status(500).json({ error: "Failed to generate shortcode suggestions" });
+    }
+  });
+  
+  // Update title for a URL
+  app.patch("/api/urls/:id/title", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    const { title } = req.body;
+    if (!title) {
+      return res.status(400).json({ error: "Title is required" });
+    }
+    
+    try {
+      const urlId = parseInt(req.params.id);
+      const urls = await storage.getUserUrls(req.user!.id, 1, 0);
+      const url = urls.find(u => u.id === urlId);
+      
+      if (!url) {
+        return res.status(404).send("URL not found");
+      }
+      
+      const updatedUrl = await storage.updateUrl(urlId, req.user!.id, { title });
+      
+      await storage.logActivity({
+        userId: req.user!.id,
+        type: "url_title_update",
+        metadata: {
+          urlId: updatedUrl.id,
+          title
+        }
+      });
+      
+      res.json(updatedUrl);
+    } catch (error) {
+      console.error("Error updating URL title:", error);
+      res.status(500).json({ error: "Failed to update URL title" });
+    }
+  });
+  
+  // Update shortcode for a URL
+  app.patch("/api/urls/:id/shortcode", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    const { shortCode } = req.body;
+    if (!shortCode) {
+      return res.status(400).json({ error: "Short code is required" });
+    }
+    
+    try {
+      // Check if shortcode already exists
+      const existingUrl = await storage.getUrlByShortCode(shortCode);
+      if (existingUrl) {
+        return res.status(400).json({ error: "This short code is already in use" });
+      }
+      
+      const urlId = parseInt(req.params.id);
+      const urls = await storage.getUserUrls(req.user!.id, 1, 0);
+      const url = urls.find(u => u.id === urlId);
+      
+      if (!url) {
+        return res.status(404).send("URL not found");
+      }
+      
+      const oldShortCode = url.shortCode;
+      const updatedUrl = await storage.updateUrl(urlId, req.user!.id, { shortCode });
+      
+      await storage.logActivity({
+        userId: req.user!.id,
+        type: "url_shortcode_update",
+        metadata: {
+          urlId: updatedUrl.id,
+          oldShortCode,
+          newShortCode: shortCode
+        }
+      });
+      
+      res.json(updatedUrl);
+    } catch (error) {
+      console.error("Error updating URL shortcode:", error);
+      res.status(500).json({ error: "Failed to update URL shortcode" });
     }
   });
 
