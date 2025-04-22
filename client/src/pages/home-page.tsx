@@ -15,7 +15,7 @@ import { useState } from "react";
 import { format } from "date-fns";
 import { AlertDialog, AlertDialogTrigger, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from "@/components/ui/alert-dialog";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
-import { FiLock, FiUnlock } from "react-icons/fi";
+import { FiLock, FiUnlock, FiBarChart2 } from "react-icons/fi";
 import { SecurityBadge } from "@/components/security-badge";
 import { getUrlSecurityLevel, getSecurityColorClasses, cn } from "@/lib/utils";
 
@@ -137,14 +137,14 @@ export default function HomePage() {
       <div className="max-w-6xl mx-auto">
         <div className="grid gap-8 grid-cols-1 lg:grid-cols-[400px,1fr]">
           <div className="space-y-8">
-            <Card>
-              <CardHeader>
-                <CardTitle>Shorten a URL</CardTitle>
-                <CardDescription>
-                  Enter a long URL to create a shortened version that's easier to share
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
+            <Card className="overflow-hidden border-0 shadow-lg">
+              <div className="bg-gradient-to-r from-primary/90 to-indigo-500/90 p-6 text-white">
+                <h2 className="text-2xl font-bold">Shorten a URL</h2>
+                <p className="text-white/80 mt-1">
+                  Create shortened links with powerful features
+                </p>
+              </div>
+              <CardContent className="p-6 pt-6">
                 <Form {...form}>
                   <form
                     onSubmit={form.handleSubmit((data) => {
@@ -205,26 +205,40 @@ export default function HomePage() {
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Quick Stats</CardTitle>
+            <Card className="overflow-hidden border-0 shadow-md">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg font-medium">Quick Stats</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="border rounded-lg p-4">
-                    <div className="text-sm font-medium text-muted-foreground">
-                      Total URLs
-                    </div>
-                    <div className="text-2xl font-bold mt-1">
-                      {total}
+                  <div className="bg-gradient-to-br from-primary/10 to-indigo-500/10 rounded-lg p-5 transition-all hover:shadow-md">
+                    <div className="flex items-center gap-3">
+                      <div className="bg-primary/20 text-primary rounded-full p-2">
+                        <LinkIcon className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <div className="text-sm font-medium text-muted-foreground">
+                          Total URLs
+                        </div>
+                        <div className="text-2xl font-bold mt-1">
+                          {total}
+                        </div>
+                      </div>
                     </div>
                   </div>
-                  <div className="border rounded-lg p-4">
-                    <div className="text-sm font-medium text-muted-foreground">
-                      Total Clicks
-                    </div>
-                    <div className="text-2xl font-bold mt-1">
-                      {urls.reduce((sum, url) => sum + url.clicks, 0)}
+                  <div className="bg-gradient-to-br from-indigo-500/10 to-primary/10 rounded-lg p-5 transition-all hover:shadow-md">
+                    <div className="flex items-center gap-3">
+                      <div className="bg-indigo-500/20 text-indigo-500 rounded-full p-2">
+                        <FiBarChart2 className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <div className="text-sm font-medium text-muted-foreground">
+                          Total Clicks
+                        </div>
+                        <div className="text-2xl font-bold mt-1">
+                          {urls.reduce((sum, url) => sum + url.clicks, 0)}
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -232,15 +246,15 @@ export default function HomePage() {
             </Card>
           </div>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Your Shortened URLs</CardTitle>
-              <CardDescription>
-                Manage and track your shortened URLs
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
+          <Card className="overflow-hidden border-0 shadow-lg">
+            <div className="bg-gradient-to-r from-indigo-500/90 to-primary/90 p-6 text-white">
+              <h2 className="text-2xl font-bold">Your Shortened URLs</h2>
+              <p className="text-white/80 mt-1">
+                Manage and track all your links in one place
+              </p>
+            </div>
+            <CardContent className="p-6">
+              <div className="space-y-6">
                 {urls.map((url) => {
                   const qrConfig = url.qrConfig as QrConfig;
                   const securityLevel = getUrlSecurityLevel(url);
@@ -250,7 +264,7 @@ export default function HomePage() {
                     <div
                       key={url.id}
                       className={cn(
-                        "p-4 rounded-lg border",
+                        "p-5 rounded-lg border shadow-sm transition-all hover:shadow-md",
                         securityColors.border
                       )}
                     >

@@ -40,8 +40,10 @@ export default function AuthPage() {
         <Card className="w-full max-w-md border-none shadow-none">
           <CardHeader className="space-y-4">
             <div className="flex items-center gap-2">
-              <FiLink className="w-8 h-8 text-primary" />
-              <CardTitle className="text-2xl">URL Shortener</CardTitle>
+              <FiLink className="w-10 h-10 text-primary" />
+              <CardTitle className="text-3xl">
+                <span className="bg-gradient-to-r from-primary to-indigo-500 text-transparent bg-clip-text">ADLink</span>
+              </CardTitle>
             </div>
             <CardDescription className="text-base">
               Welcome back! Please enter your details to access your account.

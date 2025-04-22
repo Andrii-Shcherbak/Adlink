@@ -25,7 +25,10 @@ export function Layout({ children }: { children: ReactNode }) {
         <div className="max-w-6xl mx-auto px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-8">
             <Link href="/">
-              <a className="font-bold text-xl">URL Shortener</a>
+              <a className="font-bold text-xl flex items-center gap-2">
+                <FiLink className="h-5 w-5 text-primary" />
+                <span className="bg-gradient-to-r from-primary to-indigo-500 text-transparent bg-clip-text">ADLink</span>
+              </a>
             </Link>
             <nav className="hidden md:flex items-center gap-6">
               {navItems.map(({ href, label, icon: Icon }) => (

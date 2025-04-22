@@ -18,7 +18,7 @@ export default function ProtectedUrl() {
     setIsSubmitting(true);
 
     try {
-      const res = await fetch(`/api/r/${shortCode}/verify`, {
+      const res = await fetch(`/${shortCode}/verify`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ password }),
