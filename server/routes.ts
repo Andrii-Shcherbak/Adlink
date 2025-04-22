@@ -118,6 +118,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
+  // New direct shortCode route without /api/r prefix
+  app.get("/:shortCode", async (req, res, next) => {
+    // Skip API endpoints and protected route
+    if (req.params.shortCode.startsWith('api') || 
+        req.params.shortCode === 'protected' || 
+        req.params.shortCode === 'admin' || 
+        req.params.shortCode === 'analytics' || 
+        req.params.shortCode === 'profile' || 
+        req.params.shortCode === 'activities') {
+      return next();
+    }
+    
+    const url = await storage.getUrlByShortCode(req.params.shortCode);
+    if (!url) return next();
+
+    if (url.isPasswordProtected) {
+      return res.redirect(`/protected/${url.shortCode}`);
+    }
+
+    const deviceType = getDeviceType(req.headers['user-agent'] || '');
+    const referrer = getReferrer(req.headers.referer);
+    let countryCode = (req.headers['cf-ipcountry'] as string)?.toUpperCase() || 'UNKNOWN';
+
+    try {
+      await storage.incrementUrlClicks(url.id, url.userId, deviceType, countryCode, referrer);
+      res.redirect(url.originalUrl);
+    } catch (error) {
+      console.error('Error incrementing clicks:', error);
+      res.redirect(url.originalUrl);
+    }
+  });
+
+  // Keep the /api/r/:shortCode route for backward compatibility
   app.get("/api/r/:shortCode", async (req, res) => {
     const url = await storage.getUrlByShortCode(req.params.shortCode);
     if (!url) return res.sendStatus(404);
@@ -139,6 +172,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/:shortCode/verify", async (req, res) => {
+    const url = await storage.getUrlByShortCode(req.params.shortCode);
+    if (!url) return res.sendStatus(404);
+
+    if (!url.isPasswordProtected || !url.password) {
+      return res.status(400).json({ error: "URL is not password protected" });
+    }
+
+    const isValid = await comparePasswords(req.body.password, url.password);
+    if (!isValid) {
+      return res.status(401).json({ error: "Invalid password" });
+    }
+
+    const deviceType = getDeviceType(req.headers['user-agent'] || '');
+    const referrer = getReferrer(req.headers.referer);
+    let countryCode = (req.headers['cf-ipcountry'] as string)?.toUpperCase() || 'UNKNOWN';
+
+    try {
+      await storage.incrementUrlClicks(url.id, url.userId, deviceType, countryCode, referrer);
+      res.json({ redirectUrl: url.originalUrl });
+    } catch (error) {
+      console.error('Error incrementing clicks:', error);
+      res.json({ redirectUrl: url.originalUrl });
+    }
+  });
+
+  // Keep old route for backward compatibility
   app.post("/api/r/:shortCode/verify", async (req, res) => {
     const url = await storage.getUrlByShortCode(req.params.shortCode);
     if (!url) return res.sendStatus(404);
