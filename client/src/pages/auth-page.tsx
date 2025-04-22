@@ -102,7 +102,7 @@ export default function AuthPage() {
                           <FormLabel className="text-sm font-medium">Password</FormLabel>
                           <FormControl>
                             <div className="relative">
-                              <FiLock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
+                              <FiLock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/70" />
                               <Input type="password" className="h-11 pl-10 bg-white/10 border-white/20 text-white placeholder:text-white/50" {...field} placeholder="Enter your password" />
                             </div>
                           </FormControl>
@@ -143,16 +143,7 @@ export default function AuthPage() {
               <TabsContent value="register">
                 <Form {...registerForm}>
                   <form onSubmit={registerForm.handleSubmit((data) => registerMutation.mutate(data))} className="space-y-6">
-                    <style jsx>{`
-                      input {
-                        background-color: rgba(255, 255, 255, 0.1);
-                        border-color: rgba(255, 255, 255, 0.2);
-                        color: white;
-                      }
-                      input::placeholder {
-                        color: rgba(255, 255, 255, 0.5);
-                      }
-                    `}</style>
+
                     <div className="grid grid-cols-2 gap-4">
                       <FormField
                         control={registerForm.control}
@@ -161,7 +152,7 @@ export default function AuthPage() {
                           <FormItem>
                             <FormLabel className="text-sm font-medium">First Name</FormLabel>
                             <FormControl>
-                              <Input className="h-11" {...field} placeholder="John" />
+                              <Input className="h-11 bg-white/10 border-white/20 text-white placeholder:text-white/50" {...field} placeholder="John" />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -174,7 +165,7 @@ export default function AuthPage() {
                           <FormItem>
                             <FormLabel className="text-sm font-medium">Last Name</FormLabel>
                             <FormControl>
-                              <Input className="h-11" {...field} placeholder="Doe" />
+                              <Input className="h-11 bg-white/10 border-white/20 text-white placeholder:text-white/50" {...field} placeholder="Doe" />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -189,7 +180,7 @@ export default function AuthPage() {
                           <FormLabel className="text-sm font-medium">Email</FormLabel>
                           <FormControl>
                             <div className="relative">
-                              <Input type="email" className="h-11" {...field} placeholder="you@example.com" />
+                              <Input type="email" className="h-11 bg-white/10 border-white/20 text-white placeholder:text-white/50" {...field} placeholder="you@example.com" />
                             </div>
                           </FormControl>
                           <FormMessage />
@@ -203,7 +194,7 @@ export default function AuthPage() {
                         <FormItem>
                           <FormLabel className="text-sm font-medium">Company (Optional)</FormLabel>
                           <FormControl>
-                            <Input className="h-11" {...field} placeholder="Your company" />
+                            <Input className="h-11 bg-white/10 border-white/20 text-white placeholder:text-white/50" {...field} placeholder="Your company" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -217,8 +208,8 @@ export default function AuthPage() {
                           <FormLabel className="text-sm font-medium">Username</FormLabel>
                           <FormControl>
                             <div className="relative">
-                              <FiUser className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
-                              <Input className="h-11 pl-10" {...field} placeholder="Choose a username" />
+                              <FiUser className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/70" />
+                              <Input className="h-11 pl-10 bg-white/10 border-white/20 text-white placeholder:text-white/50" {...field} placeholder="Choose a username" />
                             </div>
                           </FormControl>
                           <FormMessage />
