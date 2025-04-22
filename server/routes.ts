@@ -247,18 +247,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(400).json(parseResult.error);
     }
 
-    const url = await storage.getUrlByShortCode(req.params.id, req.user!.id);
-    if (!url) {
-      return res.status(404).send("URL not found");
+    try {
+      // Get the ID from the URL parameter
+      const urlId = parseInt(req.params.id);
+      
+      // Get user's URLs and find the specific one
+      const urls = await storage.getUserUrls(req.user!.id);
+      const url = urls.find(u => u.id === urlId);
+      
+      if (!url) {
+        return res.status(404).send("URL not found");
+      }
+
+      const updatedUrl = await storage.updateUrlQrConfig(
+        urlId,
+        req.user!.id,
+        parseResult.data
+      );
+
+      // Log activity for QR config update
+      await storage.logActivity({
+        userId: req.user!.id,
+        type: "qr_config_update",
+        metadata: {
+          urlId
+        }
+      });
+
+      res.json(updatedUrl);
+    } catch (error) {
+      console.error("Error updating QR config:", error);
+      res.status(500).json({ error: "Failed to update QR config" });
     }
-
-    const updatedUrl = await storage.updateUrlQrConfig(
-      parseInt(req.params.id),
-      req.user!.id,
-      parseResult.data
-    );
-
-    res.json(updatedUrl);
   });
 
   app.patch("/api/urls/:id/password", async (req, res) => {
