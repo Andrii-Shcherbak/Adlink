@@ -8,9 +8,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
 import { QRCodeSVG } from "qrcode.react";
 import type { QrConfig } from "@shared/schema";
-import { Settings2, Download, Paintbrush, Layout, Image, Check, Loader2 } from "lucide-react";
+import { Settings2, Download, Paintbrush, Layout, Image, Check, Loader2, Upload, Trash2, Link2 } from "lucide-react";
 import { downloadQRCode } from "@/lib/utils";
 import { cn } from "@/lib/utils";
+import "./qr-styles.css";
 
 const colorPresets = [
   { name: "Classic", fg: "#000000", bg: "#FFFFFF" },
@@ -179,7 +180,7 @@ export function QrCustomizer({ url, config, onSave }: QrCustomizerProps) {
               </TabsContent>
 
               <TabsContent value="frame" className="space-y-4">
-                <div className="space-y-4">
+                <div className="space-y-5">
                   <div className="flex items-center justify-between">
                     <Label htmlFor="margin">Include Margin</Label>
                     <Switch
@@ -189,6 +190,71 @@ export function QrCustomizer({ url, config, onSave }: QrCustomizerProps) {
                         setLocalConfig((prev) => ({ ...prev, includeMargin: checked }))
                       }
                     />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="pattern" className="block mb-2">QR Pattern Style</Label>
+                    <div className="grid grid-cols-5 gap-2">
+                      {[
+                        { value: "squares", label: "Squares" },
+                        { value: "dots", label: "Dots" },
+                        { value: "rounded", label: "Rounded" },
+                        { value: "classy", label: "Classy" },
+                        { value: "elegant", label: "Elegant" }
+                      ].map(pattern => (
+                        <Button
+                          key={pattern.value}
+                          type="button"
+                          variant={localConfig.pattern === pattern.value ? "default" : "outline"}
+                          onClick={() => setLocalConfig(prev => ({ ...prev, pattern: pattern.value as any }))}
+                          className="h-auto py-2"
+                        >
+                          {pattern.label}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="cornerStyle" className="block mb-2">Corner Style</Label>
+                    <div className="grid grid-cols-3 gap-2">
+                      {[
+                        { value: "square", label: "Square" },
+                        { value: "dot", label: "Dot" },
+                        { value: "extra-rounded", label: "Rounded" }
+                      ].map(style => (
+                        <Button
+                          key={style.value}
+                          type="button"
+                          variant={localConfig.cornerStyle === style.value ? "default" : "outline"}
+                          onClick={() => setLocalConfig(prev => ({ ...prev, cornerStyle: style.value as any }))}
+                          className="h-auto py-2"
+                        >
+                          {style.label}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="frameStyle" className="block mb-2">Frame Style</Label>
+                    <div className="grid grid-cols-3 gap-2">
+                      {[
+                        { value: "none", label: "None" },
+                        { value: "simple", label: "Simple" },
+                        { value: "dots", label: "Dots" }
+                      ].map(style => (
+                        <Button
+                          key={style.value}
+                          type="button"
+                          variant={localConfig.frameStyle === style.value ? "default" : "outline"}
+                          onClick={() => setLocalConfig(prev => ({ ...prev, frameStyle: style.value as any }))}
+                          className="h-auto py-2"
+                        >
+                          {style.label}
+                        </Button>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </TabsContent>
@@ -207,6 +273,87 @@ export function QrCustomizer({ url, config, onSave }: QrCustomizerProps) {
                       className="mt-2"
                     />
                   </div>
+                  
+                  <div className="mt-4 border-t pt-4">
+                    <Label className="block mb-2">Upload Logo (SVG or PNG)</Label>
+                    <div className="grid gap-4">
+                      <div className="flex items-center justify-center w-full">
+                        <label 
+                          htmlFor="logo-upload" 
+                          className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer bg-muted/50 hover:bg-muted/70 transition-colors"
+                        >
+                          <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                            <Upload className="w-8 h-8 mb-2 text-primary/50" />
+                            <p className="mb-1 text-sm text-muted-foreground">
+                              <span className="font-semibold">Click to upload</span> or drag and drop
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              SVG or PNG (max 2MB)
+                            </p>
+                          </div>
+                          <input 
+                            id="logo-upload" 
+                            type="file" 
+                            className="hidden" 
+                            accept=".svg,.png"
+                            onChange={async (e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                try {
+                                  const formData = new FormData();
+                                  formData.append("logo", file);
+                                
+                                  const response = await fetch("/api/uploads/logo", {
+                                    method: "POST",
+                                    body: formData,
+                                  });
+                                
+                                  if (!response.ok) {
+                                    throw new Error("Failed to upload logo");
+                                  }
+                                
+                                  const data = await response.json();
+                                  setLocalConfig(prev => ({ 
+                                    ...prev, 
+                                    logoUrl: data.url 
+                                  }));
+                                } catch (error) {
+                                  console.error("Error uploading logo:", error);
+                                  // Show error toast
+                                }
+                              }
+                            }}
+                          />
+                        </label>
+                      </div>
+                      
+                      {localConfig.logoUrl && (
+                        <div className="flex items-center space-x-2">
+                          <div className="w-12 h-12 bg-background rounded-md flex items-center justify-center overflow-hidden border">
+                            {localConfig.logoUrl.endsWith('.svg') || localConfig.logoUrl.endsWith('.png') ? (
+                              <img 
+                                src={localConfig.logoUrl} 
+                                alt="Logo" 
+                                className="max-w-full max-h-full object-contain"
+                              />
+                            ) : (
+                              <Link2 className="w-6 h-6 text-primary/50" />
+                            )}
+                          </div>
+                          <div className="flex-1 truncate">
+                            <p className="text-sm truncate">{localConfig.logoUrl.split('/').pop()}</p>
+                          </div>
+                          <Button 
+                            size="icon" 
+                            variant="ghost"
+                            onClick={() => setLocalConfig(prev => ({ ...prev, logoUrl: '' }))}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </TabsContent>
             </Tabs>
@@ -214,27 +361,39 @@ export function QrCustomizer({ url, config, onSave }: QrCustomizerProps) {
             <Card className="w-[220px] p-5 bg-muted/50 border rounded-lg">
               <div className="space-y-4">
                 <div 
-                  className="flex justify-center p-4 bg-background rounded-lg shadow-sm" 
+                  className={cn(
+                    "flex justify-center p-4 bg-background rounded-lg shadow-sm overflow-hidden",
+                    `qr-pattern-${localConfig.pattern}`,
+                    `qr-corner-${localConfig.cornerStyle}`,
+                    `qr-frame-${localConfig.frameStyle}`,
+                  )}
                   ref={qrRef}
+                  style={{
+                    "--corner-dot-color": localConfig.cornerDotColor,
+                    "--corner-square-color": localConfig.cornerSquareColor,
+                    "--frame-color": localConfig.frameColor,
+                  } as React.CSSProperties}
                 >
-                  <QRCodeSVG
-                    value={url}
-                    size={170}
-                    level="H"
-                    fgColor={localConfig.fgColor}
-                    bgColor={localConfig.bgColor}
-                    includeMargin={localConfig.includeMargin}
-                    imageSettings={
-                      localConfig.logoUrl
-                        ? {
-                          src: localConfig.logoUrl,
-                          height: 30,
-                          width: 30,
-                          excavate: true,
-                        }
-                        : undefined
-                    }
-                  />
+                  <div className="qr-code-wrapper">
+                    <QRCodeSVG
+                      value={url}
+                      size={170}
+                      level="H"
+                      fgColor={localConfig.fgColor}
+                      bgColor={localConfig.bgColor}
+                      includeMargin={localConfig.includeMargin}
+                      imageSettings={
+                        localConfig.logoUrl
+                          ? {
+                            src: localConfig.logoUrl,
+                            height: 40,
+                            width: 40,
+                            excavate: true,
+                          }
+                          : undefined
+                      }
+                    />
+                  </div>
                 </div>
                 <div className="flex flex-col gap-2">
                   <Button 

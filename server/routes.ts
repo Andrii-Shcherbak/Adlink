@@ -351,6 +351,74 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Serve uploaded files
+  app.use('/uploads', express.static(path.join(process.cwd(), 'public/uploads')));
+  
+  // Configure multer for logo uploads
+  const storage_config = multer.diskStorage({
+    destination: function(req, file, cb) {
+      const dir = path.join(process.cwd(), 'public/uploads');
+      
+      // Create directory if it doesn't exist
+      if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+      }
+      
+      cb(null, dir);
+    },
+    filename: function(req, file, cb) {
+      // Generate unique filename with timestamp and original extension
+      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+      const fileExt = path.extname(file.originalname);
+      cb(null, `logo-${uniqueSuffix}${fileExt}`);
+    }
+  });
+  
+  // Create upload middleware with file filtering for SVG and PNG
+  const upload = multer({
+    storage: storage_config,
+    limits: {
+      fileSize: 1024 * 1024 * 2, // 2MB max file size
+    },
+    fileFilter: function(req, file, cb) {
+      // Accept only SVG and PNG
+      if (file.mimetype === 'image/svg+xml' || file.mimetype === 'image/png') {
+        cb(null, true);
+      } else {
+        cb(new Error('Only SVG and PNG files are allowed') as any, false);
+      }
+    }
+  });
+  
+  // Logo upload endpoint
+  app.post('/api/uploads/logo', upload.single('logo'), async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: 'No file uploaded' });
+      }
+      
+      // Return the URL to the uploaded file
+      const fileUrl = `/uploads/${req.file.filename}`;
+      
+      // Log activity
+      await storage.logActivity({
+        userId: req.user!.id,
+        type: "logo_uploaded",
+        metadata: {
+          filename: req.file.filename,
+          fileUrl
+        }
+      });
+      
+      res.json({ url: fileUrl });
+    } catch (error: any) {
+      console.error('Error uploading logo:', error);
+      res.status(500).json({ error: error.message || 'Failed to upload logo' });
+    }
+  });
+  
   // AI endpoints for title and shortcode generation
   
   app.post("/api/ai/generate-title", async (req, res) => {

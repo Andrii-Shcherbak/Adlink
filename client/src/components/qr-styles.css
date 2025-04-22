@@ -1,0 +1,131 @@
+/* QR Code Styling */
+.qr-code-wrapper {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Pattern Styles */
+.qr-pattern-squares svg path:not(:first-child) {
+  shape-rendering: crispEdges;
+}
+
+.qr-pattern-dots svg path:not(:first-child) {
+  rx: 50%;
+  ry: 50%;
+}
+
+.qr-pattern-rounded svg path:not(:first-child) {
+  rx: 25%;
+  ry: 25%;
+}
+
+.qr-pattern-classy svg path:not(:first-child) {
+  rx: 15%;
+  ry: 15%;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.1));
+}
+
+.qr-pattern-elegant svg path:not(:first-child) {
+  rx: 10px;
+  ry: 10px;
+  transform-origin: center;
+  transform: scale(0.9);
+  animation: qr-elegant-float 3s ease-in-out infinite;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.15));
+}
+
+@keyframes qr-elegant-float {
+  0%, 100% {
+    transform: scale(0.9);
+  }
+  50% {
+    transform: scale(0.95);
+  }
+}
+
+/* Corner Styles */
+.qr-corner-square svg > path:nth-child(2),
+.qr-corner-square svg > path:nth-child(3),
+.qr-corner-square svg > path:nth-child(4) {
+  shape-rendering: crispEdges;
+}
+
+.qr-corner-dot svg > path:nth-child(2),
+.qr-corner-dot svg > path:nth-child(3),
+.qr-corner-dot svg > path:nth-child(4) {
+  rx: 50%;
+  ry: 50%;
+}
+
+.qr-corner-extra-rounded svg > path:nth-child(2),
+.qr-corner-extra-rounded svg > path:nth-child(3),
+.qr-corner-extra-rounded svg > path:nth-child(4) {
+  rx: 40%;
+  ry: 40%;
+}
+
+/* Highlight special corners with custom colors */
+.qr-corner-square svg > path:nth-child(2),
+.qr-corner-square svg > path:nth-child(3),
+.qr-corner-square svg > path:nth-child(4),
+.qr-corner-dot svg > path:nth-child(2),
+.qr-corner-dot svg > path:nth-child(3),
+.qr-corner-dot svg > path:nth-child(4),
+.qr-corner-extra-rounded svg > path:nth-child(2),
+.qr-corner-extra-rounded svg > path:nth-child(3),
+.qr-corner-extra-rounded svg > path:nth-child(4) {
+  fill: var(--corner-square-color, currentColor);
+}
+
+/* Inner dot colors */
+.qr-corner-square svg > path:nth-child(5),
+.qr-corner-square svg > path:nth-child(6),
+.qr-corner-square svg > path:nth-child(7),
+.qr-corner-dot svg > path:nth-child(5),
+.qr-corner-dot svg > path:nth-child(6),
+.qr-corner-dot svg > path:nth-child(7),
+.qr-corner-extra-rounded svg > path:nth-child(5),
+.qr-corner-extra-rounded svg > path:nth-child(6),
+.qr-corner-extra-rounded svg > path:nth-child(7) {
+  fill: var(--corner-dot-color, currentColor);
+}
+
+/* Frame Styles */
+.qr-frame-simple {
+  position: relative;
+}
+
+.qr-frame-simple::before {
+  content: '';
+  position: absolute;
+  top: -5px;
+  left: -5px;
+  right: -5px;
+  bottom: -5px;
+  border: 2px solid var(--frame-color, currentColor);
+  border-radius: 12px;
+  pointer-events: none;
+}
+
+.qr-frame-dots {
+  position: relative;
+}
+
+.qr-frame-dots::before {
+  content: '';
+  position: absolute;
+  top: -8px;
+  left: -8px;
+  right: -8px;
+  bottom: -8px;
+  border: 3px dashed var(--frame-color, currentColor);
+  border-radius: 15px;
+  pointer-events: none;
+}
+
+/* Ensure logo is visible and well-positioned */
+.qr-code-wrapper svg image {
+  transform: scale(1.2);
+}
