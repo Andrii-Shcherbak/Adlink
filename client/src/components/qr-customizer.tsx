@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
 import { QRCodeSVG } from "qrcode.react";
 import type { QrConfig } from "@shared/schema";
-import { Settings2, Download, Paintbrush, Layout, Image, Check, Loader2, Upload, Trash2, Link2 } from "lucide-react";
+import { Settings2, Download, Paintbrush, Layout, Image, Check, Loader2, Upload, Trash2, Link2, RotateCcw } from "lucide-react";
 import { downloadQRCode } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import "./qr-styles.css";
@@ -26,6 +26,19 @@ interface QrCustomizerProps {
   config: QrConfig;
   onSave: (config: QrConfig) => void;
 }
+
+const defaultConfig: QrConfig = {
+  fgColor: "#000000",
+  bgColor: "#FFFFFF",
+  includeMargin: false,
+  logoUrl: "",
+  pattern: "squares",
+  cornerStyle: "square",
+  frameStyle: "none",
+  cornerDotColor: "#000000",
+  cornerSquareColor: "#000000",
+  frameColor: "#000000"
+};
 
 export function QrCustomizer({ url, config, onSave }: QrCustomizerProps) {
   const [isOpen, setIsOpen] = useState(false);
@@ -429,7 +442,7 @@ export function QrCustomizer({ url, config, onSave }: QrCustomizerProps) {
                   <Button 
                     variant="outline" 
                     size="sm"
-                    onClick={() => setLocalConfig(defaultConfig)}
+                    onClick={() => setLocalConfig({...defaultConfig})}
                     className="text-xs"
                   >
                     <RotateCcw className="h-3 w-3 mr-1" />
