@@ -90,7 +90,7 @@ export function setupAuth(app: Express) {
       {
         clientID: process.env.MICROSOFT_CLIENT_ID!,
         clientSecret: process.env.MICROSOFT_CLIENT_SECRET!,
-        callbackURL: "https://210439ba-2384-47f3-899d-fb76ff3d8138-00-3pp9yxr5bhzhm.kirk.replit.dev/api/auth/microsoft/callback",
+        callbackURL: `${process.env.APP_URL || process.env.REPL_SLUG ? `https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co` : "http://localhost:5000"}/api/auth/microsoft/callback`,
         scope: ["user.read"],
         authority: "https://login.microsoftonline.com/organizations",
         tenant: process.env.MICROSOFT_TENANT_ID!,
