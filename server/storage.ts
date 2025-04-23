@@ -5,6 +5,7 @@ import session from "express-session";
 import connectPg from "connect-pg-simple";
 import { pool } from "./db";
 import { nanoid } from "nanoid";
+import { CountryInfo } from "./routes";
 
 const PostgresSessionStore = connectPg(session);
 
@@ -19,7 +20,7 @@ export interface IStorage {
   getUrlByShortCode(shortCode: string, userId?: number): Promise<Url | undefined>;
   getUserUrls(userId: number, limit?: number, offset?: number): Promise<Url[]>;
   getUserUrlsCount(userId: number): Promise<number>;
-  incrementUrlClicks(id: number, userId: number, deviceType: DeviceType, countryCode: string, referrer: string): Promise<void>;
+  incrementUrlClicks(id: number, userId: number, deviceType: DeviceType, countryInfo: CountryInfo, referrer: string): Promise<void>;
   sessionStore: session.Store;
   updateUrlQrConfig(id: number, userId: number, qrConfig: any): Promise<Url | undefined>;
   updateUrl(id: number, userId: number, update: Partial<Url>): Promise<Url>;
@@ -181,13 +182,19 @@ export class DatabaseStorage implements IStorage {
     }
     
     // Increment country count
-    analytics.countries[countryInfo.code].count += 1;
+    if (analytics.countries[countryInfo.code]) {
+      analytics.countries[countryInfo.code].count += 1;
+    }
     
     // Update city data if available
     if (countryInfo.city) {
-      analytics.countries[countryInfo.code].cities = analytics.countries[countryInfo.code].cities || {};
-      analytics.countries[countryInfo.code].cities[countryInfo.city] = 
-        (analytics.countries[countryInfo.code].cities[countryInfo.city] || 0) + 1;
+      const countryData = analytics.countries[countryInfo.code];
+      if (countryData) {
+        countryData.cities = countryData.cities || {};
+        if (countryData.cities && countryInfo.city) {
+          countryData.cities[countryInfo.city] = (countryData.cities[countryInfo.city] || 0) + 1;
+        }
+      }
     }
     
     // Update referrer data

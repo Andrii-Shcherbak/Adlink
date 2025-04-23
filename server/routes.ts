@@ -602,7 +602,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const user = await storage.updateUserApproval({ 
         userId, 
-        approved 
+        isApproved: approved,
+        isActive: true 
       });
       
       await storage.logActivity({
@@ -644,7 +645,7 @@ function getReferrer(referer: string | undefined): string {
   }
 }
 
-interface CountryInfo {
+export interface CountryInfo {
   code: string;
   name: string;
   city?: string;
