@@ -179,12 +179,19 @@ export class DatabaseStorage implements IStorage {
         name: countryInfo.name,
         cities: {}
       };
+    } else if (typeof analytics.countries[countryInfo.code] === 'number') {
+      // Handle legacy data format where countries were stored as just numbers
+      const oldCount = analytics.countries[countryInfo.code] as unknown as number;
+      analytics.countries[countryInfo.code] = {
+        count: oldCount,
+        name: countryInfo.name,
+        cities: {}
+      };
     }
     
-    // Increment country count
-    if (analytics.countries[countryInfo.code]) {
-      analytics.countries[countryInfo.code].count += 1;
-    }
+    // Increment country count - now we know it's an object
+    const countryData = analytics.countries[countryInfo.code] as { count: number, name: string, cities?: Record<string, number> };
+    countryData.count += 1;
     
     // Update city data if available
     if (countryInfo.city) {

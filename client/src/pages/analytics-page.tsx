@@ -110,17 +110,30 @@ export default function AnalyticsPage() {
                 <BarChart
                   layout="vertical"
                   data={urls.reduce((acc, url) => {
-                    const analytics = url.analytics as { 
-                      countries: Record<string, { count: number, name: string, cities?: Record<string, number> }> 
-                    };
-                    Object.entries(analytics.countries || {}).forEach(([code, data]) => {
-                      // Use the stored country name if available, otherwise just use the code
-                      const countryName = data.name || (code === 'UNKNOWN' ? 'Unknown' : code);
-                      const existingEntry = acc.find(entry => entry.name === countryName);
-                      if (existingEntry) {
-                        existingEntry.value += data.count;
-                      } else {
-                        acc.push({ name: countryName, value: data.count });
+                    const analytics = url.analytics as any;
+                    const countries = analytics.countries || {};
+                    
+                    Object.entries(countries).forEach(([code, data]) => {
+                      // Handle both old format (number) and new format (object with count and name)
+                      if (typeof data === 'number') {
+                        // Old format - just a number count
+                        const countryName = code === 'UNKNOWN' ? 'Unknown' : code;
+                        const existingEntry = acc.find(entry => entry.name === countryName);
+                        if (existingEntry) {
+                          existingEntry.value += data;
+                        } else {
+                          acc.push({ name: countryName, value: data });
+                        }
+                      } else if (data && typeof data === 'object') {
+                        // New format - object with count and name
+                        const countryData = data as { count: number, name?: string };
+                        const countryName = countryData.name || (code === 'UNKNOWN' ? 'Unknown' : code);
+                        const existingEntry = acc.find(entry => entry.name === countryName);
+                        if (existingEntry) {
+                          existingEntry.value += countryData.count;
+                        } else {
+                          acc.push({ name: countryName, value: countryData.count });
+                        }
                       }
                     });
                     return acc;
@@ -185,28 +198,32 @@ export default function AnalyticsPage() {
               <BarChart
                 layout="vertical"
                 data={urls.reduce((acc, url) => {
-                  const analytics = url.analytics as { 
-                    countries: Record<string, { count: number, name: string, cities?: Record<string, number> }> 
-                  };
+                  const analytics = url.analytics as any;
+                  const countries = analytics.countries || {};
                   
-                  Object.values(analytics.countries || {}).forEach((countryData) => {
-                    if (countryData.cities) {
-                      Object.entries(countryData.cities).forEach(([cityName, count]) => {
-                        if (!cityName) return; // Skip empty city names
-                        
-                        const formattedCityName = cityName.charAt(0).toUpperCase() + cityName.slice(1);
-                        const existingEntry = acc.find(entry => entry.name === formattedCityName);
-                        
-                        if (existingEntry) {
-                          existingEntry.value += count;
-                        } else {
-                          acc.push({ 
-                            name: formattedCityName, 
-                            value: count,
-                            country: countryData.name
-                          });
-                        }
-                      });
+                  Object.entries(countries).forEach(([code, data]) => {
+                    // Skip old format data (numbers) since they don't have city info
+                    if (typeof data === 'object' && data !== null) {
+                      const countryData = data as { count: number, name: string, cities?: Record<string, number> };
+                      
+                      if (countryData.cities) {
+                        Object.entries(countryData.cities).forEach(([cityName, count]) => {
+                          if (!cityName) return; // Skip empty city names
+                          
+                          const formattedCityName = cityName.charAt(0).toUpperCase() + cityName.slice(1);
+                          const existingEntry = acc.find(entry => entry.name === formattedCityName);
+                          
+                          if (existingEntry) {
+                            existingEntry.value += count;
+                          } else {
+                            acc.push({ 
+                              name: formattedCityName, 
+                              value: count,
+                              country: countryData.name || code
+                            });
+                          }
+                        });
+                      }
                     }
                   });
                   
