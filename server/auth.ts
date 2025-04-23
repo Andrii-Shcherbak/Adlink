@@ -7,6 +7,7 @@ import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import { storage } from "./storage";
 import { User as SelectUser } from "@shared/schema";
+import { getAppBaseUrl } from "./utils/appConfig";
 
 declare global {
   namespace Express {
@@ -90,7 +91,7 @@ export function setupAuth(app: Express) {
       {
         clientID: process.env.MICROSOFT_CLIENT_ID!,
         clientSecret: process.env.MICROSOFT_CLIENT_SECRET!,
-        callbackURL: `${process.env.APP_URL || process.env.REPL_SLUG ? `https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co` : "http://localhost:5000"}/api/auth/microsoft/callback`,
+        callbackURL: `${getAppBaseUrl()}/api/auth/microsoft/callback`,
         scope: ["user.read"],
         authority: "https://login.microsoftonline.com/organizations",
         tenant: process.env.MICROSOFT_TENANT_ID!,
