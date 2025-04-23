@@ -746,9 +746,18 @@ export interface CountryInfo {
 function getCountryCode(req: express.Request): CountryInfo {
   // First try Cloudflare country header (for production with Cloudflare)
   const cfCountry = (req.headers['cf-ipcountry'] as string)?.toUpperCase();
+  
+  // For Cloudflare headers, we don't get city info, but we can get the country
   if (cfCountry) {
-    const countryName = getName(cfCountry) || 'Unknown Country';
-    return { code: cfCountry, name: countryName };
+    const countryName = getName(cfCountry) || cfCountry;
+    
+    // If we have a user-provided city from an X-City header (custom header), use it
+    const cfCity = req.headers['x-city'] as string;
+    return { 
+      code: cfCountry, 
+      name: countryName,
+      city: cfCity || undefined
+    };
   }
 
   // Next, try to get the client IP address
@@ -761,12 +770,21 @@ function getCountryCode(req: express.Request): CountryInfo {
     try {
       const geo = geoip.lookup(ip);
       if (geo && geo.country) {
-        const countryName = getName(geo.country) || 'Unknown Country';
-        console.log(`Detected country for IP ${ip}: ${geo.country} (${countryName})`);
+        const countryName = getName(geo.country) || geo.country;
+        
+        // Format city name with proper capitalization
+        let cityName = undefined;
+        if (geo.city) {
+          // Convert to lowercase first, then capitalize first letter
+          cityName = geo.city.charAt(0).toUpperCase() + geo.city.slice(1).toLowerCase();
+        }
+        
+        console.log(`Detected location for IP ${ip}: ${geo.country} (${countryName}), City: ${cityName || 'unknown'}`);
+        
         return { 
           code: geo.country, 
           name: countryName,
-          city: geo.city || undefined
+          city: cityName
         };
       }
     } catch (error) {
