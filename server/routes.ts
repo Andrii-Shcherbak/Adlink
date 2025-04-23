@@ -62,9 +62,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       for (const url of allUrls) {
         if (url.analytics) {
           try {
-            // Create a new analytics structure
+            // Create a new analytics structure with proper typing
             const oldAnalytics = url.analytics as any;
-            const newAnalytics = {
+            const newAnalytics: {
+              devices: Record<string, number>;
+              countries: Record<string, { count: number; name: string; cities: Record<string, number> }>;
+              referrers: Record<string, number>;
+            } = {
               devices: oldAnalytics.devices || { desktop: 0, mobile: 0, tablet: 0 },
               countries: {},
               referrers: oldAnalytics.referrers || {}
@@ -125,7 +129,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       console.error('Migration error:', error);
-      res.status(500).json({ error: 'Migration failed', details: error.message });
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      res.status(500).json({ error: 'Migration failed', details: errorMessage });
     }
   });
 

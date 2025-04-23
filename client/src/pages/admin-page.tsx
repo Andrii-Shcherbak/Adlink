@@ -3,9 +3,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, UserPlus } from "lucide-react";
+import { Loader2, UserPlus, Database } from "lucide-react";
 import type { User } from "@shared/schema";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useForm } from "react-hook-form";
@@ -88,6 +89,30 @@ export default function AdminPage() {
     },
   });
 
+  const migrateAnalyticsMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch("/api/admin/migrate-analytics", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" }
+      });
+      if (!res.ok) throw new Error("Failed to migrate analytics data");
+      return res.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Analytics Migration Successful",
+        description: data.message || "Analytics data has been migrated successfully",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Migration Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  });
+
   const onSubmit = (data: CreateUserForm) => {
     createUserMutation.mutate(data);
   };
@@ -103,6 +128,44 @@ export default function AdminPage() {
   return (
     <div className="min-h-screen bg-background p-8">
       <div className="max-w-6xl mx-auto space-y-8">
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle>System Maintenance</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center gap-4 flex-wrap">
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="outline">
+                    <Database className="h-4 w-4 mr-2" />
+                    Migrate Analytics Data
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Migrate Analytics Data</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This will update the analytics data format for all URLs. This operation is necessary if you're seeing issues with country or city data visualization. Continue?
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction 
+                      onClick={() => migrateAnalyticsMutation.mutate()}
+                      disabled={migrateAnalyticsMutation.isPending}
+                    >
+                      {migrateAnalyticsMutation.isPending && (
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      )}
+                      Start Migration
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
+          </CardContent>
+        </Card>
+
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-bold">User Management</h1>
           <Dialog>
