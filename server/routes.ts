@@ -14,6 +14,7 @@ import path from "path";
 import fs from "fs";
 import dotenv from "dotenv";
 import geoip from 'geoip-lite';
+import { getName } from 'country-list';
 
 // Load environment variables from .env file
 dotenv.config();
@@ -643,11 +644,18 @@ function getReferrer(referer: string | undefined): string {
   }
 }
 
-function getCountryCode(req: express.Request): string {
+interface CountryInfo {
+  code: string;
+  name: string;
+  city?: string;
+}
+
+function getCountryCode(req: express.Request): CountryInfo {
   // First try Cloudflare country header (for production with Cloudflare)
   const cfCountry = (req.headers['cf-ipcountry'] as string)?.toUpperCase();
   if (cfCountry) {
-    return cfCountry;
+    const countryName = getName(cfCountry) || 'Unknown Country';
+    return { code: cfCountry, name: countryName };
   }
 
   // Next, try to get the client IP address
@@ -660,13 +668,18 @@ function getCountryCode(req: express.Request): string {
     try {
       const geo = geoip.lookup(ip);
       if (geo && geo.country) {
-        console.log(`Detected country for IP ${ip}: ${geo.country}`);
-        return geo.country;
+        const countryName = getName(geo.country) || 'Unknown Country';
+        console.log(`Detected country for IP ${ip}: ${geo.country} (${countryName})`);
+        return { 
+          code: geo.country, 
+          name: countryName,
+          city: geo.city || undefined
+        };
       }
     } catch (error) {
       console.error(`Error looking up country for IP ${ip}:`, error);
     }
   }
 
-  return 'UNKNOWN';
+  return { code: 'UNKNOWN', name: 'Unknown Country' };
 }

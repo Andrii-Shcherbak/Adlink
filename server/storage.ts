@@ -142,7 +142,13 @@ export class DatabaseStorage implements IStorage {
     return Number(result?.count) || 0;
   }
 
-  async incrementUrlClicks(id: number, userId: number, deviceType: DeviceType, countryCode: string, referrer: string): Promise<void> {
+  async incrementUrlClicks(
+    id: number, 
+    userId: number, 
+    deviceType: DeviceType, 
+    countryInfo: { code: string; name: string; city?: string }, 
+    referrer: string
+  ): Promise<void> {
     const [url] = await db
       .select()
       .from(urls)
@@ -154,7 +160,7 @@ export class DatabaseStorage implements IStorage {
 
     const analytics = url.analytics as {
       devices: Record<DeviceType, number>,
-      countries: Record<string, number>,
+      countries: Record<string, { count: number, name: string, cities?: Record<string, number> }>,
       referrers: Record<string, number>
     };
 
@@ -162,8 +168,29 @@ export class DatabaseStorage implements IStorage {
     analytics.countries = analytics.countries || {};
     analytics.referrers = analytics.referrers || {};
 
+    // Update device count
     analytics.devices[deviceType] = (analytics.devices[deviceType] || 0) + 1;
-    analytics.countries[countryCode] = (analytics.countries[countryCode] || 0) + 1;
+    
+    // Initialize or update country data
+    if (!analytics.countries[countryInfo.code]) {
+      analytics.countries[countryInfo.code] = {
+        count: 0,
+        name: countryInfo.name,
+        cities: {}
+      };
+    }
+    
+    // Increment country count
+    analytics.countries[countryInfo.code].count += 1;
+    
+    // Update city data if available
+    if (countryInfo.city) {
+      analytics.countries[countryInfo.code].cities = analytics.countries[countryInfo.code].cities || {};
+      analytics.countries[countryInfo.code].cities[countryInfo.city] = 
+        (analytics.countries[countryInfo.code].cities[countryInfo.city] || 0) + 1;
+    }
+    
+    // Update referrer data
     analytics.referrers[referrer] = (analytics.referrers[referrer] || 0) + 1;
 
     await db
