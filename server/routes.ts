@@ -12,6 +12,10 @@ import { openAiService } from "./services/openai-service";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
+import dotenv from "dotenv";
+
+// Load environment variables from .env file
+dotenv.config();
 
 const scryptAsync = promisify(scrypt);
 
