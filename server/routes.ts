@@ -162,7 +162,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     const deviceType = getDeviceType(req.headers['user-agent'] || '');
     const referrer = getReferrer(req.headers.referer);
-    let countryCode = (req.headers['cf-ipcountry'] as string)?.toUpperCase() || 'UNKNOWN';
+    const countryCode = getCountryCode(req);
 
     try {
       await storage.incrementUrlClicks(url.id, url.userId, deviceType, countryCode, referrer);
@@ -184,7 +184,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     const deviceType = getDeviceType(req.headers['user-agent'] || '');
     const referrer = getReferrer(req.headers.referer);
-    let countryCode = (req.headers['cf-ipcountry'] as string)?.toUpperCase() || 'UNKNOWN';
+    const countryCode = getCountryCode(req);
 
     try {
       await storage.incrementUrlClicks(url.id, url.userId, deviceType, countryCode, referrer);
@@ -210,7 +210,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     const deviceType = getDeviceType(req.headers['user-agent'] || '');
     const referrer = getReferrer(req.headers.referer);
-    let countryCode = (req.headers['cf-ipcountry'] as string)?.toUpperCase() || 'UNKNOWN';
+    const countryCode = getCountryCode(req);
 
     try {
       await storage.incrementUrlClicks(url.id, url.userId, deviceType, countryCode, referrer);
@@ -237,7 +237,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     const deviceType = getDeviceType(req.headers['user-agent'] || '');
     const referrer = getReferrer(req.headers.referer);
-    let countryCode = (req.headers['cf-ipcountry'] as string)?.toUpperCase() || 'UNKNOWN';
+    const countryCode = getCountryCode(req);
 
     try {
       await storage.incrementUrlClicks(url.id, url.userId, deviceType, countryCode, referrer);
@@ -510,12 +510,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
     
     try {
-      // Check if shortcode already exists
-      const existingUrl = await storage.getUrlByShortCode(shortCode);
-      if (existingUrl) {
-        return res.status(400).json({ error: "This short code is already in use" });
+      // Check if the shortcode is already in use
+      const existing = await storage.getUrlByShortCode(shortCode);
+      if (existing && existing.id !== parseInt(req.params.id)) {
+        return res.status(400).json({ error: "Short code is already in use" });
       }
       
+      // Verify the URL belongs to the current user
       const urlId = parseInt(req.params.id);
       const urls = await storage.getUserUrls(req.user!.id, 1, 0);
       const url = urls.find(u => u.id === urlId);
@@ -524,16 +525,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).send("URL not found");
       }
       
-      const oldShortCode = url.shortCode;
       const updatedUrl = await storage.updateUrl(urlId, req.user!.id, { shortCode });
       
+      // Log shortcode update
       await storage.logActivity({
         userId: req.user!.id,
         type: "url_shortcode_update",
         metadata: {
           urlId: updatedUrl.id,
-          oldShortCode,
-          newShortCode: shortCode
+          shortCode
         }
       });
       
@@ -541,6 +541,82 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error updating URL shortcode:", error);
       res.status(500).json({ error: "Failed to update URL shortcode" });
+    }
+  });
+  
+  app.get("/api/user/activities", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+    const offset = (page - 1) * limit;
+    
+    try {
+      const [activities, total] = await Promise.all([
+        storage.getUserActivities(req.user!.id, limit, offset),
+        storage.getUserActivitiesCount(req.user!.id)
+      ]);
+      
+      res.json({
+        activities,
+        pagination: {
+          total,
+          page,
+          totalPages: Math.ceil(total / limit),
+          hasMore: offset + activities.length < total
+        }
+      });
+    } catch (error) {
+      console.error("Error fetching user activities:", error);
+      res.status(500).json({ error: "Failed to fetch activities" });
+    }
+  });
+  
+  app.get("/api/users", async (req, res) => {
+    if (!req.isAuthenticated() || req.user!.role !== "admin") {
+      return res.sendStatus(403);
+    }
+    
+    try {
+      const users = await storage.getAllUsers();
+      res.json(users);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+      res.status(500).json({ error: "Failed to fetch users" });
+    }
+  });
+  
+  app.patch("/api/users/:id/approve", async (req, res) => {
+    if (!req.isAuthenticated() || req.user!.role !== "admin") {
+      return res.sendStatus(403);
+    }
+    
+    try {
+      const userId = parseInt(req.params.id);
+      const { approved } = req.body;
+      
+      if (typeof approved !== "boolean") {
+        return res.status(400).json({ error: "Approved status is required as a boolean" });
+      }
+      
+      const user = await storage.updateUserApproval({ 
+        userId, 
+        approved 
+      });
+      
+      await storage.logActivity({
+        userId: req.user!.id,
+        type: "user_approval_change",
+        metadata: {
+          targetUserId: userId,
+          approved
+        }
+      });
+      
+      res.json(user);
+    } catch (error) {
+      console.error("Error updating user approval:", error);
+      res.status(500).json({ error: "Failed to update user approval" });
     }
   });
 
