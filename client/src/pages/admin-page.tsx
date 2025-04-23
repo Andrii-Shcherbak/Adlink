@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, UserPlus, Database } from "lucide-react";
+import { Loader2, UserPlus, Database, RefreshCcw } from "lucide-react";
 import type { User } from "@shared/schema";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
@@ -137,7 +137,7 @@ export default function AdminPage() {
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button variant="outline">
-                    <Database className="h-4 w-4 mr-2" />
+                    <RefreshCcw className="h-4 w-4 mr-2" />
                     Migrate Analytics Data
                   </Button>
                 </AlertDialogTrigger>

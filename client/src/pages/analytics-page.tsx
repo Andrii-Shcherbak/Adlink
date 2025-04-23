@@ -126,18 +126,32 @@ export default function AnalyticsPage() {
                         }
                       } else if (data && typeof data === 'object') {
                         // New format - object with count and name
-                        const countryData = data as { count: number, name?: string };
+                        const countryData = data as { count: number, name?: string, cities?: Record<string, number> };
                         const countryName = countryData.name || (code === 'UNKNOWN' ? 'Unknown' : code);
+                        
+                        // Count total cities clicks if cities data exists
+                        let citiesTotal = 0;
+                        if (countryData.cities) {
+                          citiesTotal = Object.values(countryData.cities).reduce((sum, count) => sum + count, 0);
+                        }
+                        
+                        // Use the greater of explicit count or cities total (for data consistency)
+                        const actualCount = Math.max(countryData.count || 0, citiesTotal);
+                        
                         const existingEntry = acc.find(entry => entry.name === countryName);
                         if (existingEntry) {
-                          existingEntry.value += countryData.count;
+                          existingEntry.value += actualCount;
                         } else {
-                          acc.push({ name: countryName, value: countryData.count });
+                          acc.push({ 
+                            name: countryName, 
+                            value: actualCount,
+                            code // Keep code for reference
+                          });
                         }
                       }
                     });
                     return acc;
-                  }, [] as { name: string; value: number }[])
+                  }, [] as { name: string; value: number; code?: string }[])
                     .sort((a, b) => b.value - a.value)
                     .slice(0, 10) // Show top 10 countries for better readability
                   }
@@ -146,7 +160,12 @@ export default function AnalyticsPage() {
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis type="number" />
                   <YAxis type="category" dataKey="name" width={120} />
-                  <Tooltip />
+                  <Tooltip 
+                    labelFormatter={(label) => `Country: ${label}`}
+                    formatter={(value, name, props) => {
+                      return [value, 'Clicks'];
+                    }}
+                  />
                   <Bar dataKey="value" fill="hsl(var(--primary))" />
                 </BarChart>
               </ResponsiveContainer>
@@ -181,7 +200,12 @@ export default function AnalyticsPage() {
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis type="number" />
                   <YAxis type="category" dataKey="name" width={120} />
-                  <Tooltip labelFormatter={(label) => `Referrer: ${label}`} />
+                  <Tooltip 
+                    labelFormatter={(label) => `Referrer: ${label}`}
+                    formatter={(value, name, props) => {
+                      return [value, 'Clicks'];
+                    }}
+                  />
                   <Bar dataKey="value" fill="hsl(var(--primary))" />
                 </BarChart>
               </ResponsiveContainer>
@@ -208,16 +232,24 @@ export default function AnalyticsPage() {
                       
                       if (countryData.cities) {
                         Object.entries(countryData.cities).forEach(([cityName, count]) => {
-                          if (!cityName) return; // Skip empty city names
+                          if (!cityName || cityName.trim() === '') return; // Skip empty city names
                           
-                          const formattedCityName = cityName.charAt(0).toUpperCase() + cityName.slice(1);
-                          const existingEntry = acc.find(entry => entry.name === formattedCityName);
+                          // Handle a common case where unknown cities are marked with dashes or "unknown"
+                          let displayName = cityName;
+                          if (cityName === '-' || cityName.toLowerCase() === 'unknown') {
+                            displayName = `Unknown (${countryData.name || code})`;
+                          } else {
+                            // Format city name with proper capitalization
+                            displayName = cityName.charAt(0).toUpperCase() + cityName.slice(1).toLowerCase();
+                          }
+                          
+                          const existingEntry = acc.find(entry => entry.name === displayName);
                           
                           if (existingEntry) {
                             existingEntry.value += count;
                           } else {
                             acc.push({ 
-                              name: formattedCityName, 
+                              name: displayName, 
                               value: count,
                               country: countryData.name || code
                             });
