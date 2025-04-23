@@ -24,6 +24,7 @@ export const urls = pgTable("urls", {
   title: text("title"),
   clicks: integer("clicks").notNull().default(0),
   createdAt: timestamp("created_at").notNull().defaultNow(),
+  expiresAt: timestamp("expires_at"),
   analytics: jsonb("analytics").notNull().default({
     devices: {
       desktop: 0,
@@ -68,6 +69,7 @@ export const insertUrlSchema = createInsertSchema(urls).pick({
   originalUrl: true,
 }).extend({
   password: z.string().optional(),
+  expiresAt: z.string().optional().transform((val) => val ? new Date(val) : undefined),
 });
 
 export const qrConfigSchema = z.object({

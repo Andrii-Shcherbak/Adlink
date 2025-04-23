@@ -248,6 +248,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     const url = await storage.getUrlByShortCode(req.params.shortCode);
     if (!url) return next();
+    
+    // Check if URL has expired
+    if (url.expiresAt && new Date(url.expiresAt) < new Date()) {
+      return res.status(410).send("This link has expired.");
+    }
 
     if (url.isPasswordProtected) {
       return res.redirect(`/protected/${url.shortCode}`);
@@ -270,6 +275,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/r/:shortCode", async (req, res) => {
     const url = await storage.getUrlByShortCode(req.params.shortCode);
     if (!url) return res.sendStatus(404);
+    
+    // Check if URL has expired
+    if (url.expiresAt && new Date(url.expiresAt) < new Date()) {
+      return res.status(410).send("This link has expired.");
+    }
 
     if (url.isPasswordProtected) {
       return res.redirect(`/protected/${url.shortCode}`);
@@ -291,6 +301,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/:shortCode/verify", async (req, res) => {
     const url = await storage.getUrlByShortCode(req.params.shortCode);
     if (!url) return res.sendStatus(404);
+    
+    // Check if URL has expired
+    if (url.expiresAt && new Date(url.expiresAt) < new Date()) {
+      return res.status(410).json({ error: "This link has expired." });
+    }
 
     if (!url.isPasswordProtected || !url.password) {
       return res.status(400).json({ error: "URL is not password protected" });
@@ -318,6 +333,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/r/:shortCode/verify", async (req, res) => {
     const url = await storage.getUrlByShortCode(req.params.shortCode);
     if (!url) return res.sendStatus(404);
+    
+    // Check if URL has expired
+    if (url.expiresAt && new Date(url.expiresAt) < new Date()) {
+      return res.status(410).json({ error: "This link has expired." });
+    }
 
     if (!url.isPasswordProtected || !url.password) {
       return res.status(400).json({ error: "URL is not password protected" });
@@ -593,6 +613,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Update expiry for a URL
+  app.patch("/api/urls/:id/expiry", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    const { expiresAt } = req.body;
+    
+    try {
+      // Verify the URL belongs to the current user
+      const urlId = parseInt(req.params.id);
+      const urls = await storage.getUserUrls(req.user!.id, 1, 0);
+      const url = urls.find(u => u.id === urlId);
+      
+      if (!url) {
+        return res.status(404).send("URL not found");
+      }
+      
+      const updatedUrl = await storage.updateUrl(urlId, req.user!.id, { 
+        expiresAt: expiresAt ? new Date(expiresAt) : null 
+      });
+      
+      // Log expiry update
+      await storage.logActivity({
+        userId: req.user!.id,
+        type: "url_expiry_update",
+        metadata: {
+          urlId: updatedUrl.id,
+          expiresAt: updatedUrl.expiresAt
+        }
+      });
+      
+      res.json(updatedUrl);
+    } catch (error) {
+      console.error("Error updating URL expiry:", error);
+      res.status(500).json({ error: "Failed to update URL expiry" });
+    }
+  });
+  
   // Update shortcode for a URL
   app.patch("/api/urls/:id/shortcode", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
@@ -718,13 +775,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
   return httpServer;
 }
 
+// Enhanced device detection that returns OS and model information when available
+interface DeviceInfo {
+  type: 'desktop' | 'mobile' | 'tablet';
+  os?: string;
+  model?: string;
+  brand?: string;
+}
+
 function getDeviceType(userAgent: string): 'desktop' | 'mobile' | 'tablet' {
+  const deviceInfo = getDetailedDeviceInfo(userAgent);
+  return deviceInfo.type;
+}
+
+function getDetailedDeviceInfo(userAgent: string): DeviceInfo {
   const parser = new UAParser(userAgent);
   const device = parser.getDevice();
-
-  if (device.type === 'tablet') return 'tablet';
-  if (device.type === 'mobile') return 'mobile';
-  return 'desktop';
+  const os = parser.getOS();
+  
+  const deviceInfo: DeviceInfo = {
+    type: 'desktop'
+  };
+  
+  // Set device type
+  if (device.type === 'tablet') deviceInfo.type = 'tablet';
+  else if (device.type === 'mobile') deviceInfo.type = 'mobile';
+  
+  // Add OS info
+  if (os.name) {
+    deviceInfo.os = os.name + (os.version ? ` ${os.version}` : '');
+  }
+  
+  // Add device model and brand when available
+  if (device.model) deviceInfo.model = device.model;
+  if (device.vendor) deviceInfo.brand = device.vendor;
+  
+  return deviceInfo;
 }
 
 function getReferrer(referer: string | undefined): string {
