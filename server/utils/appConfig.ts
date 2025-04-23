@@ -3,20 +3,15 @@
  */
 
 /**
- * Get the base URL for the application based on environment
- * This is used for callbacks, redirects, and any absolute URLs needed by the server
+ * Get the domain for the application based on environment
+ * This is used for Microsoft authentication callbacks
  */
-export function getAppBaseUrl(): string {
-  // First priority: explicitly set APP_URL
-  if (process.env.APP_URL) {
-    return process.env.APP_URL;
+export function getAuthDomain(): string {
+  // Use AUTH_DOMAIN if set (for production or specific environments)
+  if (process.env.AUTH_DOMAIN) {
+    return process.env.AUTH_DOMAIN;
   }
-
-  // Second priority: Replit environment (for development and testing)
-  if (process.env.REPL_SLUG && process.env.REPL_OWNER) {
-    return `https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co`;
-  }
-
-  // Fallback for local development
+  
+  // Fallback for development
   return 'http://localhost:5000';
 }

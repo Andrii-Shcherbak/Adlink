@@ -9,7 +9,6 @@ import { Button } from "@/components/ui/button";
 import { Redirect } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { FiLink, FiBarChart2, FiGlobe, FiCode, FiUser, FiLock } from "react-icons/fi";
-import { getAppUrl } from "@/lib/appConfig";
 
 export default function AuthPage() {
   const { user, loginMutation, registerMutation } = useAuth();
@@ -132,7 +131,7 @@ export default function AuthPage() {
                       type="button"
                       variant="outline"
                       className="w-full h-11 text-base text-white border-white/20 bg-white/10 hover:bg-white/20"
-                      onClick={() => window.location.href = `${getAppUrl()}/api/auth/microsoft`}
+                      onClick={() => window.location.href = `/api/auth/microsoft`}
                     >
                       <FiUser className="mr-2 h-5 w-5" />
                       Sign in with Microsoft
