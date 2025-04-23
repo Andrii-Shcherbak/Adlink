@@ -731,12 +731,27 @@ export default function HomePage() {
                               </AlertDialog>
                             </div>
                           </div>
-                          <div className="flex flex-col sm:flex-row sm:items-center gap-2 text-sm text-muted-foreground">
+                          <div className="flex flex-col sm:flex-row sm:items-center gap-2 text-sm text-muted-foreground flex-wrap">
                             <span>
                               Created: {format(new Date(url.createdAt), 'MMM d, yyyy HH:mm')}
                             </span>
                             <span className="hidden sm:inline">•</span>
                             <span>Clicks: {url.clicks}</span>
+                            {url.expiresAt && (
+                              <>
+                                <span className="hidden sm:inline">•</span>
+                                <span className="flex items-center gap-1">
+                                  <FiClock className="h-3 w-3" />
+                                  {isPast(new Date(url.expiresAt)) ? (
+                                    <Badge variant="destructive" className="text-xs py-0 h-5">Expired</Badge>
+                                  ) : (
+                                    <span>
+                                      Expires: {formatDistanceToNow(new Date(url.expiresAt), { addSuffix: true })}
+                                    </span>
+                                  )}
+                                </span>
+                              </>
+                            )}
                           </div>
                           
                           {/* Title display with edit option */}
@@ -845,6 +860,10 @@ export default function HomePage() {
                               }
                             }}
                           />
+                          {/* Expiry Date Button */}
+                          <ExpiryDialog url={url} />
+                          
+                          {/* Password Protection Button */}
                           <Popover>
                             <PopoverTrigger asChild>
                               <Button
