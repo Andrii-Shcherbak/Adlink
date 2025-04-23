@@ -15,6 +15,9 @@ import fs from "fs";
 import dotenv from "dotenv";
 import geoip from 'geoip-lite';
 import { getName } from 'country-list';
+import { db } from "./db";
+import { urls } from "@shared/schema";
+import { eq, and } from "drizzle-orm";
 
 // Load environment variables from .env file
 dotenv.config();
@@ -41,6 +44,90 @@ async function hashPassword(password: string) {
 
 export async function registerRoutes(app: Express): Promise<Server> {
   setupAuth(app);
+
+  // Add admin-only data migration endpoint
+  app.post('/api/admin/migrate-analytics', async (req, res) => {
+    try {
+      const user = req.user as any;
+      if (!req.isAuthenticated() || !user || user.role !== 'admin') {
+        return res.status(403).json({ error: 'Unauthorized' });
+      }
+      
+      // Get all URLs
+      const allUrls = await db.select().from(urls);
+      let migrationCount = 0;
+      let conversionCount = 0;
+      
+      // Process each URL
+      for (const url of allUrls) {
+        if (url.analytics) {
+          try {
+            // Create a new analytics structure
+            const oldAnalytics = url.analytics as any;
+            const newAnalytics = {
+              devices: oldAnalytics.devices || { desktop: 0, mobile: 0, tablet: 0 },
+              countries: {},
+              referrers: oldAnalytics.referrers || {}
+            };
+            
+            // Determine if we need to perform a conversion
+            let needsConversion = false;
+            
+            // Check if countries exist and if any entry is in the old format
+            if (oldAnalytics.countries) {
+              Object.entries(oldAnalytics.countries).forEach(([code, data]) => {
+                if (typeof data === 'number') {
+                  needsConversion = true;
+                }
+              });
+            }
+            
+            // Migrate country data
+            if (oldAnalytics.countries) {
+              Object.entries(oldAnalytics.countries).forEach(([code, data]) => {
+                if (typeof data === 'number') {
+                  // Convert old format to new format
+                  newAnalytics.countries[code] = {
+                    count: data,
+                    name: code === 'UNKNOWN' ? 'Unknown' : getName(code) || code,
+                    cities: {}
+                  };
+                  conversionCount++;
+                } else if (data && typeof data === 'object') {
+                  // Already in new format, just ensure it has all properties
+                  newAnalytics.countries[code] = {
+                    count: (data as any).count || 0,
+                    name: (data as any).name || getName(code) || code,
+                    cities: (data as any).cities || {}
+                  };
+                }
+              });
+            }
+            
+            if (needsConversion) {
+              // Update the URL with the new analytics structure
+              await db
+                .update(urls)
+                .set({ analytics: newAnalytics })
+                .where(eq(urls.id, url.id));
+                
+              migrationCount++;
+            }
+          } catch (error) {
+            console.error(`Error migrating URL ${url.id}:`, error);
+          }
+        }
+      }
+      
+      res.json({ 
+        success: true, 
+        message: `Migration completed. Updated ${migrationCount} URLs with ${conversionCount} country data conversions.` 
+      });
+    } catch (error) {
+      console.error('Migration error:', error);
+      res.status(500).json({ error: 'Migration failed', details: error.message });
+    }
+  });
 
   app.post("/api/urls", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);

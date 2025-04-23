@@ -173,27 +173,53 @@ export class DatabaseStorage implements IStorage {
     // Completely rebuild countries structure if needed
     const countryEntry = analytics.countries[countryInfo.code];
     
-    // Check if we need to convert legacy format
-    let needsConversion = false;
+    // Create a completely new analytics structure with proper typing
+    const newAnalytics: {
+      devices: Record<DeviceType, number>;
+      countries: Record<string, { count: number; name: string; cities: Record<string, number> }>;
+      referrers: Record<string, number>;
+    } = {
+      devices: { ...analytics.devices },
+      countries: {},
+      referrers: { ...analytics.referrers }
+    };
     
-    if (typeof countryEntry === 'number') {
-      needsConversion = true;
+    // Copy and convert all countries data to new format
+    if (analytics.countries && typeof analytics.countries === 'object') {
+      Object.entries(analytics.countries).forEach(([code, entry]) => {
+        if (typeof entry === 'number') {
+          // Convert old format to new format
+          newAnalytics.countries[code] = {
+            count: entry,
+            name: code,
+            cities: {}
+          };
+        } else if (entry && typeof entry === 'object') {
+          // Already in new format, just copy it
+          const countryData = entry as { count?: number; name?: string; cities?: Record<string, number> };
+          newAnalytics.countries[code] = { 
+            count: countryData.count || 0,
+            name: countryData.name || code,
+            cities: countryData.cities || {}
+          };
+        }
+      });
     }
     
-    // If we need to convert legacy format or if entry doesn't exist
-    if (needsConversion || !countryEntry) {
-      // Create new country data structure
-      const existingCount = typeof countryEntry === 'number' ? countryEntry : 0;
-      
-      analytics.countries[countryInfo.code] = {
-        count: existingCount,
+    // Make sure the current country exists
+    if (!newAnalytics.countries[countryInfo.code]) {
+      newAnalytics.countries[countryInfo.code] = {
+        count: 0,
         name: countryInfo.name,
         cities: {}
       };
     }
     
-    // Now it's safe to increment the count
-    analytics.countries[countryInfo.code].count += 1;
+    // Increment the count for this country
+    newAnalytics.countries[countryInfo.code].count += 1;
+    
+    // Replace the analytics object with our new one
+    analytics = newAnalytics;
     
     // Update city data if available
     if (countryInfo.city) {
