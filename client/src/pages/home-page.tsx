@@ -9,17 +9,18 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { useToast } from "@/hooks/use-toast";
 import { QRCodeSVG } from "qrcode.react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { Loader2, Copy, ExternalLink, LinkIcon, ChevronLeft, ChevronRight, Trash2, Download } from "lucide-react";
+import { Loader2, Copy, ExternalLink, LinkIcon, ChevronLeft, ChevronRight, Trash2, Download, Calendar, Clock, AlertTriangle } from "lucide-react";
 import { QrCustomizer } from "@/components/qr-customizer";
 import { useState } from "react";
-import { format } from "date-fns";
+import { format, addDays, isAfter, isPast, formatDistanceToNow } from "date-fns";
 import { AlertDialog, AlertDialogTrigger, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from "@/components/ui/alert-dialog";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { FiLock, FiUnlock, FiBarChart2, FiEdit2, FiEdit3, FiRefreshCw, FiArrowRight, FiCheck } from "react-icons/fi";
+import { FiLock, FiUnlock, FiBarChart2, FiEdit2, FiEdit3, FiRefreshCw, FiArrowRight, FiCheck, FiClock } from "react-icons/fi";
 import { SecurityBadge } from "@/components/security-badge";
 import { getUrlSecurityLevel, getSecurityColorClasses, cn } from "@/lib/utils";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 
 function truncateUrl(url: string, maxLength: number = 50): string {
   if (url.length <= maxLength) return url;
@@ -133,6 +134,163 @@ function TitleEditDialog({ url }: { url: Url }) {
               <FiCheck className="h-4 w-4 mr-2" />
             )}
             Save
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// Expiry Date Dialog Component
+function ExpiryDialog({ url }: { url: Url }) {
+  const { toast } = useToast();
+  const [isOpen, setIsOpen] = useState(false);
+  const [expiryDate, setExpiryDate] = useState<Date | null>(url.expiresAt ? new Date(url.expiresAt) : null);
+  const [expiryDays, setExpiryDays] = useState<number | null>(null);
+  
+  const updateExpiryMutation = useMutation({
+    mutationFn: async ({ id, expiresAt }: { id: number; expiresAt: string | null }) => {
+      const res = await apiRequest("PATCH", `/api/urls/${id}/expiry`, { expiresAt });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/urls"] });
+      setIsOpen(false);
+      toast({
+        title: expiryDate ? "Expiry date set" : "Expiry date removed",
+        description: expiryDate 
+          ? `The URL will expire on ${format(expiryDate, 'MMM d, yyyy')}`
+          : "The URL will not expire automatically",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Failed to update expiry date",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+  
+  const setExpirationPeriod = (days: number) => {
+    setExpiryDays(days);
+    setExpiryDate(addDays(new Date(), days));
+  };
+  
+  const removeExpiration = () => {
+    setExpiryDate(null);
+    setExpiryDays(null);
+  };
+  
+  const applyExpiration = () => {
+    updateExpiryMutation.mutate({
+      id: url.id,
+      expiresAt: expiryDate ? expiryDate.toISOString() : null
+    });
+  };
+  
+  return (
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger asChild>
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          className={url.expiresAt ? "text-amber-500 dark:text-amber-400" : ""}
+        >
+          <Clock className="h-4 w-4" />
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>Set Expiry Date</DialogTitle>
+          <DialogDescription>
+            Choose when this link should expire. Expired links will no longer work.
+          </DialogDescription>
+        </DialogHeader>
+        
+        <div className="space-y-4 py-4">
+          <div className="flex flex-wrap gap-2">
+            <Button 
+              variant={expiryDays === 1 ? "default" : "outline"} 
+              size="sm" 
+              onClick={() => setExpirationPeriod(1)}
+            >
+              1 Day
+            </Button>
+            <Button 
+              variant={expiryDays === 7 ? "default" : "outline"} 
+              size="sm" 
+              onClick={() => setExpirationPeriod(7)}
+            >
+              7 Days
+            </Button>
+            <Button 
+              variant={expiryDays === 30 ? "default" : "outline"} 
+              size="sm" 
+              onClick={() => setExpirationPeriod(30)}
+            >
+              30 Days
+            </Button>
+            <Button 
+              variant={expiryDays === 90 ? "default" : "outline"} 
+              size="sm" 
+              onClick={() => setExpirationPeriod(90)}
+            >
+              90 Days
+            </Button>
+            <Button 
+              variant={expiryDate === null ? "default" : "outline"} 
+              size="sm" 
+              onClick={removeExpiration}
+            >
+              No Expiry
+            </Button>
+          </div>
+          
+          <div className="space-y-1">
+            <Label>Custom Date</Label>
+            <Input 
+              type="date" 
+              value={expiryDate ? format(expiryDate, 'yyyy-MM-dd') : ''}
+              min={format(new Date(), 'yyyy-MM-dd')}
+              onChange={(e) => {
+                setExpiryDays(null);
+                if (e.target.value) {
+                  setExpiryDate(new Date(e.target.value));
+                } else {
+                  setExpiryDate(null);
+                }
+              }}
+            />
+          </div>
+          
+          {expiryDate && (
+            <div className="rounded-md bg-muted p-3 text-sm">
+              This link will expire on {format(expiryDate, 'MMMM d, yyyy')}
+              {isPast(expiryDate) && (
+                <div className="mt-2 flex items-center text-destructive">
+                  <AlertTriangle className="h-4 w-4 mr-1" />
+                  <span>This date is in the past. The link will be immediately expired.</span>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+        
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setIsOpen(false)}>
+            Cancel
+          </Button>
+          <Button 
+            onClick={applyExpiration}
+            disabled={updateExpiryMutation.isPending}
+          >
+            {updateExpiryMutation.isPending ? (
+              <Loader2 className="h-4 w-4 animate-spin mr-2" />
+            ) : (
+              <FiCheck className="h-4 w-4 mr-2" />
+            )}
+            {expiryDate ? 'Set Expiry' : 'Remove Expiry'}
           </Button>
         </DialogFooter>
       </DialogContent>
