@@ -159,12 +159,10 @@ export class DatabaseStorage implements IStorage {
       throw new Error("URL not found or unauthorized");
     }
 
-    const analytics = url.analytics as {
-      devices: Record<DeviceType, number>,
-      countries: Record<string, { count: number, name: string, cities?: Record<string, number> }>,
-      referrers: Record<string, number>
-    };
+    // Clone the analytics to avoid direct mutation of db result
+    let analytics = JSON.parse(JSON.stringify(url.analytics || {}));
 
+    // Initialize defaults if not present
     analytics.devices = analytics.devices || { desktop: 0, mobile: 0, tablet: 0 };
     analytics.countries = analytics.countries || {};
     analytics.referrers = analytics.referrers || {};
@@ -172,36 +170,40 @@ export class DatabaseStorage implements IStorage {
     // Update device count
     analytics.devices[deviceType] = (analytics.devices[deviceType] || 0) + 1;
     
-    // Initialize or update country data
-    if (!analytics.countries[countryInfo.code]) {
+    // Completely rebuild countries structure if needed
+    const countryEntry = analytics.countries[countryInfo.code];
+    
+    // Check if we need to convert legacy format
+    let needsConversion = false;
+    
+    if (typeof countryEntry === 'number') {
+      needsConversion = true;
+    }
+    
+    // If we need to convert legacy format or if entry doesn't exist
+    if (needsConversion || !countryEntry) {
+      // Create new country data structure
+      const existingCount = typeof countryEntry === 'number' ? countryEntry : 0;
+      
       analytics.countries[countryInfo.code] = {
-        count: 0,
-        name: countryInfo.name,
-        cities: {}
-      };
-    } else if (typeof analytics.countries[countryInfo.code] === 'number') {
-      // Handle legacy data format where countries were stored as just numbers
-      const oldCount = analytics.countries[countryInfo.code] as unknown as number;
-      analytics.countries[countryInfo.code] = {
-        count: oldCount,
+        count: existingCount,
         name: countryInfo.name,
         cities: {}
       };
     }
     
-    // Increment country count - now we know it's an object
-    const countryData = analytics.countries[countryInfo.code] as { count: number, name: string, cities?: Record<string, number> };
-    countryData.count += 1;
+    // Now it's safe to increment the count
+    analytics.countries[countryInfo.code].count += 1;
     
     // Update city data if available
     if (countryInfo.city) {
-      const countryData = analytics.countries[countryInfo.code];
-      if (countryData) {
-        countryData.cities = countryData.cities || {};
-        if (countryData.cities && countryInfo.city) {
-          countryData.cities[countryInfo.city] = (countryData.cities[countryInfo.city] || 0) + 1;
-        }
+      const cityName = countryInfo.city.toLowerCase();
+      if (!analytics.countries[countryInfo.code].cities) {
+        analytics.countries[countryInfo.code].cities = {};
       }
+      
+      analytics.countries[countryInfo.code].cities[cityName] = 
+        (analytics.countries[countryInfo.code].cities[cityName] || 0) + 1;
     }
     
     // Update referrer data
