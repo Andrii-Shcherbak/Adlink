@@ -163,10 +163,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     const deviceType = getDeviceType(req.headers['user-agent'] || '');
     const referrer = getReferrer(req.headers.referer);
-    const countryCode = getCountryCode(req);
+    const countryInfo = getCountryCode(req);
 
     try {
-      await storage.incrementUrlClicks(url.id, url.userId, deviceType, countryCode, referrer);
+      await storage.incrementUrlClicks(url.id, url.userId, deviceType, countryInfo, referrer);
       res.redirect(url.originalUrl);
     } catch (error) {
       console.error('Error incrementing clicks:', error);
@@ -185,10 +185,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     const deviceType = getDeviceType(req.headers['user-agent'] || '');
     const referrer = getReferrer(req.headers.referer);
-    const countryCode = getCountryCode(req);
+    const countryInfo = getCountryCode(req);
 
     try {
-      await storage.incrementUrlClicks(url.id, url.userId, deviceType, countryCode, referrer);
+      await storage.incrementUrlClicks(url.id, url.userId, deviceType, countryInfo, referrer);
       res.redirect(url.originalUrl);
     } catch (error) {
       console.error('Error incrementing clicks:', error);
@@ -211,10 +211,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     const deviceType = getDeviceType(req.headers['user-agent'] || '');
     const referrer = getReferrer(req.headers.referer);
-    const countryCode = getCountryCode(req);
+    const countryInfo = getCountryCode(req);
 
     try {
-      await storage.incrementUrlClicks(url.id, url.userId, deviceType, countryCode, referrer);
+      await storage.incrementUrlClicks(url.id, url.userId, deviceType, countryInfo, referrer);
       res.json({ redirectUrl: url.originalUrl });
     } catch (error) {
       console.error('Error incrementing clicks:', error);
@@ -238,10 +238,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     const deviceType = getDeviceType(req.headers['user-agent'] || '');
     const referrer = getReferrer(req.headers.referer);
-    const countryCode = getCountryCode(req);
+    const countryInfo = getCountryCode(req);
 
     try {
-      await storage.incrementUrlClicks(url.id, url.userId, deviceType, countryCode, referrer);
+      await storage.incrementUrlClicks(url.id, url.userId, deviceType, countryInfo, referrer);
       res.json({ redirectUrl: url.originalUrl });
     } catch (error) {
       console.error('Error incrementing clicks:', error);

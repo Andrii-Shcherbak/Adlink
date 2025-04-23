@@ -108,24 +108,31 @@ export default function AnalyticsPage() {
             <CardContent className="h-[400px]">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
+                  layout="vertical"
                   data={urls.reduce((acc, url) => {
-                    const analytics = url.analytics as { countries: Record<string, number> };
-                    Object.entries(analytics.countries).forEach(([country, count]) => {
-                      const countryName = country === 'UNKNOWN' ? 'Unknown' : country;
+                    const analytics = url.analytics as { 
+                      countries: Record<string, { count: number, name: string, cities?: Record<string, number> }> 
+                    };
+                    Object.entries(analytics.countries || {}).forEach(([code, data]) => {
+                      // Use the stored country name if available, otherwise just use the code
+                      const countryName = data.name || (code === 'UNKNOWN' ? 'Unknown' : code);
                       const existingEntry = acc.find(entry => entry.name === countryName);
                       if (existingEntry) {
-                        existingEntry.value += count;
+                        existingEntry.value += data.count;
                       } else {
-                        acc.push({ name: countryName, value: count });
+                        acc.push({ name: countryName, value: data.count });
                       }
                     });
                     return acc;
-                  }, [] as { name: string; value: number }[]).sort((a, b) => b.value - a.value)}
-                  margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                  }, [] as { name: string; value: number }[])
+                    .sort((a, b) => b.value - a.value)
+                    .slice(0, 10) // Show top 10 countries for better readability
+                  }
+                  margin={{ top: 20, right: 30, left: 50, bottom: 5 }}
                 >
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis />
+                  <XAxis type="number" />
+                  <YAxis type="category" dataKey="name" width={120} />
                   <Tooltip />
                   <Bar dataKey="value" fill="hsl(var(--primary))" />
                 </BarChart>
@@ -164,6 +171,62 @@ export default function AnalyticsPage() {
             </CardContent>
           </Card>
         </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>City Analytics</CardTitle>
+          </CardHeader>
+          <CardContent className="h-[400px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                layout="vertical"
+                data={urls.reduce((acc, url) => {
+                  const analytics = url.analytics as { 
+                    countries: Record<string, { count: number, name: string, cities?: Record<string, number> }> 
+                  };
+                  
+                  Object.values(analytics.countries || {}).forEach((countryData) => {
+                    if (countryData.cities) {
+                      Object.entries(countryData.cities).forEach(([cityName, count]) => {
+                        if (!cityName) return; // Skip empty city names
+                        
+                        const formattedCityName = cityName.charAt(0).toUpperCase() + cityName.slice(1);
+                        const existingEntry = acc.find(entry => entry.name === formattedCityName);
+                        
+                        if (existingEntry) {
+                          existingEntry.value += count;
+                        } else {
+                          acc.push({ 
+                            name: formattedCityName, 
+                            value: count,
+                            country: countryData.name
+                          });
+                        }
+                      });
+                    }
+                  });
+                  
+                  return acc;
+                }, [] as { name: string; value: number; country?: string }[])
+                  .sort((a, b) => b.value - a.value)
+                  .slice(0, 12) // Show top 12 cities for better readability
+                }
+                margin={{ top: 20, right: 30, left: 100, bottom: 5 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis type="number" />
+                <YAxis type="category" dataKey="name" width={150} />
+                <Tooltip 
+                  labelFormatter={(label) => `City: ${label}`} 
+                  formatter={(value, name, props) => {
+                    return [value, props.payload.country ? `Clicks (${props.payload.country})` : 'Clicks'];
+                  }}
+                />
+                <Bar dataKey="value" fill="hsl(var(--primary))" />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
