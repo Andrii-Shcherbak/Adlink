@@ -13,6 +13,7 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 import dotenv from "dotenv";
+import geoip from 'geoip-lite';
 
 // Load environment variables from .env file
 dotenv.config();
@@ -564,4 +565,32 @@ function getReferrer(referer: string | undefined): string {
   } catch {
     return 'invalid';
   }
+}
+
+function getCountryCode(req: express.Request): string {
+  // First try Cloudflare country header (for production with Cloudflare)
+  const cfCountry = (req.headers['cf-ipcountry'] as string)?.toUpperCase();
+  if (cfCountry) {
+    return cfCountry;
+  }
+
+  // Next, try to get the client IP address
+  const ip = 
+    (req.headers['x-forwarded-for'] as string)?.split(',').shift()?.trim() || 
+    req.socket.remoteAddress || 
+    'unknown';
+  
+  if (ip && ip !== 'unknown' && ip !== '127.0.0.1' && ip !== '::1') {
+    try {
+      const geo = geoip.lookup(ip);
+      if (geo && geo.country) {
+        console.log(`Detected country for IP ${ip}: ${geo.country}`);
+        return geo.country;
+      }
+    } catch (error) {
+      console.error(`Error looking up country for IP ${ip}:`, error);
+    }
+  }
+
+  return 'UNKNOWN';
 }
