@@ -11,6 +11,13 @@ const PostgresSessionStore = connectPg(session);
 
 type DeviceType = 'desktop' | 'mobile' | 'tablet';
 
+interface DeviceInfo {
+  type: DeviceType;
+  os?: string;
+  model?: string;
+  brand?: string;
+}
+
 export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
@@ -20,7 +27,7 @@ export interface IStorage {
   getUrlByShortCode(shortCode: string, userId?: number): Promise<Url | undefined>;
   getUserUrls(userId: number, limit?: number, offset?: number): Promise<Url[]>;
   getUserUrlsCount(userId: number): Promise<number>;
-  incrementUrlClicks(id: number, userId: number, deviceType: DeviceType, countryInfo: CountryInfo, referrer: string): Promise<void>;
+  incrementUrlClicks(id: number, userId: number, deviceType: DeviceType, countryInfo: CountryInfo, referrer: string, deviceInfo?: DeviceInfo): Promise<void>;
   sessionStore: session.Store;
   updateUrlQrConfig(id: number, userId: number, qrConfig: any): Promise<Url | undefined>;
   updateUrl(id: number, userId: number, update: Partial<Url>): Promise<Url>;
@@ -148,7 +155,8 @@ export class DatabaseStorage implements IStorage {
     userId: number, 
     deviceType: DeviceType, 
     countryInfo: { code: string; name: string; city?: string }, 
-    referrer: string
+    referrer: string,
+    deviceInfo?: DeviceInfo
   ): Promise<void> {
     const [url] = await db
       .select()
@@ -166,9 +174,31 @@ export class DatabaseStorage implements IStorage {
     analytics.devices = analytics.devices || { desktop: 0, mobile: 0, tablet: 0 };
     analytics.countries = analytics.countries || {};
     analytics.referrers = analytics.referrers || {};
+    analytics.deviceDetails = analytics.deviceDetails || { os: {}, models: {}, brands: {} };
 
     // Update device count
     analytics.devices[deviceType] = (analytics.devices[deviceType] || 0) + 1;
+    
+    // Update detailed device information if available
+    if (deviceInfo) {
+      // Track OS information
+      if (deviceInfo.os) {
+        analytics.deviceDetails.os[deviceInfo.os] = 
+          (analytics.deviceDetails.os[deviceInfo.os] || 0) + 1;
+      }
+      
+      // Track device model information
+      if (deviceInfo.model) {
+        analytics.deviceDetails.models[deviceInfo.model] = 
+          (analytics.deviceDetails.models[deviceInfo.model] || 0) + 1;
+      }
+      
+      // Track device brand information
+      if (deviceInfo.brand) {
+        analytics.deviceDetails.brands[deviceInfo.brand] = 
+          (analytics.deviceDetails.brands[deviceInfo.brand] || 0) + 1;
+      }
+    }
     
     // Completely rebuild countries structure if needed
     const countryEntry = analytics.countries[countryInfo.code];
@@ -178,10 +208,20 @@ export class DatabaseStorage implements IStorage {
       devices: Record<DeviceType, number>;
       countries: Record<string, { count: number; name: string; cities: Record<string, number> }>;
       referrers: Record<string, number>;
+      deviceDetails: {
+        os: Record<string, number>;
+        models: Record<string, number>;
+        brands: Record<string, number>;
+      };
     } = {
       devices: { ...analytics.devices },
       countries: {},
-      referrers: { ...analytics.referrers }
+      referrers: { ...analytics.referrers },
+      deviceDetails: { 
+        os: analytics.deviceDetails?.os ? { ...analytics.deviceDetails.os } : {},
+        models: analytics.deviceDetails?.models ? { ...analytics.deviceDetails.models } : {},
+        brands: analytics.deviceDetails?.brands ? { ...analytics.deviceDetails.brands } : {}
+      }
     };
     
     // Copy and convert all countries data to new format
