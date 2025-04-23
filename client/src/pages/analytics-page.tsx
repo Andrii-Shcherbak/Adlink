@@ -147,6 +147,7 @@ export default function AnalyticsPage() {
             <CardContent className="h-[400px]">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
+                  layout="vertical"
                   data={urls.reduce((acc, url) => {
                     const analytics = url.analytics as { referrers: Record<string, number> };
                     Object.entries(analytics.referrers || {}).forEach(([referrer, count]) => {
@@ -158,13 +159,16 @@ export default function AnalyticsPage() {
                       }
                     });
                     return acc;
-                  }, [] as { name: string; value: number }[]).sort((a, b) => b.value - a.value)}
-                  margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                  }, [] as { name: string; value: number }[])
+                    .sort((a, b) => b.value - a.value)
+                    .slice(0, 10) // Show top 10 referrers for better readability
+                  }
+                  margin={{ top: 20, right: 30, left: 50, bottom: 5 }}
                 >
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <Tooltip />
+                  <XAxis type="number" />
+                  <YAxis type="category" dataKey="name" width={120} />
+                  <Tooltip labelFormatter={(label) => `Referrer: ${label}`} />
                   <Bar dataKey="value" fill="hsl(var(--primary))" />
                 </BarChart>
               </ResponsiveContainer>
