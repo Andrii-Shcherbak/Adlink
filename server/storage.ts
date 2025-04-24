@@ -88,6 +88,16 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  async getUserByInviteToken(token: string): Promise<User | undefined> {
+    try {
+      const [user] = await db.select().from(users).where(eq(users.inviteToken, token));
+      return user;
+    } catch (error) {
+      console.error('Error getting user by invite token:', error);
+      return undefined;
+    }
+  }
+
   async createUser(insertUser: InsertUser): Promise<User> {
     try {
       const [user] = await db.insert(users).values({
@@ -331,6 +341,82 @@ export class DatabaseStorage implements IStorage {
       return user;
     } catch (error) {
       console.error('Error updating user approval:', error);
+      throw error;
+    }
+  }
+  
+  async createInvitation(inviteData: { email: string; firstName: string; lastName: string; company?: string }): Promise<{ user: User; token: string }> {
+    try {
+      // Generate a random token
+      const token = nanoid(32);
+      
+      // Check if a user with this email already exists
+      const existingUser = await this.getUserByEmail(inviteData.email);
+      if (existingUser) {
+        throw new Error("A user with this email already exists");
+      }
+      
+      // Create a placeholder user with the invite token
+      const [user] = await db.insert(users).values({
+        username: `invite_${nanoid(8)}`, // Temporary username until accepted
+        password: nanoid(32), // Temporary password until accepted
+        email: inviteData.email,
+        firstName: inviteData.firstName,
+        lastName: inviteData.lastName,
+        company: inviteData.company || "",
+        role: "user",
+        isApproved: true, // Pre-approved since it's an admin-created invite
+        isActive: false, // Not active until invitation is accepted
+        inviteToken: token,
+        inviteSentAt: new Date()
+      }).returning();
+      
+      return { user, token };
+    } catch (error) {
+      console.error('Error creating invitation:', error);
+      throw error;
+    }
+  }
+  
+  async acceptInvitation(token: string, userData: { username: string; password: string }): Promise<User> {
+    try {
+      // Find the invitation
+      const user = await this.getUserByInviteToken(token);
+      if (!user) {
+        throw new Error("Invalid or expired invitation token");
+      }
+      
+      // Check if the invitation has already been accepted
+      if (user.inviteAcceptedAt) {
+        throw new Error("This invitation has already been accepted");
+      }
+      
+      // Check if username is already taken by another user
+      const existingUser = await this.getUserByUsername(userData.username);
+      if (existingUser && existingUser.id !== user.id) {
+        throw new Error("This username is already taken");
+      }
+      
+      // Update the user with the provided username and password
+      const [updatedUser] = await db.update(users)
+        .set({
+          username: userData.username,
+          password: userData.password, // Note: This should be hashed before calling this method
+          isActive: true,
+          inviteAcceptedAt: new Date(),
+          // Clear the invite token to prevent reuse
+          inviteToken: null
+        })
+        .where(eq(users.id, user.id))
+        .returning();
+      
+      if (!updatedUser) {
+        throw new Error("Failed to update user");
+      }
+      
+      return updatedUser;
+    } catch (error) {
+      console.error('Error accepting invitation:', error);
       throw error;
     }
   }
