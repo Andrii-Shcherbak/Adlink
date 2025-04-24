@@ -1,13 +1,12 @@
-import { MailService } from '@sendgrid/mail';
+import sgMail from '@sendgrid/mail';
 import { getAuthDomain } from '../utils/appConfig';
 
 if (!process.env.SENDGRID_API_KEY) {
   console.warn("WARNING: SENDGRID_API_KEY environment variable is not set. Email functionality will not work.");
-}
-
-const mailService = new MailService();
-if (process.env.SENDGRID_API_KEY) {
-  mailService.setApiKey(process.env.SENDGRID_API_KEY);
+} else {
+  // Set API key for the entire SendGrid client
+  sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+  console.log("SendGrid API key configured");
 }
 
 interface EmailParams {
@@ -36,17 +35,27 @@ export class EmailService {
     }
 
     try {
-      // Always use the configured sender email
-      await mailService.send({
+      // Create message using v3 API format
+      const msg = {
         to: params.to,
         from: this.from, // Use the class property instead of params.from
         subject: params.subject,
         text: params.text || '',
         html: params.html || '',
-      });
+      };
+      
+      // Send email using v3 API
+      await sgMail.send(msg);
+      console.log(`Email sent successfully to ${params.to}`);
       return true;
     } catch (error) {
-      console.error('SendGrid email error:', error);
+      // More detailed error logging
+      console.error('SendGrid email error:');
+      if (error.response) {
+        console.error(error.response.body);
+      } else {
+        console.error(error);
+      }
       return false;
     }
   }
