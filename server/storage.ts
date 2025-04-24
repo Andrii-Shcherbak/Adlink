@@ -35,6 +35,7 @@ export interface IStorage {
   deleteUrl(id: number, userId: number): Promise<void>;
   getAllUsers(): Promise<User[]>;
   updateUserApproval(approval: UserApproval): Promise<User>;
+  deleteUser(userId: number): Promise<void>;
   
   // Invite-related methods
   createInvitation(inviteData: { email: string, firstName: string, lastName: string, company?: string }): Promise<{ user: User, token: string }>;
@@ -341,6 +342,32 @@ export class DatabaseStorage implements IStorage {
       return user;
     } catch (error) {
       console.error('Error updating user approval:', error);
+      throw error;
+    }
+  }
+  
+  async deleteUser(userId: number): Promise<void> {
+    try {
+      // First, delete user's URLs to maintain referential integrity
+      await db
+        .delete(urls)
+        .where(eq(urls.userId, userId));
+      
+      // Delete any activities associated with this user
+      await db
+        .delete(activities)
+        .where(eq(activities.userId, userId));
+      
+      // Finally, delete the user
+      const result = await db
+        .delete(users)
+        .where(eq(users.id, userId));
+        
+      if (!result) {
+        throw new Error("User not found or could not be deleted");
+      }
+    } catch (error) {
+      console.error('Error deleting user:', error);
       throw error;
     }
   }
