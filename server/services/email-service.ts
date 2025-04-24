@@ -24,7 +24,7 @@ export class EmailService {
 
   constructor() {
     // Always use the specified sender email address
-    this.from = 'Fromdev@dcxtransform.com';
+    this.from = 'dev@dcxtransform.com';
     
     console.log(`Email service initialized with sender: ${this.from}`);
   }
