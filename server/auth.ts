@@ -330,6 +330,7 @@ export function setupAuth(app: Express) {
         });
       } else if (!emailSent) {
         // If email fails for other reasons, return success but with a warning
+        // Also include the token so it can be manually shared
         return res.status(201).json({
           success: true,
           user: {
@@ -338,6 +339,7 @@ export function setupAuth(app: Express) {
             firstName: user.firstName,
             lastName: user.lastName
           },
+          token: token, // Include token for manual sharing
           warning: "Invitation created but email could not be sent. Please check your email configuration."
         });
       }
