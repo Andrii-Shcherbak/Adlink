@@ -739,15 +739,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Delete a user (admin only)
   app.delete("/api/users/:id", async (req, res) => {
+    console.log(`DELETE /api/users/${req.params.id} - received request to delete user`);
+    
     if (!req.isAuthenticated() || req.user!.role !== "admin") {
+      console.log(`DELETE /api/users/${req.params.id} - unauthorized, user not admin`);
       return res.sendStatus(403);
     }
     
     const userId = parseInt(req.params.id);
+    console.log(`DELETE /api/users/${req.params.id} - parsed userId: ${userId}`);
     
     try {
       // Make sure we're not deleting the current user or another admin
       if (userId === req.user!.id) {
+        console.log(`DELETE /api/users/${req.params.id} - rejected: attempting to delete own account`);
         return res.status(403).json({ 
           error: 'Cannot delete your own account' 
         });
@@ -758,10 +763,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userToDelete = users.find(u => u.id === userId);
       
       if (!userToDelete) {
+        console.log(`DELETE /api/users/${req.params.id} - user not found`);
         return res.status(404).json({ error: 'User not found' });
       }
       
+      console.log(`DELETE /api/users/${req.params.id} - found user to delete: ${userToDelete.username}`);
+      
       if (userToDelete.role === 'admin') {
+        console.log(`DELETE /api/users/${req.params.id} - rejected: attempting to delete admin account`);
         return res.status(403).json({ 
           error: 'Cannot delete an admin account' 
         });
@@ -779,9 +788,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       });
       
+      console.log(`DELETE /api/users/${req.params.id} - successfully deleted user ${userToDelete.username}`);
       res.json({ success: true });
     } catch (error) {
-      console.error('Error deleting user:', error);
+      console.error(`DELETE /api/users/${req.params.id} - error:`, error);
       res.status(500).json({ error: 'Failed to delete user' });
     }
   });

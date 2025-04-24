@@ -348,24 +348,41 @@ export class DatabaseStorage implements IStorage {
   
   async deleteUser(userId: number): Promise<void> {
     try {
+      console.log(`Starting deletion of user with ID: ${userId}`);
+      
+      // Verify user exists before deleting
+      const userExists = await this.getUser(userId);
+      if (!userExists) {
+        console.log(`User with ID ${userId} not found`);
+        throw new Error(`User with ID ${userId} not found`);
+      }
+      
+      console.log(`User exists, proceeding with deletion of user ${userExists.username}`);
+      
       // First, delete user's URLs to maintain referential integrity
-      await db
+      const deletedUrlsResult = await db
         .delete(urls)
         .where(eq(urls.userId, userId));
+      console.log(`Deleted user URLs: ${JSON.stringify(deletedUrlsResult)}`);
       
       // Delete any activities associated with this user
-      await db
+      const deletedActivitiesResult = await db
         .delete(activities)
         .where(eq(activities.userId, userId));
+      console.log(`Deleted user activities: ${JSON.stringify(deletedActivitiesResult)}`);
       
       // Finally, delete the user
-      const result = await db
+      const deletedUserResult = await db
         .delete(users)
         .where(eq(users.id, userId));
-        
-      if (!result) {
+      console.log(`Deleted user result: ${JSON.stringify(deletedUserResult)}`);
+      
+      if (!deletedUserResult) {
+        console.error(`Failed to delete user with ID ${userId}`);
         throw new Error("User not found or could not be deleted");
       }
+      
+      console.log(`Successfully deleted user with ID ${userId}`);
     } catch (error) {
       console.error('Error deleting user:', error);
       throw error;
