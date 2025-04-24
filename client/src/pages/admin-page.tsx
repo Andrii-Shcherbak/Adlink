@@ -187,10 +187,37 @@ export default function AdminPage() {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
       
       if (data.warning) {
+        // Show a toast with the warning and invite link for manual sharing
+        const baseUrl = window.location.origin;
+        const inviteUrl = `${baseUrl}/invite/${data.token}`;
+        
         toast({
-          title: "Invitation Created",
-          description: data.warning,
-          variant: "default",
+          title: "Invitation Created - Email Not Sent",
+          description: (
+            <div className="space-y-2">
+              <p>{data.warning}</p>
+              <p className="text-sm font-medium">You can manually share this invitation link:</p>
+              <div className="bg-secondary/30 p-2 rounded text-xs break-all select-all">
+                {inviteUrl}
+              </div>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="mt-2 text-xs"
+                onClick={() => {
+                  navigator.clipboard.writeText(inviteUrl);
+                  toast({
+                    title: "Copied to clipboard",
+                    description: "Invitation link copied to clipboard",
+                    duration: 2000,
+                  });
+                }}
+              >
+                Copy Link
+              </Button>
+            </div>
+          ),
+          duration: 10000,
         });
       } else {
         toast({
