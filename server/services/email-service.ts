@@ -14,8 +14,8 @@ interface EmailParams {
   to: string;
   from: string;
   subject: string;
-  text?: string;
-  html?: string;
+  text: string;
+  html: string;
 }
 
 export class EmailService {
@@ -40,8 +40,8 @@ export class EmailService {
         to: params.to,
         from: params.from,
         subject: params.subject,
-        text: params.text,
-        html: params.html,
+        text: params.text || '',
+        html: params.html || '',
       });
       return true;
     } catch (error) {

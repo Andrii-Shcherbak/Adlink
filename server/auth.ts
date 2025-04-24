@@ -8,6 +8,7 @@ import { promisify } from "util";
 import { storage } from "./storage";
 import { User as SelectUser } from "@shared/schema";
 import { getAuthDomain } from "./utils/appConfig";
+import { emailService } from "./services/email-service";
 
 declare global {
   namespace Express {
@@ -294,6 +295,183 @@ export function setupAuth(app: Express) {
     // Clear the message after sending it
     delete req.session.authMessage;
     res.json({ message });
+  });
+
+  // Invite management routes
+  app.post("/api/invites", isAdmin, async (req, res) => {
+    try {
+      const inviteData = req.body;
+      
+      // Validate the invite data
+      if (!inviteData.email || !inviteData.firstName || !inviteData.lastName) {
+        return res.status(400).json({ error: "Email, first name, and last name are required" });
+      }
+      
+      // Check if email already exists
+      const existingEmail = await storage.getUserByEmail(inviteData.email);
+      if (existingEmail) {
+        return res.status(400).json({ error: "Email already registered" });
+      }
+      
+      // Create invitation
+      const { user, token } = await storage.createInvitation(inviteData);
+      
+      // Send invitation email
+      const emailSent = await emailService.sendInvitation(
+        inviteData.email,
+        inviteData.firstName,
+        inviteData.lastName,
+        token
+      );
+      
+      if (!emailSent && !process.env.SENDGRID_API_KEY) {
+        return res.status(400).json({ 
+          error: "SendGrid API key is missing. Please add a SENDGRID_API_KEY to your environment variables." 
+        });
+      } else if (!emailSent) {
+        // If email fails for other reasons, return success but with a warning
+        return res.status(201).json({
+          success: true,
+          user: {
+            id: user.id,
+            email: user.email,
+            firstName: user.firstName,
+            lastName: user.lastName
+          },
+          warning: "Invitation created but email could not be sent. Please check your email configuration."
+        });
+      }
+      
+      // Log activity
+      await storage.logActivity({
+        userId: req.user!.id,
+        type: 'user_invited',
+        metadata: { 
+          email: inviteData.email,
+          invitedBy: req.user!.username
+        }
+      });
+      
+      return res.status(201).json({
+        success: true,
+        user: {
+          id: user.id,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName
+        },
+        message: "Invitation sent successfully"
+      });
+    } catch (error) {
+      console.error('Error creating invitation:', error);
+      return res.status(500).json({ 
+        error: error.message || "Server error during invitation creation" 
+      });
+    }
+  });
+  
+  // Accept invitation (public route)
+  app.post("/api/invites/accept", async (req, res) => {
+    try {
+      const { token, username, password } = req.body;
+      
+      if (!token || !username || !password) {
+        return res.status(400).json({ error: "Token, username, and password are required" });
+      }
+      
+      // Find the invitation
+      const user = await storage.getUserByInviteToken(token);
+      if (!user) {
+        return res.status(400).json({ error: "Invalid or expired invitation token" });
+      }
+      
+      // Check if the invitation has already been accepted
+      if (user.inviteAcceptedAt) {
+        return res.status(400).json({ error: "This invitation has already been accepted" });
+      }
+      
+      // Check if username is already taken
+      const existingUser = await storage.getUserByUsername(username);
+      if (existingUser && existingUser.id !== user.id) {
+        return res.status(400).json({ error: "Username already taken" });
+      }
+      
+      // Hash the password
+      const hashedPassword = await hashPassword(password);
+      
+      // Accept the invitation
+      const updatedUser = await storage.acceptInvitation(token, {
+        username,
+        password: hashedPassword
+      });
+      
+      // Log activity
+      await storage.logActivity({
+        userId: updatedUser.id,
+        type: 'invitation_accepted',
+        metadata: { username: updatedUser.username }
+      });
+      
+      // Automatically log the user in
+      req.login(updatedUser, (err) => {
+        if (err) {
+          return res.status(500).json({ error: "Authentication error" });
+        }
+        
+        return res.status(200).json({
+          success: true,
+          user: {
+            id: updatedUser.id,
+            username: updatedUser.username,
+            firstName: updatedUser.firstName,
+            lastName: updatedUser.lastName,
+            email: updatedUser.email,
+            role: updatedUser.role
+          },
+          message: "Invitation accepted successfully"
+        });
+      });
+    } catch (error) {
+      console.error('Error accepting invitation:', error);
+      return res.status(500).json({ 
+        error: error.message || "Server error while accepting invitation" 
+      });
+    }
+  });
+  
+  // Get invitation details (public route)
+  app.get("/api/invites/:token", async (req, res) => {
+    try {
+      const token = req.params.token;
+      if (!token) {
+        return res.status(400).json({ error: "Invitation token is required" });
+      }
+      
+      // Find the invitation
+      const user = await storage.getUserByInviteToken(token);
+      if (!user) {
+        return res.status(404).json({ error: "Invalid or expired invitation" });
+      }
+      
+      // Check if the invitation has already been accepted
+      if (user.inviteAcceptedAt) {
+        return res.status(400).json({ error: "This invitation has already been accepted" });
+      }
+      
+      // Return the invitation details (only non-sensitive information)
+      return res.status(200).json({
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        company: user.company,
+        inviteSentAt: user.inviteSentAt
+      });
+    } catch (error) {
+      console.error('Error retrieving invitation:', error);
+      return res.status(500).json({ 
+        error: "Server error while retrieving invitation details" 
+      });
+    }
   });
 }
 

@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, UserPlus, Database, RefreshCcw } from "lucide-react";
+import { Loader2, UserPlus, Database, RefreshCcw, Mail, User as UserIcon, UserCog } from "lucide-react";
 import type { User } from "@shared/schema";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
@@ -13,10 +13,18 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { queryClient } from "@/lib/queryClient";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 type CreateUserForm = {
   username: string;
   password: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  company: string;
+};
+
+type InviteUserForm = {
   email: string;
   firstName: string;
   lastName: string;
@@ -36,6 +44,14 @@ export default function AdminPage() {
   });
 
   const form = useForm<CreateUserForm>();
+  const inviteForm = useForm<InviteUserForm>({
+    defaultValues: {
+      email: '',
+      firstName: '',
+      lastName: '',
+      company: ''
+    }
+  });
 
   const createUserMutation = useMutation({
     mutationFn: async (data: CreateUserForm) => {
