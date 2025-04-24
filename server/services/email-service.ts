@@ -19,14 +19,22 @@ interface EmailParams {
 }
 
 export class EmailService {
-  private readonly from: string = 'noreply@adlink.dcxtransform.com';
+  private readonly from: string;
   private readonly domain: string = getAuthDomain();
 
   constructor() {
-    // Initialize with environment variables
+    // Initialize with environment variables or default value
+    // For SendGrid, this should be a verified sender email address
     if (process.env.EMAIL_FROM && typeof process.env.EMAIL_FROM === 'string') {
       this.from = process.env.EMAIL_FROM;
+    } else {
+      // Default email - use a gmail address or your verified sender as fallback
+      // Note: You should set up a proper verified sender in SendGrid
+      console.warn("Warning: EMAIL_FROM not set. Using default sender email address.");
+      this.from = 'noreply@adlink.dcxtransform.com';
     }
+    
+    console.log(`Email service initialized with sender: ${this.from}`);
   }
 
   async sendEmail(params: EmailParams): Promise<boolean> {
