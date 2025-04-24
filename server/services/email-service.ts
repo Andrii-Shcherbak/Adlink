@@ -31,7 +31,7 @@ export class EmailService {
       // Default email - use a gmail address or your verified sender as fallback
       // Note: You should set up a proper verified sender in SendGrid
       console.warn("Warning: EMAIL_FROM not set. Using default sender email address.");
-      this.from = 'noreply@adlink.dcxtransform.com';
+      this.from = 'Fromdev@dcxtransform.com';
     }
     
     console.log(`Email service initialized with sender: ${this.from}`);
