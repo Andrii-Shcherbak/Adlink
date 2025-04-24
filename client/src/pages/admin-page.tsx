@@ -1,9 +1,9 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, UserPlus, Database, RefreshCcw, Mail, User as UserIcon, UserCog } from "lucide-react";
+import { Loader2, UserPlus, Database, RefreshCcw, Mail, User as UserIcon, UserCog, Trash2 } from "lucide-react";
 import type { User } from "@shared/schema";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
@@ -94,6 +94,34 @@ export default function AdminPage() {
       toast({
         title: "Success",
         description: "User status updated successfully",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+  
+  const deleteUserMutation = useMutation({
+    mutationFn: async (userId: number) => {
+      const res = await fetch(`/api/users/${userId}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" }
+      });
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || "Failed to delete user");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+      toast({
+        title: "Success",
+        description: "User deleted successfully",
       });
     },
     onError: (error: Error) => {
@@ -467,6 +495,39 @@ export default function AdminPage() {
                   </div>
                 </div>
               </CardContent>
+              {user.role !== "admin" && (
+                <CardFooter className="flex justify-end pt-2">
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="destructive" size="sm">
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Delete User
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Delete User</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Are you sure you want to delete {user.firstName} {user.lastName}? This action cannot be undone and will delete all of their links and data.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction 
+                          onClick={() => deleteUserMutation.mutate(user.id)}
+                          disabled={deleteUserMutation.isPending}
+                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                          {deleteUserMutation.isPending && (
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          )}
+                          Delete
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </CardFooter>
+              )}
             </Card>
           ))}
         </div>

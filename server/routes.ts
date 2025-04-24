@@ -737,6 +737,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Delete a user (admin only)
+  app.delete("/api/users/:id", async (req, res) => {
+    if (!req.isAuthenticated() || req.user!.role !== "admin") {
+      return res.sendStatus(403);
+    }
+    
+    const userId = parseInt(req.params.id);
+    
+    try {
+      // Make sure we're not deleting the current user or another admin
+      if (userId === req.user!.id) {
+        return res.status(403).json({ 
+          error: 'Cannot delete your own account' 
+        });
+      }
+      
+      // Check if user exists and is not an admin
+      const users = await storage.getAllUsers();
+      const userToDelete = users.find(u => u.id === userId);
+      
+      if (!userToDelete) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+      
+      if (userToDelete.role === 'admin') {
+        return res.status(403).json({ 
+          error: 'Cannot delete an admin account' 
+        });
+      }
+      
+      await storage.deleteUser(userId);
+      
+      // Log this activity
+      await storage.logActivity({
+        userId: req.user!.id,
+        type: 'user_deleted',
+        metadata: { 
+          deletedUserId: userId,
+          username: userToDelete.username
+        }
+      });
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      res.status(500).json({ error: 'Failed to delete user' });
+    }
+  });
+  
   app.patch("/api/users/:id/approve", async (req, res) => {
     if (!req.isAuthenticated() || req.user!.role !== "admin") {
       return res.sendStatus(403);
