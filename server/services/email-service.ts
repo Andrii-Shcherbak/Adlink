@@ -23,16 +23,8 @@ export class EmailService {
   private readonly domain: string = getAuthDomain();
 
   constructor() {
-    // Initialize with environment variables or default value
-    // For SendGrid, this should be a verified sender email address
-    if (process.env.EMAIL_FROM && typeof process.env.EMAIL_FROM === 'string') {
-      this.from = process.env.EMAIL_FROM;
-    } else {
-      // Default email - use a gmail address or your verified sender as fallback
-      // Note: You should set up a proper verified sender in SendGrid
-      console.warn("Warning: EMAIL_FROM not set. Using default sender email address.");
-      this.from = 'Fromdev@dcxtransform.com';
-    }
+    // Always use the specified sender email address
+    this.from = 'Fromdev@dcxtransform.com';
     
     console.log(`Email service initialized with sender: ${this.from}`);
   }
@@ -44,9 +36,10 @@ export class EmailService {
     }
 
     try {
+      // Always use the configured sender email
       await mailService.send({
         to: params.to,
-        from: params.from,
+        from: this.from, // Use the class property instead of params.from
         subject: params.subject,
         text: params.text || '',
         html: params.html || '',
