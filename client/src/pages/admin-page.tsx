@@ -407,12 +407,7 @@ export default function AdminPage() {
                         Send Invitation
                       </Button>
                       
-                      {!process.env.SENDGRID_API_KEY && (
-                        <p className="text-sm text-amber-500 text-center">
-                          <span className="block font-medium">SendGrid API key is missing!</span>
-                          <span className="text-xs">Invitations will be created but emails won't be sent</span>
-                        </p>
-                      )}
+                      {/* Warning message removed as process.env isn't available in browser */}
                     </div>
                   </form>
                 </Form>
