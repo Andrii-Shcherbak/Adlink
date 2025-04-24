@@ -128,9 +128,55 @@ export default function AdminPage() {
       });
     }
   });
+  
+  // Invitation mutation
+  const inviteUserMutation = useMutation({
+    mutationFn: async (data: InviteUserForm) => {
+      const res = await fetch("/api/invites", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || "Failed to send invitation");
+      }
+      
+      return res.json();
+    },
+    onSuccess: (data) => {
+      inviteForm.reset();
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+      
+      if (data.warning) {
+        toast({
+          title: "Invitation Created",
+          description: data.warning,
+          variant: "default",
+        });
+      } else {
+        toast({
+          title: "Success",
+          description: "Invitation sent successfully",
+        });
+      }
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
 
   const onSubmit = (data: CreateUserForm) => {
     createUserMutation.mutate(data);
+  };
+  
+  const onInviteSubmit = (data: InviteUserForm) => {
+    inviteUserMutation.mutate(data);
   };
 
   if (isLoading) {
@@ -184,107 +230,195 @@ export default function AdminPage() {
 
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-bold">User Management</h1>
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button>
-                <UserPlus className="h-4 w-4 mr-2" />
-                Add User
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Create New User</DialogTitle>
-              </DialogHeader>
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                  <FormField
-                    control={form.control}
-                    name="username"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Username</FormLabel>
-                        <FormControl>
-                          <Input {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="password"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Password</FormLabel>
-                        <FormControl>
-                          <Input type="password" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="email"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Email</FormLabel>
-                        <FormControl>
-                          <Input type="email" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="firstName"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>First Name</FormLabel>
-                        <FormControl>
-                          <Input {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="lastName"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Last Name</FormLabel>
-                        <FormControl>
-                          <Input {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="company"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Company</FormLabel>
-                        <FormControl>
-                          <Input {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <Button type="submit" disabled={createUserMutation.isPending}>
-                    {createUserMutation.isPending && (
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    )}
-                    Create User
-                  </Button>
-                </form>
-              </Form>
-            </DialogContent>
-          </Dialog>
+          <div className="flex gap-2">
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button variant="outline">
+                  <UserPlus className="h-4 w-4 mr-2" />
+                  Add User
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Create New User</DialogTitle>
+                </DialogHeader>
+                <Form {...form}>
+                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                    <FormField
+                      control={form.control}
+                      name="username"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Username</FormLabel>
+                          <FormControl>
+                            <Input {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="password"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Password</FormLabel>
+                          <FormControl>
+                            <Input type="password" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="email"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Email</FormLabel>
+                          <FormControl>
+                            <Input type="email" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="firstName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>First Name</FormLabel>
+                          <FormControl>
+                            <Input {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="lastName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Last Name</FormLabel>
+                          <FormControl>
+                            <Input {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="company"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Company</FormLabel>
+                          <FormControl>
+                            <Input {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <Button type="submit" disabled={createUserMutation.isPending}>
+                      {createUserMutation.isPending && (
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      )}
+                      Create User
+                    </Button>
+                  </form>
+                </Form>
+              </DialogContent>
+            </Dialog>
+            
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button>
+                  <Mail className="h-4 w-4 mr-2" />
+                  Invite User
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Invite New User</DialogTitle>
+                </DialogHeader>
+                <Form {...inviteForm}>
+                  <form onSubmit={inviteForm.handleSubmit(onInviteSubmit)} className="space-y-4">
+                    <FormField
+                      control={inviteForm.control}
+                      name="email"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Email</FormLabel>
+                          <FormControl>
+                            <Input type="email" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={inviteForm.control}
+                      name="firstName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>First Name</FormLabel>
+                          <FormControl>
+                            <Input {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={inviteForm.control}
+                      name="lastName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Last Name</FormLabel>
+                          <FormControl>
+                            <Input {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={inviteForm.control}
+                      name="company"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Company</FormLabel>
+                          <FormControl>
+                            <Input {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <div className="space-y-2">
+                      <Button type="submit" disabled={inviteUserMutation.isPending} className="w-full">
+                        {inviteUserMutation.isPending && (
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        )}
+                        Send Invitation
+                      </Button>
+                      
+                      {!process.env.SENDGRID_API_KEY && (
+                        <p className="text-sm text-amber-500 text-center">
+                          <span className="block font-medium">SendGrid API key is missing!</span>
+                          <span className="text-xs">Invitations will be created but emails won't be sent</span>
+                        </p>
+                      )}
+                    </div>
+                  </form>
+                </Form>
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
         <div className="grid gap-4">
           {users?.map((user) => (

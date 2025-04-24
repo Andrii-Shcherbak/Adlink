@@ -11,6 +11,7 @@ import ProfilePage from "@/pages/profile-page";
 import AdminPage from "@/pages/admin-page";
 import ActivityDashboard from "@/pages/activity-dashboard";
 import AuthStatus from "@/pages/auth-status";
+import InvitePage from "@/pages/invite-page";
 import { ProtectedRoute } from "./lib/protected-route";
 import { AdminRoute } from "./lib/admin-route";
 import { Layout } from "@/components/layout";
@@ -34,6 +35,7 @@ function Router() {
       <AdminRoute path="/activities" component={() => <ProtectedLayout component={ActivityDashboard} />} />
       <Route path="/auth" component={AuthPage} />
       <Route path="/auth-status" component={AuthStatus} />
+      <Route path="/invite/:token" component={InvitePage} />
       <Route path="/protected/:shortCode" component={ProtectedUrl} />
       <Route component={NotFound} />
     </Switch>
