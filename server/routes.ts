@@ -9,6 +9,7 @@ import { UAParser } from "ua-parser-js";
 import { scrypt, timingSafeEqual, randomBytes } from "crypto";
 import { promisify } from "util";
 import { openAiService } from "./services/openai-service";
+import { emailService } from "./services/email-service";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
