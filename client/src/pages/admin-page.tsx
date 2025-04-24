@@ -1,4 +1,5 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -11,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { queryClient } from "@/lib/queryClient";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -33,6 +35,14 @@ type InviteUserForm = {
 
 export default function AdminPage() {
   const { toast } = useToast();
+  const [showInviteDialog, setShowInviteDialog] = useState(false);
+  const [inviteDialogData, setInviteDialogData] = useState<{
+    email: string;
+    firstName: string;
+    lastName: string;
+    inviteUrl: string;
+    warning: string;
+  } | null>(null);
 
   const { data: users, isLoading } = useQuery<User[]>({
     queryKey: ["/api/admin/users"],
@@ -43,8 +53,36 @@ export default function AdminPage() {
     },
   });
 
-  const form = useForm<CreateUserForm>();
+  const form = useForm<CreateUserForm>({
+    resolver: zodResolver(
+      z.object({
+        username: z.string().min(3, "Username must be at least 3 characters"),
+        password: z.string().min(6, "Password must be at least 6 characters"),
+        email: z.string().email("Please enter a valid email"),
+        firstName: z.string().min(2, "First name must be at least 2 characters"),
+        lastName: z.string().min(2, "Last name must be at least 2 characters"),
+        company: z.string().optional(),
+      })
+    ),
+    defaultValues: {
+      username: "",
+      password: "",
+      email: "",
+      firstName: "",
+      lastName: "",
+      company: "",
+    },
+  });
+
   const inviteForm = useForm<InviteUserForm>({
+    resolver: zodResolver(
+      z.object({
+        email: z.string().email("Please enter a valid email"),
+        firstName: z.string().min(2, "First name must be at least 2 characters"),
+        lastName: z.string().min(2, "Last name must be at least 2 characters"),
+        company: z.string().optional(),
+      })
+    ),
     defaultValues: {
       email: '',
       firstName: '',
@@ -191,34 +229,15 @@ export default function AdminPage() {
         const baseUrl = window.location.origin;
         const inviteUrl = `${baseUrl}/invite/${data.token}`;
         
-        toast({
-          title: "Invitation Created - Email Not Sent",
-          description: (
-            <div className="space-y-2">
-              <p>{data.warning}</p>
-              <p className="text-sm font-medium">You can manually share this invitation link:</p>
-              <div className="bg-secondary/30 p-2 rounded text-xs break-all select-all">
-                {inviteUrl}
-              </div>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="mt-2 text-xs"
-                onClick={() => {
-                  navigator.clipboard.writeText(inviteUrl);
-                  toast({
-                    title: "Copied to clipboard",
-                    description: "Invitation link copied to clipboard",
-                    duration: 2000,
-                  });
-                }}
-              >
-                Copy Link
-              </Button>
-            </div>
-          ),
-          duration: 10000,
+        // Use a dialog instead of a toast for better invitation management
+        setInviteDialogData({
+          email: data.user.email,
+          firstName: data.user.firstName,
+          lastName: data.user.lastName,
+          inviteUrl: inviteUrl,
+          warning: data.warning
         });
+        setShowInviteDialog(true);
       } else {
         toast({
           title: "Success",
@@ -253,6 +272,83 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-screen bg-background p-8">
+      {/* Invite Link Dialog */}
+      <Dialog open={showInviteDialog} onOpenChange={setShowInviteDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Invitation Created - Email Not Sent</DialogTitle>
+          </DialogHeader>
+          
+          {inviteDialogData && (
+            <div className="space-y-4">
+              <div className="bg-amber-50 dark:bg-amber-950/30 p-3 rounded border border-amber-200 dark:border-amber-800">
+                <p className="text-amber-700 dark:text-amber-400 text-sm">{inviteDialogData.warning}</p>
+              </div>
+              
+              <div>
+                <h3 className="text-sm font-medium mb-1">Invitation Details</h3>
+                <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-sm">
+                  <dt className="font-medium">Name:</dt>
+                  <dd>{inviteDialogData.firstName} {inviteDialogData.lastName}</dd>
+                  <dt className="font-medium">Email:</dt>
+                  <dd>{inviteDialogData.email}</dd>
+                </dl>
+              </div>
+              
+              <div>
+                <h3 className="text-sm font-medium mb-1">Invitation Link</h3>
+                <p className="text-sm text-muted-foreground mb-2">
+                  Share this link with the user to complete their registration
+                </p>
+                <div className="flex items-center gap-2">
+                  <Input 
+                    value={inviteDialogData.inviteUrl}
+                    readOnly
+                    className="text-xs font-mono"
+                  />
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      navigator.clipboard.writeText(inviteDialogData.inviteUrl);
+                      toast({
+                        title: "Copied",
+                        description: "Invitation link copied to clipboard",
+                        duration: 2000,
+                      });
+                    }}
+                  >
+                    Copy
+                  </Button>
+                </div>
+              </div>
+              
+              <div className="bg-muted/50 p-3 rounded">
+                <h3 className="text-sm font-medium mb-1">Email Subject</h3>
+                <p className="text-xs">Invitation to join ADLink</p>
+                
+                <h3 className="text-sm font-medium mt-3 mb-1">Email Preview</h3>
+                <div className="bg-background p-2 rounded text-xs">
+                  <p>Hello {inviteDialogData.firstName} {inviteDialogData.lastName},</p>
+                  <p className="mt-1">You have been invited to join ADLink, a robust URL shortening and QR code generation platform.</p>
+                  <p className="mt-1">To accept this invitation, please visit the link that was sent to you.</p>
+                  <p className="mt-1">This invitation will expire in 7 days.</p>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          <div className="flex justify-end gap-2 mt-4">
+            <Button
+              variant="outline"
+              onClick={() => setShowInviteDialog(false)}
+            >
+              Close
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+      
       <div className="max-w-6xl mx-auto space-y-8">
         <Card className="mb-8">
           <CardHeader>
