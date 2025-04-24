@@ -111,11 +111,20 @@ export default function AdminPage() {
         method: "DELETE",
         headers: { "Content-Type": "application/json" }
       });
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
-        throw new Error(errorData.error || "Failed to delete user");
+      
+      // For successful responses (200-299), just return success
+      if (res.ok) {
+        return { success: true };
       }
-      return res.json();
+      
+      // For error responses, try to parse JSON if available
+      try {
+        const errorData = await res.json();
+        throw new Error(errorData.error || "Failed to delete user");
+      } catch (e) {
+        // If JSON parsing fails, return generic error
+        throw new Error("Failed to delete user");
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
