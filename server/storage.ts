@@ -22,6 +22,7 @@ export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
+  getUserByInviteToken(token: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   createUrl(userId: number, url: InsertUrl): Promise<Url>;
   getUrlByShortCode(shortCode: string, userId?: number): Promise<Url | undefined>;
@@ -34,7 +35,11 @@ export interface IStorage {
   deleteUrl(id: number, userId: number): Promise<void>;
   getAllUsers(): Promise<User[]>;
   updateUserApproval(approval: UserApproval): Promise<User>;
-
+  
+  // Invite-related methods
+  createInvitation(inviteData: { email: string, firstName: string, lastName: string, company?: string }): Promise<{ user: User, token: string }>;
+  acceptInvitation(token: string, userData: { username: string, password: string }): Promise<User>;
+  
   logActivity(activity: InsertActivity): Promise<Activity>;
   getUserActivities(userId: number, limit?: number, offset?: number): Promise<Activity[]>;
   getUserActivitiesCount(userId: number): Promise<number>;

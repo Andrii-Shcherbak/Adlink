@@ -14,6 +14,9 @@ export const users = pgTable("users", {
   isApproved: boolean("is_approved").notNull().default(false),
   isActive: boolean("is_active").notNull().default(true),
   microsoftId: text("microsoft_id").unique(),
+  inviteToken: text("invite_token").unique(),
+  inviteSentAt: timestamp("invite_sent_at"),
+  inviteAcceptedAt: timestamp("invite_accepted_at"),
 });
 
 export const urls = pgTable("urls", {
@@ -105,4 +108,19 @@ export const userApprovalSchema = z.object({
   isActive: z.boolean(),
 });
 
+export const userInviteSchema = z.object({
+  email: z.string().email("Invalid email address"),
+  firstName: z.string().min(1, "First name is required"),
+  lastName: z.string().min(1, "Last name is required"),
+  company: z.string().optional(),
+});
+
+export const inviteAcceptSchema = z.object({
+  token: z.string().min(1, "Invite token is required"),
+  username: z.string().min(1, "Username is required"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+});
+
 export type UserApproval = z.infer<typeof userApprovalSchema>;
+export type UserInvite = z.infer<typeof userInviteSchema>;
+export type InviteAccept = z.infer<typeof inviteAcceptSchema>;
