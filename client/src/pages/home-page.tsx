@@ -1,7 +1,7 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { insertUrlSchema, type InsertUrl, type Url, type QrConfig } from "@shared/schema";
+import { insertUrlSchema, type InsertUrl, type Url, type QrConfig, type Destinations } from "@shared/schema";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -9,18 +9,19 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { useToast } from "@/hooks/use-toast";
 import { QRCodeSVG } from "qrcode.react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { Loader2, Copy, ExternalLink, LinkIcon, ChevronLeft, ChevronRight, Trash2, Download, Calendar, Clock, AlertTriangle } from "lucide-react";
+import { Loader2, Copy, ExternalLink, LinkIcon, ChevronLeft, ChevronRight, Trash2, Download, Calendar, Clock, AlertTriangle, Smartphone, Monitor, Tablet } from "lucide-react";
 import { QrCustomizer } from "@/components/qr-customizer";
 import { useState } from "react";
 import { format, addDays, isAfter, isPast, formatDistanceToNow } from "date-fns";
 import { AlertDialog, AlertDialogTrigger, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from "@/components/ui/alert-dialog";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { FiLock, FiUnlock, FiBarChart2, FiEdit2, FiEdit3, FiRefreshCw, FiArrowRight, FiCheck, FiClock } from "react-icons/fi";
+import { FiLock, FiUnlock, FiBarChart2, FiEdit2, FiEdit3, FiRefreshCw, FiArrowRight, FiCheck, FiClock, FiSmartphone, FiTablet } from "react-icons/fi";
 import { SecurityBadge } from "@/components/security-badge";
 import { getUrlSecurityLevel, getSecurityColorClasses, cn } from "@/lib/utils";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 
 function truncateUrl(url: string, maxLength: number = 50): string {
   if (url.length <= maxLength) return url;
@@ -291,6 +292,200 @@ function ExpiryDialog({ url }: { url: Url }) {
               <FiCheck className="h-4 w-4 mr-2" />
             )}
             {expiryDate ? 'Set Expiry' : 'Remove Expiry'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// Multi-Destination Dialog Component
+function MultiDestinationDialog({ url }: { url: Url }) {
+  const { toast } = useToast();
+  const [isOpen, setIsOpen] = useState(false);
+  const [isMultiDestination, setIsMultiDestination] = useState(!!url.isMultiDestination);
+  
+  // Initialize destinations from URL or with empty values
+  const initialDestinations = url.destinations 
+    ? typeof url.destinations === 'string' 
+      ? JSON.parse(url.destinations) 
+      : url.destinations
+    : { ios: '', android: '', desktop: '' };
+    
+  const [destinations, setDestinations] = useState<Destinations>(initialDestinations);
+  
+  const updateDestinationsMutation = useMutation({
+    mutationFn: async ({ id, isMultiDestination, destinations }: { 
+      id: number; 
+      isMultiDestination: boolean; 
+      destinations: Destinations 
+    }) => {
+      const res = await apiRequest(
+        "PATCH", 
+        `/api/urls/${id}/destinations`, 
+        { isMultiDestination, destinations }
+      );
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/urls"] });
+      setIsOpen(false);
+      toast({
+        title: isMultiDestination 
+          ? "Multi-destination enabled" 
+          : "Multi-destination disabled",
+        description: isMultiDestination
+          ? "Your QR code will now redirect to different URLs based on device type."
+          : "Your QR code will now redirect to a single URL."
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Failed to update destinations",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  });
+  
+  const handleDestinationChange = (platform: keyof Destinations, value: string) => {
+    setDestinations(prev => ({
+      ...prev,
+      [platform]: value
+    }));
+  };
+  
+  const handleSubmit = () => {
+    // Validation
+    if (isMultiDestination) {
+      // Ensure at least one destination is set
+      if (!destinations.ios && !destinations.android && !destinations.desktop) {
+        toast({
+          title: "Validation Error",
+          description: "At least one platform destination must be provided",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      // Validate URLs
+      for (const [platform, url] of Object.entries(destinations)) {
+        if (url) {
+          try {
+            new URL(url);
+          } catch (error) {
+            toast({
+              title: "Invalid URL",
+              description: `The URL for ${platform} is not valid`,
+              variant: "destructive"
+            });
+            return;
+          }
+        }
+      }
+    }
+    
+    updateDestinationsMutation.mutate({
+      id: url.id,
+      isMultiDestination,
+      destinations
+    });
+  };
+  
+  return (
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger asChild>
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          className={url.isMultiDestination ? "text-green-500 dark:text-green-400" : ""}
+        >
+          <Tablet className="h-4 w-4" />
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-[500px]">
+        <DialogHeader>
+          <DialogTitle>Multi-Platform Destinations</DialogTitle>
+          <DialogDescription>
+            Configure your URL to redirect to different destinations based on the user's device type.
+          </DialogDescription>
+        </DialogHeader>
+        
+        <div className="space-y-4 py-4">
+          <div className="flex items-center justify-between space-x-2">
+            <Label htmlFor="multi-destination" className="flex-1">
+              Enable Multi-Destination
+            </Label>
+            <Switch
+              id="multi-destination"
+              checked={isMultiDestination}
+              onCheckedChange={setIsMultiDestination}
+            />
+          </div>
+          
+          {isMultiDestination && (
+            <div className="space-y-4 pt-2">
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <Smartphone className="h-4 w-4 text-blue-500" />
+                  <Label htmlFor="ios-url" className="font-medium">iOS Destination</Label>
+                </div>
+                <Input
+                  id="ios-url"
+                  placeholder="https://example.com/ios"
+                  value={destinations.ios || ''}
+                  onChange={(e) => handleDestinationChange('ios', e.target.value)}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <Smartphone className="h-4 w-4 text-green-500" />
+                  <Label htmlFor="android-url" className="font-medium">Android Destination</Label>
+                </div>
+                <Input
+                  id="android-url"
+                  placeholder="https://example.com/android"
+                  value={destinations.android || ''}
+                  onChange={(e) => handleDestinationChange('android', e.target.value)}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <Monitor className="h-4 w-4 text-purple-500" />
+                  <Label htmlFor="desktop-url" className="font-medium">Desktop Destination</Label>
+                </div>
+                <Input
+                  id="desktop-url"
+                  placeholder="https://example.com/desktop"
+                  value={destinations.desktop || ''}
+                  onChange={(e) => handleDestinationChange('desktop', e.target.value)}
+                />
+              </div>
+              
+              <div className="rounded-md bg-muted p-3 text-sm">
+                <p>Leave a field empty to use the original URL as fallback for that platform.</p>
+                <p className="mt-1">Original URL: <span className="font-mono text-xs">{url.originalUrl}</span></p>
+              </div>
+            </div>
+          )}
+        </div>
+        
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setIsOpen(false)}>
+            Cancel
+          </Button>
+          <Button 
+            onClick={handleSubmit}
+            disabled={updateDestinationsMutation.isPending}
+          >
+            {updateDestinationsMutation.isPending ? (
+              <Loader2 className="h-4 w-4 animate-spin mr-2" />
+            ) : (
+              <FiCheck className="h-4 w-4 mr-2" />
+            )}
+            Save
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -777,6 +972,19 @@ export default function HomePage() {
                             </p>
                             <ShortcodeEditDialog url={url} />
                           </div>
+
+                          {/* Multi-destination indicator */}
+                          {url.isMultiDestination && (
+                            <div className="mt-2 flex items-center gap-2">
+                              <Badge 
+                                variant="outline" 
+                                className="bg-green-50 text-green-700 border-green-200 dark:bg-green-950 dark:text-green-300 dark:border-green-800"
+                              >
+                                <Tablet className="h-3 w-3 mr-1" />
+                                Multi-Device URL
+                              </Badge>
+                            </div>
+                          )}
                         </div>
                         <div className="flex items-center gap-2 justify-end">
                           <div className="flex items-center gap-2">
