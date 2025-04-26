@@ -125,7 +125,7 @@ export default function AdminPage() {
 
   const updateUserMutation = useMutation({
     mutationFn: async ({ userId, isActive, role, userType }: { userId: number; isActive: boolean; role?: string; userType?: string }) => {
-      const res = await fetch(`/api/admin/users/${userId}`, {
+      const res = await fetch(`/api/users/${userId}/status`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ isActive, role, userType }),

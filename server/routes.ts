@@ -796,38 +796,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.patch("/api/users/:id/approve", async (req, res) => {
+  app.patch("/api/users/:id/status", async (req, res) => {
     if (!req.isAuthenticated() || req.user!.role !== "admin") {
       return res.sendStatus(403);
     }
     
     try {
       const userId = parseInt(req.params.id);
-      const { approved } = req.body;
+      const { isActive, role, userType } = req.body;
       
-      if (typeof approved !== "boolean") {
-        return res.status(400).json({ error: "Approved status is required as a boolean" });
-      }
-      
-      const user = await storage.updateUserApproval({ 
+      const user = await storage.updateUser({ 
         userId, 
-        isApproved: approved,
-        isActive: true 
+        isActive,
+        role,
+        userType
       });
       
       await storage.logActivity({
         userId: req.user!.id,
-        type: "user_approval_change",
+        type: "user_status_update",
         metadata: {
           targetUserId: userId,
-          approved
+          changes: {
+            isActive,
+            role,
+            userType
+          }
         }
       });
       
       res.json(user);
     } catch (error) {
-      console.error("Error updating user approval:", error);
-      res.status(500).json({ error: "Failed to update user approval" });
+      console.error("Error updating user status:", error);
+      res.status(500).json({ error: "Failed to update user status" });
     }
   });
 
