@@ -810,8 +810,26 @@ export default function HomePage() {
                     </Button>
                   </form>
                 </Form>
+                <div className="mt-4 pt-4 border-t">
+                  <Button 
+                    variant="outline" 
+                    className="w-full flex items-center gap-2"
+                    onClick={() => setShowPdfDocumentDialog(true)}
+                  >
+                    <FiFile className="h-4 w-4" />
+                    Create PDF Document URL
+                  </Button>
+                </div>
               </CardContent>
             </Card>
+            
+            <PDFDocumentDialog
+              open={showPdfDocumentDialog}
+              onOpenChange={setShowPdfDocumentDialog}
+              onUrlCreated={() => {
+                queryClient.invalidateQueries({ queryKey: ["/api/urls"] });
+              }}
+            />
 
             <Card className="overflow-hidden border-0 shadow-md">
               <CardHeader className="pb-2">

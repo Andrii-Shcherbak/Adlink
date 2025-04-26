@@ -52,13 +52,7 @@ export function PDFDocumentDialog({ open, onOpenChange, onUrlCreated }: PDFDocum
       pdfDocumentSize: number;
       isPdfDocument: boolean;
     }) => {
-      const response = await apiRequest('/api/urls', {
-        method: 'POST',
-        body: JSON.stringify(data),
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
+      const response = await apiRequest('POST', '/api/urls', data);
 
       return response;
     },

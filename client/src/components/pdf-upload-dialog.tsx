@@ -64,38 +64,37 @@ export function PDFUploadDialog({ open, onOpenChange, onUploadComplete }: PDFUpl
       const formData = new FormData();
       formData.append('pdfFile', file);
 
-      const response = await apiRequest<{
-        success: boolean;
-        fileUrl: string;
-        fileName: string;
-        fileSize: number;
-        message: string;
-      }>('/api/pdf-upload', {
+      // Use fetch directly for FormData as apiRequest is designed for JSON
+      const response = await fetch('/api/pdf-upload', {
         method: 'POST',
         body: formData,
-        headers: {
-          // Don't set Content-Type header for FormData
-          // browser will set it automatically with the boundary
-        },
+        credentials: 'include'
       });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || response.statusText);
+      }
 
       setIsUploading(false);
       
-      if (response.success) {
+      const data = await response.json();
+      
+      if (data.success) {
         toast({
           title: 'Upload successful',
           description: 'PDF document uploaded successfully',
         });
         
         onUploadComplete({
-          fileUrl: response.fileUrl,
-          fileName: response.fileName,
-          fileSize: response.fileSize
+          fileUrl: data.fileUrl,
+          fileName: data.fileName,
+          fileSize: data.fileSize
         });
         
         onOpenChange(false);
       } else {
-        setError(response.message || 'Upload failed');
+        setError(data.message || 'Upload failed');
       }
     } catch (err) {
       setIsUploading(false);
