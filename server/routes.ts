@@ -328,6 +328,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       await storage.incrementUrlClicks(url.id, url.userId, deviceType, countryInfo, referrer, deviceInfo);
       
+      // Check if this is a PDF document URL
+      if (url.isPdfDocument) {
+        // Import and use the PDF handler to properly serve the document
+        const { servePdfDocument } = require('./pdf-handler');
+        return servePdfDocument(res, url);
+      }
+      
       // Handle multi-destination URLs - redirect based on device platform
       if (url.isMultiDestination && url.destinations) {
         // Parse destinations JSON if it's a string
@@ -357,6 +364,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.redirect(url.originalUrl);
     } catch (error) {
       console.error('Error incrementing clicks:', error);
+      
+      // Even in case of error, try to serve PDF documents properly
+      if (url.isPdfDocument) {
+        const { servePdfDocument } = require('./pdf-handler');
+        return servePdfDocument(res, url);
+      }
+      
       res.redirect(url.originalUrl);
     }
   });
@@ -384,6 +398,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       await storage.incrementUrlClicks(url.id, url.userId, deviceType, countryInfo, referrer, deviceInfo);
       
+      // Check if this is a PDF document URL
+      if (url.isPdfDocument) {
+        // Import and use the PDF handler to properly serve the document
+        const { servePdfDocument } = require('./pdf-handler');
+        return servePdfDocument(res, url);
+      }
+      
       // Handle multi-destination URLs - redirect based on device platform
       if (url.isMultiDestination && url.destinations) {
         // Parse destinations JSON if it's a string
@@ -413,6 +434,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.redirect(url.originalUrl);
     } catch (error) {
       console.error('Error incrementing clicks:', error);
+      
+      // Even in case of error, try to serve PDF documents properly
+      if (url.isPdfDocument) {
+        const { servePdfDocument } = require('./pdf-handler');
+        return servePdfDocument(res, url);
+      }
+      
       res.redirect(url.originalUrl);
     }
   });

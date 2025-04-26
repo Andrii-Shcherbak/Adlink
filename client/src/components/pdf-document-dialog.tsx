@@ -99,10 +99,15 @@ export function PDFDocumentDialog({ open, onOpenChange, onUrlCreated }: PDFDocum
       return;
     }
 
+    // Create a temporary URL object to properly format the URL
+    const domainUrl = window.location.origin;
+    const placeholderUrl = `${domainUrl}/pdf-document-url-${Date.now()}`;
+
     createUrlMutation.mutate({
       ...data,
-      // Using the PDF file URL as the originalUrl to satisfy the schema validation
-      originalUrl: pdfFileData.fileUrl,
+      // Using a domain-based URL as originalUrl to satisfy schema validation
+      // but we'll use isPdfDocument flag on server side for custom handling
+      originalUrl: placeholderUrl,
       pdfDocumentUrl: pdfFileData.fileUrl,
       pdfDocumentName: pdfFileData.fileName,
       pdfDocumentSize: pdfFileData.fileSize,
