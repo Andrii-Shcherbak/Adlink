@@ -370,7 +370,6 @@ export function setupAuth(app: Express) {
         ...req.body,
         password: hashedPassword,
         role: 'user', // Always create regular users through admin interface
-        isApproved: true, // Admins can create pre-approved users
         isActive: true,
       });
       res.status(201).json(user);
@@ -660,7 +659,6 @@ async function createAdminUser() {
         email: 'admin@example.com',
         company: '',
         role: 'admin',
-        isApproved: true,
         isActive: true
       });
       console.log('Admin user created successfully');
