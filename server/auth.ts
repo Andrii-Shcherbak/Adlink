@@ -385,6 +385,35 @@ export function setupAuth(app: Express) {
     delete req.session.authMessage;
     res.json({ message });
   });
+  
+  // Special route to handle Microsoft authentication for invited users
+  app.get("/api/auth/microsoft/invite/:token", async (req, res) => {
+    try {
+      const { token } = req.params;
+      
+      // Look up the invited user
+      const invitedUser = await storage.getUserByInviteToken(token);
+      if (!invitedUser) {
+        return res.status(404).json({ error: "Invalid or expired invitation token" });
+      }
+      
+      // Set the invited email in the session so we can match it during Microsoft auth
+      if (!req.session.microsoftInviteData) {
+        req.session.microsoftInviteData = {};
+      }
+      req.session.microsoftInviteData.invitedEmail = invitedUser.email;
+      req.session.microsoftInviteData.inviteToken = token;
+      
+      // Log for debugging
+      console.log(`Setting invited email in session: ${invitedUser.email}, token: ${token}`);
+      
+      // Redirect to Microsoft auth
+      res.redirect("/api/auth/microsoft");
+    } catch (error) {
+      console.error("Error in Microsoft invite handler:", error);
+      res.status(500).json({ error: "An error occurred during invitation processing" });
+    }
+  });
 
   // Invite management routes
   app.post("/api/invites", isAdmin, async (req, res) => {
