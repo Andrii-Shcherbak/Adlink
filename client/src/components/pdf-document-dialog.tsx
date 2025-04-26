@@ -21,8 +21,7 @@ interface PDFDocumentDialogProps {
 }
 
 const pdfDocumentFormSchema = z.object({
-  shortCode: z.string().min(3, 'Short code must be at least 3 characters').optional(),
-  expiresAt: z.string().optional(),
+  // Fields intentionally left empty as we don't need custom inputs
 });
 
 type PDFDocumentFormValues = z.infer<typeof pdfDocumentFormSchema>;
@@ -39,10 +38,7 @@ export function PDFDocumentDialog({ open, onOpenChange, onUrlCreated }: PDFDocum
 
   const form = useForm<PDFDocumentFormValues>({
     resolver: zodResolver(pdfDocumentFormSchema),
-    defaultValues: {
-      shortCode: '',
-      expiresAt: '',
-    },
+    defaultValues: {},
   });
 
   const createUrlMutation = useMutation({
@@ -105,6 +101,8 @@ export function PDFDocumentDialog({ open, onOpenChange, onUrlCreated }: PDFDocum
 
     createUrlMutation.mutate({
       ...data,
+      // Using the PDF file URL as the originalUrl to satisfy the schema validation
+      originalUrl: pdfFileData.fileUrl,
       pdfDocumentUrl: pdfFileData.fileUrl,
       pdfDocumentName: pdfFileData.fileName,
       pdfDocumentSize: pdfFileData.fileSize,
@@ -156,34 +154,6 @@ export function PDFDocumentDialog({ open, onOpenChange, onUrlCreated }: PDFDocum
                     </Button>
                   </div>
                 )}
-                
-                <FormField
-                  control={form.control}
-                  name="shortCode"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Custom Short Code (Optional)</FormLabel>
-                      <FormControl>
-                        <Input placeholder="e.g. my-pdf" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="expiresAt"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Expiration Date (Optional)</FormLabel>
-                      <FormControl>
-                        <Input type="datetime-local" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
               </div>
               
               <DialogFooter>
