@@ -4,20 +4,20 @@ import { z } from "zod";
 
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
-  username: text("username").unique(), // No longer required
+  email: text("email").notNull().unique(), // Email is the primary identifier 
   password: text("password"), // Can be null for Microsoft authentication
   firstName: text("first_name").notNull(),
   lastName: text("last_name").notNull(),
-  email: text("email").notNull().unique(), // Email is now unique and the primary identifier
   company: text("company"),
   role: text("role").notNull().default("user"),
   userType: text("user_type").notNull().default("external"), // 'internal' or 'external'
-  isApproved: boolean("is_approved").notNull().default(false),
   isActive: boolean("is_active").notNull().default(true),
   microsoftId: text("microsoft_id").unique(),
   inviteToken: text("invite_token").unique(),
   inviteSentAt: timestamp("invite_sent_at"),
   inviteAcceptedAt: timestamp("invite_accepted_at"),
+  // Username field is maintained for backward compatibility but no longer used as primary identifier
+  username: text("username").unique(), 
 });
 
 export const urls = pgTable("urls", {
@@ -104,9 +104,8 @@ export type InsertActivity = z.infer<typeof insertActivitySchema>;
 export type UserRole = "admin" | "user";
 export type UserType = "internal" | "external";
 
-export const userApprovalSchema = z.object({
+export const userUpdateSchema = z.object({
   userId: z.number(),
-  isApproved: z.boolean(),
   isActive: z.boolean(),
   role: z.enum(["admin", "user"]).optional(),
   userType: z.enum(["internal", "external"]).optional(),
@@ -127,6 +126,6 @@ export const inviteAcceptSchema = z.object({
   password: z.string().min(6, "Password must be at least 6 characters").optional(), // Password is optional for internal users
 });
 
-export type UserApproval = z.infer<typeof userApprovalSchema>;
+export type UserUpdate = z.infer<typeof userUpdateSchema>;
 export type UserInvite = z.infer<typeof userInviteSchema>;
 export type InviteAccept = z.infer<typeof inviteAcceptSchema>;

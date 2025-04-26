@@ -1,4 +1,4 @@
-import { users, urls, activities, type User, type InsertUser, type Url, type InsertUrl, type UserApproval, type Activity, type InsertActivity } from "@shared/schema";
+import { users, urls, activities, type User, type InsertUser, type Url, type InsertUrl, type UserUpdate, type Activity, type InsertActivity } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, sql, and } from "drizzle-orm";
 import session from "express-session";
@@ -333,27 +333,26 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async updateUserApproval(approval: UserApproval): Promise<User> {
+  async updateUser(update: UserUpdate): Promise<User> {
     try {
       // Build the update object dynamically to include optional fields
       const updateData: Partial<User> = {
-        isApproved: approval.isApproved,
-        isActive: approval.isActive
+        isActive: update.isActive
       };
       
       // Add optional fields if provided
-      if (approval.role) {
-        updateData.role = approval.role;
+      if (update.role) {
+        updateData.role = update.role;
       }
       
-      if (approval.userType) {
-        updateData.userType = approval.userType;
+      if (update.userType) {
+        updateData.userType = update.userType;
       }
       
       const [user] = await db
         .update(users)
         .set(updateData)
-        .where(eq(users.id, approval.userId))
+        .where(eq(users.id, update.userId))
         .returning();
 
       if (!user) {
@@ -362,7 +361,7 @@ export class DatabaseStorage implements IStorage {
 
       return user;
     } catch (error) {
-      console.error('Error updating user approval:', error);
+      console.error('Error updating user:', error);
       throw error;
     }
   }
