@@ -151,7 +151,7 @@ export default function AdminPage() {
   
   const deleteUserMutation = useMutation({
     mutationFn: async (userId: number) => {
-      const res = await fetch(`/api/users/${userId}`, {
+      const res = await fetch(`/api/admin/users/${userId}`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" }
       });
