@@ -2,7 +2,13 @@ import { Response } from "express";
 import { Url } from "@shared/schema";
 
 export function servePdfDocument(res: Response, url: Url): void {
-  console.log(`PDF Document URL: Serving PDF document at ${url.pdfDocumentUrl}`);
+  console.log(`PDF Document URL: Serving PDF document:`, {
+    title: url.title,
+    shortCode: url.shortCode,
+    pdfDocumentUrl: url.pdfDocumentUrl,
+    pdfDocumentName: url.pdfDocumentName,
+    pdfDocumentSize: url.pdfDocumentSize
+  });
   
   // Serve the PDF viewer page with the document URL
   res.send(`

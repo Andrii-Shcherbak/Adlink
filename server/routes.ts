@@ -307,8 +307,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return next();
     }
     
+    // Skip requests that look like they're for PDF document placeholder URLs
+    if (req.params.shortCode.startsWith('pdf-document-url-')) {
+      console.log(`Skipping direct access to PDF placeholder URL: ${req.params.shortCode}`);
+      return next();
+    }
+    
+    console.log(`Processing shortcode request: ${req.params.shortCode}`);
     const url = await storage.getUrlByShortCode(req.params.shortCode);
-    if (!url) return next();
+    if (!url) {
+      console.log(`No URL found for shortcode: ${req.params.shortCode}`);
+      return next();
+    }
     
     // Check if URL has expired
     if (url.expiresAt && new Date(url.expiresAt) < new Date()) {
