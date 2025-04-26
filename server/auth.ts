@@ -307,14 +307,30 @@ export function setupAuth(app: Express) {
         return res.status(400).json({ error: "Email, first name, and last name are required" });
       }
       
+      // Validate user type and role
+      if (inviteData.userType && !['internal', 'external'].includes(inviteData.userType)) {
+        return res.status(400).json({ error: "User type must be either 'internal' or 'external'" });
+      }
+      
+      if (inviteData.role && !['admin', 'user'].includes(inviteData.role)) {
+        return res.status(400).json({ error: "Role must be either 'admin' or 'user'" });
+      }
+      
       // Check if email already exists
       const existingEmail = await storage.getUserByEmail(inviteData.email);
       if (existingEmail) {
         return res.status(400).json({ error: "Email already registered" });
       }
       
-      // Create invitation
-      const { user, token } = await storage.createInvitation(inviteData);
+      // Create invitation with user type and role
+      const { user, token } = await storage.createInvitation({
+        email: inviteData.email,
+        firstName: inviteData.firstName,
+        lastName: inviteData.lastName,
+        company: inviteData.company,
+        userType: inviteData.userType,
+        role: inviteData.role
+      });
       
       // Send invitation email
       const emailSent = await emailService.sendInvitation(
@@ -466,7 +482,9 @@ export function setupAuth(app: Express) {
         firstName: user.firstName,
         lastName: user.lastName,
         company: user.company,
-        inviteSentAt: user.inviteSentAt
+        inviteSentAt: user.inviteSentAt,
+        userType: user.userType || 'external',
+        role: user.role || 'user'
       });
     } catch (error) {
       console.error('Error retrieving invitation:', error);

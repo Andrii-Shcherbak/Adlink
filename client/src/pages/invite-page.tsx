@@ -16,6 +16,8 @@ interface InviteData {
   lastName: string;
   company?: string;
   inviteSentAt: string;
+  userType?: 'internal' | 'external';
+  role?: 'admin' | 'user';
 }
 
 interface InviteAcceptForm {
@@ -90,6 +92,34 @@ export default function InvitePage() {
   const onSubmit = async (formData: InviteAcceptForm) => {
     if (!token) return;
     
+    // For internal users, we'll bypass the normal accept flow and redirect them to Microsoft login
+    const userType = inviteData?.userType || 'external';
+    
+    if (userType === 'internal') {
+      try {
+        // Just notify the user that they need to use Microsoft login
+        toast({
+          title: "Microsoft Account Required",
+          description: "Your account has been created. Please use the Microsoft login button to sign in.",
+        });
+        
+        // Redirect to the auth page
+        setTimeout(() => {
+          setLocation("/auth");
+        }, 2000);
+        return;
+      } catch (err) {
+        console.error("Error with internal user redirection:", err);
+        toast({
+          title: "Error",
+          description: "An unexpected error occurred. Please try again.",
+          variant: "destructive",
+        });
+      }
+      return;
+    }
+    
+    // For external users, continue with password validation and registration
     if (formData.password !== formData.confirmPassword) {
       form.setError("confirmPassword", {
         type: "manual",
@@ -178,13 +208,19 @@ export default function InvitePage() {
     return null; // shouldn't happen, but just in case
   }
 
+  // Determine user type and render appropriate UI
+  const userType = inviteData.userType || 'external';
+  const isInternalUser = userType === 'internal';
+
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-b from-background to-muted/30">
       <Card className="w-full max-w-md shadow-lg">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl">Welcome to ADLink</CardTitle>
           <CardDescription>
-            Complete your account setup
+            {isInternalUser 
+              ? "You've been invited as an internal user" 
+              : "Complete your account setup"}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -197,76 +233,119 @@ export default function InvitePage() {
               {inviteData.firstName} {inviteData.lastName}
               {inviteData.company ? ` • ${inviteData.company}` : ""}
             </p>
+            <div className="mt-2 flex items-center">
+              <span className="text-xs px-2 py-1 rounded-full bg-primary/10 text-primary">
+                {inviteData.userType === 'internal' ? 'Internal User (Microsoft)' : 'External User'}
+              </span>
+              {inviteData.role === 'admin' && (
+                <span className="ml-2 text-xs px-2 py-1 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400">
+                  Administrator
+                </span>
+              )}
+            </div>
           </div>
 
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <FormField
-                control={form.control}
-                name="username"
-                rules={{ required: "Username is required" }}
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Username</FormLabel>
-                    <FormControl>
-                      <Input {...field} autoComplete="username" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="password"
-                rules={{ 
-                  required: "Password is required",
-                  minLength: {
-                    value: 8,
-                    message: "Password must be at least 8 characters"
-                  }
+          {isInternalUser ? (
+            // Internal user UI
+            <div className="space-y-6">
+              <Alert className="bg-blue-50 text-blue-800 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800">
+                <div className="flex items-center mb-2">
+                  <AlertCircle className="h-4 w-4 mr-2" />
+                  <AlertTitle>Microsoft Authentication Required</AlertTitle>
+                </div>
+                <AlertDescription>
+                  As an internal user, you'll need to sign in with your Microsoft account. 
+                  Your account has already been set up - just click the button below to continue.
+                </AlertDescription>
+              </Alert>
+              
+              <Button 
+                type="button" 
+                className="w-full" 
+                onClick={() => {
+                  toast({
+                    title: "Redirecting to login",
+                    description: "You'll be able to log in with Microsoft on the next screen.",
+                  });
+                  setTimeout(() => {
+                    setLocation("/auth");
+                  }, 1000);
                 }}
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Password</FormLabel>
-                    <FormControl>
-                      <Input type="password" {...field} autoComplete="new-password" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="confirmPassword"
-                rules={{ required: "Please confirm your password" }}
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Confirm Password</FormLabel>
-                    <FormControl>
-                      <Input type="password" {...field} autoComplete="new-password" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <Button type="submit" className="w-full" disabled={acceptingInvite}>
-                {acceptingInvite ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Creating Account...
-                  </>
-                ) : (
-                  <>
-                    <Check className="mr-2 h-4 w-4" />
-                    Accept Invitation
-                  </>
-                )}
+              >
+                Continue to Microsoft Login
               </Button>
-            </form>
-          </Form>
+            </div>
+          ) : (
+            // External user UI
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="username"
+                  rules={{ required: "Username is required" }}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Username</FormLabel>
+                      <FormControl>
+                        <Input {...field} autoComplete="username" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="password"
+                  rules={{ 
+                    required: "Password is required",
+                    minLength: {
+                      value: 8,
+                      message: "Password must be at least 8 characters"
+                    }
+                  }}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Password</FormLabel>
+                      <FormControl>
+                        <Input type="password" {...field} autoComplete="new-password" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="confirmPassword"
+                  rules={{ required: "Please confirm your password" }}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Confirm Password</FormLabel>
+                      <FormControl>
+                        <Input type="password" {...field} autoComplete="new-password" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <Button type="submit" className="w-full" disabled={acceptingInvite}>
+                  {acceptingInvite ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Creating Account...
+                    </>
+                  ) : (
+                    <>
+                      <Check className="mr-2 h-4 w-4" />
+                      Accept Invitation
+                    </>
+                  )}
+                </Button>
+              </form>
+            </Form>
+          )}
         </CardContent>
       </Card>
     </div>

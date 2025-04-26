@@ -389,7 +389,14 @@ export class DatabaseStorage implements IStorage {
     }
   }
   
-  async createInvitation(inviteData: { email: string; firstName: string; lastName: string; company?: string }): Promise<{ user: User; token: string }> {
+  async createInvitation(inviteData: { 
+    email: string; 
+    firstName: string; 
+    lastName: string; 
+    company?: string;
+    userType?: 'internal' | 'external';
+    role?: 'admin' | 'user';
+  }): Promise<{ user: User; token: string }> {
     try {
       // Generate a random token
       const token = nanoid(32);
@@ -400,15 +407,24 @@ export class DatabaseStorage implements IStorage {
         throw new Error("A user with this email already exists");
       }
       
+      // Determine user type and role with defaults
+      const userType = inviteData.userType || 'external';
+      const role = inviteData.role || 'user';
+      
+      // For internal users, we don't require username and password since they'll use Microsoft auth
+      const username = userType === 'internal' ? null : `invite_${nanoid(8)}`; // Temp username for external
+      const password = userType === 'internal' ? null : nanoid(32); // Temp password for external
+      
       // Create a placeholder user with the invite token
       const [user] = await db.insert(users).values({
-        username: `invite_${nanoid(8)}`, // Temporary username until accepted
-        password: nanoid(32), // Temporary password until accepted
+        username,
+        password,
         email: inviteData.email,
         firstName: inviteData.firstName,
         lastName: inviteData.lastName,
         company: inviteData.company || "",
-        role: "user",
+        role,
+        userType,
         isApproved: true, // Pre-approved since it's an admin-created invite
         isActive: false, // Not active until invitation is accepted
         inviteToken: token,
@@ -435,22 +451,34 @@ export class DatabaseStorage implements IStorage {
         throw new Error("This invitation has already been accepted");
       }
       
-      // Check if username is already taken by another user
-      const existingUser = await this.getUserByUsername(userData.username);
-      if (existingUser && existingUser.id !== user.id) {
-        throw new Error("This username is already taken");
+      // Internal users (Microsoft auth) don't need username/password
+      const userType = user.userType || 'external';
+      
+      // Only validate username for external users
+      if (userType === 'external') {
+        // Check if username is already taken by another user
+        const existingUser = await this.getUserByUsername(userData.username);
+        if (existingUser && existingUser.id !== user.id) {
+          throw new Error("This username is already taken");
+        }
       }
       
-      // Update the user with the provided username and password
+      // Prepare the update data based on user type
+      const updateData: any = {
+        isActive: true,
+        inviteAcceptedAt: new Date(),
+        inviteToken: null // Clear the invite token to prevent reuse
+      };
+      
+      // Only set username and password for external users
+      if (userType === 'external') {
+        updateData.username = userData.username;
+        updateData.password = userData.password; // This should be hashed before calling this method
+      }
+      
+      // Update the user with the provided data
       const [updatedUser] = await db.update(users)
-        .set({
-          username: userData.username,
-          password: userData.password, // Note: This should be hashed before calling this method
-          isActive: true,
-          inviteAcceptedAt: new Date(),
-          // Clear the invite token to prevent reuse
-          inviteToken: null
-        })
+        .set(updateData)
         .where(eq(users.id, user.id))
         .returning();
       
