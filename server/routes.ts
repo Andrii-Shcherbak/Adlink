@@ -260,11 +260,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
 
     const deviceType = getDeviceType(req.headers['user-agent'] || '');
+    const devicePlatform = getDevicePlatform(req.headers['user-agent'] || '');
     const referrer = getReferrer(req.headers.referer);
     const countryInfo = getCountryCode(req);
+    const deviceInfo = getDetailedDeviceInfo(req.headers['user-agent'] || '');
 
     try {
-      await storage.incrementUrlClicks(url.id, url.userId, deviceType, countryInfo, referrer);
+      await storage.incrementUrlClicks(url.id, url.userId, deviceType, countryInfo, referrer, deviceInfo);
+      
+      // Handle multi-destination URLs - redirect based on device platform
+      if (url.isMultiDestination && url.destinations) {
+        // Parse destinations JSON if it's a string
+        const destinations = typeof url.destinations === 'string' 
+          ? JSON.parse(url.destinations) 
+          : url.destinations;
+        
+        let redirectUrl = url.originalUrl; // Default fallback
+        
+        if (devicePlatform === 'ios' && destinations.ios) {
+          redirectUrl = destinations.ios;
+          console.log(`Multi-destination URL: Redirecting iOS device to ${redirectUrl}`);
+        } 
+        else if (devicePlatform === 'android' && destinations.android) {
+          redirectUrl = destinations.android;
+          console.log(`Multi-destination URL: Redirecting Android device to ${redirectUrl}`);
+        }
+        else if (devicePlatform === 'desktop' && destinations.desktop) {
+          redirectUrl = destinations.desktop;
+          console.log(`Multi-destination URL: Redirecting desktop device to ${redirectUrl}`);
+        }
+        
+        return res.redirect(redirectUrl);
+      }
+      
+      // Regular URL - just redirect to the original URL
       res.redirect(url.originalUrl);
     } catch (error) {
       console.error('Error incrementing clicks:', error);
@@ -287,11 +316,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
 
     const deviceType = getDeviceType(req.headers['user-agent'] || '');
+    const devicePlatform = getDevicePlatform(req.headers['user-agent'] || '');
     const referrer = getReferrer(req.headers.referer);
     const countryInfo = getCountryCode(req);
+    const deviceInfo = getDetailedDeviceInfo(req.headers['user-agent'] || '');
 
     try {
-      await storage.incrementUrlClicks(url.id, url.userId, deviceType, countryInfo, referrer);
+      await storage.incrementUrlClicks(url.id, url.userId, deviceType, countryInfo, referrer, deviceInfo);
+      
+      // Handle multi-destination URLs - redirect based on device platform
+      if (url.isMultiDestination && url.destinations) {
+        // Parse destinations JSON if it's a string
+        const destinations = typeof url.destinations === 'string' 
+          ? JSON.parse(url.destinations) 
+          : url.destinations;
+        
+        let redirectUrl = url.originalUrl; // Default fallback
+        
+        if (devicePlatform === 'ios' && destinations.ios) {
+          redirectUrl = destinations.ios;
+          console.log(`Multi-destination URL: Redirecting iOS device to ${redirectUrl}`);
+        } 
+        else if (devicePlatform === 'android' && destinations.android) {
+          redirectUrl = destinations.android;
+          console.log(`Multi-destination URL: Redirecting Android device to ${redirectUrl}`);
+        }
+        else if (devicePlatform === 'desktop' && destinations.desktop) {
+          redirectUrl = destinations.desktop;
+          console.log(`Multi-destination URL: Redirecting desktop device to ${redirectUrl}`);
+        }
+        
+        return res.redirect(redirectUrl);
+      }
+      
+      // Regular URL - just redirect to the original URL
       res.redirect(url.originalUrl);
     } catch (error) {
       console.error('Error incrementing clicks:', error);
@@ -318,11 +376,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
 
     const deviceType = getDeviceType(req.headers['user-agent'] || '');
+    const devicePlatform = getDevicePlatform(req.headers['user-agent'] || '');
     const referrer = getReferrer(req.headers.referer);
     const countryInfo = getCountryCode(req);
+    const deviceInfo = getDetailedDeviceInfo(req.headers['user-agent'] || '');
 
     try {
-      await storage.incrementUrlClicks(url.id, url.userId, deviceType, countryInfo, referrer);
+      await storage.incrementUrlClicks(url.id, url.userId, deviceType, countryInfo, referrer, deviceInfo);
+      
+      // Handle multi-destination URLs for password-protected links
+      if (url.isMultiDestination && url.destinations) {
+        // Parse destinations JSON if it's a string
+        const destinations = typeof url.destinations === 'string' 
+          ? JSON.parse(url.destinations) 
+          : url.destinations;
+        
+        let redirectUrl = url.originalUrl; // Default fallback
+        
+        if (devicePlatform === 'ios' && destinations.ios) {
+          redirectUrl = destinations.ios;
+          console.log(`Protected multi-destination URL: Redirecting iOS device to ${redirectUrl}`);
+        } 
+        else if (devicePlatform === 'android' && destinations.android) {
+          redirectUrl = destinations.android;
+          console.log(`Protected multi-destination URL: Redirecting Android device to ${redirectUrl}`);
+        }
+        else if (devicePlatform === 'desktop' && destinations.desktop) {
+          redirectUrl = destinations.desktop;
+          console.log(`Protected multi-destination URL: Redirecting desktop device to ${redirectUrl}`);
+        }
+        
+        return res.json({ redirectUrl });
+      }
+      
+      // Regular URL
       res.json({ redirectUrl: url.originalUrl });
     } catch (error) {
       console.error('Error incrementing clicks:', error);
@@ -350,11 +437,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
 
     const deviceType = getDeviceType(req.headers['user-agent'] || '');
+    const devicePlatform = getDevicePlatform(req.headers['user-agent'] || '');
     const referrer = getReferrer(req.headers.referer);
     const countryInfo = getCountryCode(req);
+    const deviceInfo = getDetailedDeviceInfo(req.headers['user-agent'] || '');
 
     try {
-      await storage.incrementUrlClicks(url.id, url.userId, deviceType, countryInfo, referrer);
+      await storage.incrementUrlClicks(url.id, url.userId, deviceType, countryInfo, referrer, deviceInfo);
+      
+      // Handle multi-destination URLs for password-protected links
+      if (url.isMultiDestination && url.destinations) {
+        // Parse destinations JSON if it's a string
+        const destinations = typeof url.destinations === 'string' 
+          ? JSON.parse(url.destinations) 
+          : url.destinations;
+        
+        let redirectUrl = url.originalUrl; // Default fallback
+        
+        if (devicePlatform === 'ios' && destinations.ios) {
+          redirectUrl = destinations.ios;
+          console.log(`Protected multi-destination URL: Redirecting iOS device to ${redirectUrl}`);
+        } 
+        else if (devicePlatform === 'android' && destinations.android) {
+          redirectUrl = destinations.android;
+          console.log(`Protected multi-destination URL: Redirecting Android device to ${redirectUrl}`);
+        }
+        else if (devicePlatform === 'desktop' && destinations.desktop) {
+          redirectUrl = destinations.desktop;
+          console.log(`Protected multi-destination URL: Redirecting desktop device to ${redirectUrl}`);
+        }
+        
+        return res.json({ redirectUrl });
+      }
+      
+      // Regular URL
       res.json({ redirectUrl: url.originalUrl });
     } catch (error) {
       console.error('Error incrementing clicks:', error);
@@ -651,6 +767,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Update multi-destination settings for a URL
+  app.patch("/api/urls/:id/destinations", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    const { isMultiDestination, destinations } = req.body;
+    
+    try {
+      // Verify the URL belongs to the current user
+      const urlId = parseInt(req.params.id);
+      const urls = await storage.getUserUrls(req.user!.id, 1, 0);
+      const url = urls.find(u => u.id === urlId);
+      
+      if (!url) {
+        return res.status(404).send("URL not found");
+      }
+      
+      // Validate destinations object if multi-destination is enabled
+      if (isMultiDestination) {
+        if (!destinations || typeof destinations !== 'object') {
+          return res.status(400).json({ error: "Destinations object is required when multi-destination is enabled" });
+        }
+        
+        // Ensure at least one platform has a destination URL
+        if (!destinations.ios && !destinations.android && !destinations.desktop) {
+          return res.status(400).json({ error: "At least one platform (iOS, Android, or Desktop) must have a destination URL" });
+        }
+        
+        // Validate that destination URLs are valid URLs
+        for (const platform of ['ios', 'android', 'desktop']) {
+          if (destinations[platform] && typeof destinations[platform] === 'string') {
+            try {
+              new URL(destinations[platform]);
+            } catch (error) {
+              return res.status(400).json({ error: `Invalid URL for ${platform} platform` });
+            }
+          }
+        }
+      }
+      
+      const updatedUrl = await storage.updateUrl(urlId, req.user!.id, { 
+        isMultiDestination: !!isMultiDestination,
+        destinations: isMultiDestination ? destinations : null
+      });
+      
+      // Log activity
+      await storage.logActivity({
+        userId: req.user!.id,
+        type: "url_destinations_update",
+        metadata: {
+          urlId: updatedUrl.id,
+          isMultiDestination: updatedUrl.isMultiDestination
+        }
+      });
+      
+      res.json(updatedUrl);
+    } catch (error) {
+      console.error("Error updating URL destinations:", error);
+      res.status(500).json({ error: "Failed to update URL destinations" });
+    }
+  });
+
   // Update shortcode for a URL
   app.patch("/api/urls/:id/shortcode", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
