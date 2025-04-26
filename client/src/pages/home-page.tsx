@@ -16,12 +16,13 @@ import { format, addDays, isAfter, isPast, formatDistanceToNow } from "date-fns"
 import { AlertDialog, AlertDialogTrigger, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from "@/components/ui/alert-dialog";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { FiLock, FiUnlock, FiBarChart2, FiEdit2, FiEdit3, FiRefreshCw, FiArrowRight, FiCheck, FiClock, FiSmartphone, FiTablet } from "react-icons/fi";
+import { FiLock, FiUnlock, FiBarChart2, FiEdit2, FiEdit3, FiRefreshCw, FiArrowRight, FiCheck, FiClock, FiSmartphone, FiTablet, FiFile } from "react-icons/fi";
 import { SecurityBadge } from "@/components/security-badge";
 import { getUrlSecurityLevel, getSecurityColorClasses, cn } from "@/lib/utils";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
+import { PDFDocumentDialog } from "@/components/pdf-document-dialog";
 
 function truncateUrl(url: string, maxLength: number = 50): string {
   if (url.length <= maxLength) return url;
@@ -635,6 +636,7 @@ export default function HomePage() {
   const domain = window.location.origin;
   const [page, setPage] = useState(1);
   const ITEMS_PER_PAGE = 5;
+  const [showPdfDocumentDialog, setShowPdfDocumentDialog] = useState(false);
 
   const form = useForm<InsertUrl>({
     resolver: zodResolver(insertUrlSchema),
