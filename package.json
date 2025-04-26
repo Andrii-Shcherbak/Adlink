@@ -68,6 +68,7 @@
     "passport": "^0.7.0",
     "passport-local": "^1.0.0",
     "passport-microsoft": "^2.1.0",
+    "pdfjs-dist": "^5.1.91",
     "postgres": "^3.4.5",
     "qrcode.react": "^4.2.0",
     "react": "^18.3.1",
