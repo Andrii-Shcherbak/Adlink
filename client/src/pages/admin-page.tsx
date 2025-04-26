@@ -13,7 +13,7 @@ import { Label } from "@/components/ui/label";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { queryClient } from "@/lib/queryClient";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -565,6 +565,94 @@ export default function AdminPage() {
                       )}
                     />
                     
+                    <FormField
+                      control={inviteForm.control}
+                      name="userType"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>User Type</FormLabel>
+                          <div className="border rounded-md p-3 space-y-3">
+                            <FormDescription>
+                              Select the type of user account
+                            </FormDescription>
+                            <div className="flex flex-col sm:flex-row gap-4">
+                              <div className="flex items-center space-x-2">
+                                <input 
+                                  type="radio" 
+                                  id="userType-internal" 
+                                  value="internal" 
+                                  checked={field.value === 'internal'}
+                                  onChange={() => field.onChange('internal')}
+                                  className="h-4 w-4 text-primary border-muted-foreground"
+                                />
+                                <label htmlFor="userType-internal" className="text-sm font-medium leading-none cursor-pointer">
+                                  Internal (Microsoft Login)
+                                </label>
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <input 
+                                  type="radio" 
+                                  id="userType-external" 
+                                  value="external" 
+                                  checked={field.value === 'external'}
+                                  onChange={() => field.onChange('external')}
+                                  className="h-4 w-4 text-primary border-muted-foreground"
+                                />
+                                <label htmlFor="userType-external" className="text-sm font-medium leading-none cursor-pointer">
+                                  External (Password Login)
+                                </label>
+                              </div>
+                            </div>
+                          </div>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={inviteForm.control}
+                      name="role"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>User Role</FormLabel>
+                          <div className="border rounded-md p-3 space-y-3">
+                            <FormDescription>
+                              Select the user's permission level
+                            </FormDescription>
+                            <div className="flex flex-col sm:flex-row gap-4">
+                              <div className="flex items-center space-x-2">
+                                <input 
+                                  type="radio" 
+                                  id="role-user" 
+                                  value="user" 
+                                  checked={field.value === 'user'}
+                                  onChange={() => field.onChange('user')}
+                                  className="h-4 w-4 text-primary border-muted-foreground"
+                                />
+                                <label htmlFor="role-user" className="text-sm font-medium leading-none cursor-pointer">
+                                  Regular User
+                                </label>
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <input 
+                                  type="radio" 
+                                  id="role-admin" 
+                                  value="admin" 
+                                  checked={field.value === 'admin'}
+                                  onChange={() => field.onChange('admin')}
+                                  className="h-4 w-4 text-primary border-muted-foreground"
+                                />
+                                <label htmlFor="role-admin" className="text-sm font-medium leading-none cursor-pointer">
+                                  Administrator
+                                </label>
+                              </div>
+                            </div>
+                          </div>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
                     <div className="space-y-2">
                       <Button type="submit" disabled={inviteUserMutation.isPending} className="w-full">
                         {inviteUserMutation.isPending && (
@@ -572,8 +660,6 @@ export default function AdminPage() {
                         )}
                         Send Invitation
                       </Button>
-                      
-                      {/* Warning message removed as process.env isn't available in browser */}
                     </div>
                   </form>
                 </Form>
@@ -621,9 +707,11 @@ export default function AdminPage() {
               </CardHeader>
               <CardContent>
                 <div className="grid gap-2">
-                  <div className="text-sm">
-                    <span className="text-muted-foreground">Username:</span> {user.username}
-                  </div>
+                  {user.username && (
+                    <div className="text-sm">
+                      <span className="text-muted-foreground">Username:</span> {user.username}
+                    </div>
+                  )}
                   <div className="text-sm">
                     <span className="text-muted-foreground">Email:</span> {user.email}
                   </div>
@@ -631,6 +719,20 @@ export default function AdminPage() {
                     <span className="text-muted-foreground">Role:</span>{" "}
                     <span className="capitalize">{user.role}</span>
                   </div>
+                  <div className="text-sm">
+                    <span className="text-muted-foreground">Type:</span>{" "}
+                    <span className="capitalize">{user.userType || "external"}</span>
+                    {user.microsoftId && (
+                      <span className="ml-1 text-xs px-1.5 py-0.5 bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 rounded-full">
+                        Microsoft
+                      </span>
+                    )}
+                  </div>
+                  {user.company && (
+                    <div className="text-sm">
+                      <span className="text-muted-foreground">Company:</span> {user.company}
+                    </div>
+                  )}
                 </div>
               </CardContent>
               {user.role !== "admin" && (

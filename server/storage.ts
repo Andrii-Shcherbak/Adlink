@@ -38,7 +38,7 @@ export interface IStorage {
   deleteUser(userId: number): Promise<void>;
   
   // Invite-related methods
-  createInvitation(inviteData: { email: string, firstName: string, lastName: string, company?: string }): Promise<{ user: User, token: string }>;
+  createInvitation(inviteData: { email: string, firstName: string, lastName: string, company?: string, userType?: 'internal' | 'external', role?: 'admin' | 'user' }): Promise<{ user: User, token: string }>;
   acceptInvitation(token: string, userData: { username: string, password: string }): Promise<User>;
   
   logActivity(activity: InsertActivity): Promise<Activity>;
