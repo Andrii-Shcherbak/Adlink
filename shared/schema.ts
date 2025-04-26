@@ -29,6 +29,13 @@ export const urls = pgTable("urls", {
   clicks: integer("clicks").notNull().default(0),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   expiresAt: timestamp("expires_at"),
+  // Multi-destination URLs
+  isMultiDestination: boolean("is_multi_destination").notNull().default(false),
+  destinations: jsonb("destinations").notNull().default({
+    ios: "",
+    android: "",
+    desktop: ""
+  }),
   analytics: jsonb("analytics").notNull().default({
     devices: {
       desktop: 0,
@@ -69,11 +76,19 @@ export const insertUserSchema = createInsertSchema(users).extend({
   company: z.string().optional(),
 });
 
+export const destinationsSchema = z.object({
+  ios: z.string().url("Must be a valid URL").or(z.literal("")),
+  android: z.string().url("Must be a valid URL").or(z.literal("")),
+  desktop: z.string().url("Must be a valid URL").or(z.literal(""))
+});
+
 export const insertUrlSchema = createInsertSchema(urls).pick({
   originalUrl: true,
 }).extend({
   password: z.string().optional(),
   expiresAt: z.string().optional().transform((val) => val ? new Date(val) : undefined),
+  isMultiDestination: z.boolean().optional().default(false),
+  destinations: destinationsSchema.optional(),
 });
 
 export const qrConfigSchema = z.object({
@@ -98,6 +113,7 @@ export type User = typeof users.$inferSelect;
 export type Url = typeof urls.$inferSelect;
 export type InsertUrl = z.infer<typeof insertUrlSchema>;
 export type QrConfig = z.infer<typeof qrConfigSchema>;
+export type Destinations = z.infer<typeof destinationsSchema>;
 export type Activity = typeof activities.$inferSelect;
 export type InsertActivity = z.infer<typeof insertActivitySchema>;
 
