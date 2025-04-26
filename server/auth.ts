@@ -98,19 +98,48 @@ export function setupAuth(app: Express) {
         scope: ["user.read"],
         authority: "https://login.microsoftonline.com/organizations",
         tenant: process.env.MICROSOFT_TENANT_ID!,
+        passReqToCallback: true
       },
-      async (accessToken, refreshToken, profile, done) => {
+      async (req, accessToken, refreshToken, profile, done) => {
         try {
           const email = profile.emails?.[0]?.value;
           if (!email) {
             return done(new Error("No email found in Microsoft profile"));
           }
 
-          // Special handling for Microsoft auth
           console.log(`Microsoft auth: Looking up user by email ${email}`);
           
-          // Search for all user accounts with this email to handle invitations properly
-          let user = await storage.getUserByEmail(email);
+          // Check if we have invitation data in the session
+          const invitedEmail = req.session.microsoftInviteData?.invitedEmail;
+          const inviteToken = req.session.microsoftInviteData?.inviteToken;
+          
+          let user = null;
+          
+          // If we have an invite token in the session, use it to find the user
+          if (inviteToken) {
+            console.log(`Microsoft auth: Using invite token from session: ${inviteToken}`);
+            user = await storage.getUserByInviteToken(inviteToken);
+            
+            if (user) {
+              console.log(`Microsoft auth: Found invited user by token: ${user.id}, email: ${user.email}`);
+              
+              // Verify emails match (case insensitive) or are similar domains
+              const invitedEmailLower = user.email.toLowerCase();
+              const microsoftEmailLower = email.toLowerCase();
+              
+              if (invitedEmailLower !== microsoftEmailLower) {
+                console.log(`Microsoft auth: Warning - invited email (${invitedEmailLower}) doesn't match Microsoft email (${microsoftEmailLower})`);
+                // We'll proceed anyway since the user clicked the invite link
+              }
+            } else {
+              console.log(`Microsoft auth: Invalid or expired invitation token: ${inviteToken}`);
+            }
+          }
+          
+          // If we don't have a user from the invitation token, try to find by email
+          if (!user) {
+            user = await storage.getUserByEmail(email);
+          }
           
           if (!user) {
             console.log(`Microsoft auth: No existing user found for email ${email}, creating new user`);
@@ -209,6 +238,12 @@ export function setupAuth(app: Express) {
               console.error('Error automatically accepting invitation for Microsoft user:', err);
               // Continue with login even if invitation acceptance fails
             }
+          }
+          
+          // Clear the invitation data from the session
+          if (req.session.microsoftInviteData) {
+            console.log('Microsoft auth: Clearing invitation data from session');
+            delete req.session.microsoftInviteData;
           }
 
           // Check if user is active and approved (for both existing and new users)

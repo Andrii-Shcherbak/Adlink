@@ -264,15 +264,23 @@ export default function InvitePage() {
                 className="w-full" 
                 onClick={() => {
                   toast({
-                    title: "Redirecting to login",
-                    description: "You'll be able to log in with Microsoft on the next screen.",
+                    title: "Redirecting to Microsoft login",
+                    description: "You'll be automatically connected with your internal account.",
                   });
-                  setTimeout(() => {
-                    setLocation("/auth");
-                  }, 1000);
+                  
+                  // Use our special Microsoft invitation route that preserves the invitation context
+                  if (token) {
+                    // Redirect to our special Microsoft auth route that handles invites
+                    window.location.href = `/api/auth/microsoft/invite/${token}`;
+                  } else {
+                    // Fallback to regular auth page
+                    setTimeout(() => {
+                      setLocation("/auth");
+                    }, 1000);
+                  }
                 }}
               >
-                Continue to Microsoft Login
+                Continue with Microsoft
               </Button>
             </div>
           ) : (
