@@ -841,11 +841,17 @@ interface DeviceInfo {
   os?: string;
   model?: string;
   brand?: string;
+  platform?: 'ios' | 'android' | 'desktop';
 }
 
 function getDeviceType(userAgent: string): 'desktop' | 'mobile' | 'tablet' {
   const deviceInfo = getDetailedDeviceInfo(userAgent);
   return deviceInfo.type;
+}
+
+function getDevicePlatform(userAgent: string): 'ios' | 'android' | 'desktop' {
+  const deviceInfo = getDetailedDeviceInfo(userAgent);
+  return deviceInfo.platform || 'desktop';
 }
 
 function getDetailedDeviceInfo(userAgent: string): DeviceInfo {
@@ -854,7 +860,8 @@ function getDetailedDeviceInfo(userAgent: string): DeviceInfo {
   const os = parser.getOS();
   
   const deviceInfo: DeviceInfo = {
-    type: 'desktop'
+    type: 'desktop',
+    platform: 'desktop'
   };
   
   // Set device type
@@ -864,6 +871,15 @@ function getDetailedDeviceInfo(userAgent: string): DeviceInfo {
   // Add OS info
   if (os.name) {
     deviceInfo.os = os.name + (os.version ? ` ${os.version}` : '');
+    
+    // Determine the platform (iOS, Android, or desktop)
+    if (os.name.toLowerCase().includes('ios') || 
+        os.name.toLowerCase().includes('iphone') || 
+        os.name.toLowerCase().includes('ipad')) {
+      deviceInfo.platform = 'ios';
+    } else if (os.name.toLowerCase().includes('android')) {
+      deviceInfo.platform = 'android';
+    }
   }
   
   // Add device model and brand when available
