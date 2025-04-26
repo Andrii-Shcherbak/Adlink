@@ -11,6 +11,7 @@ import { promisify } from "util";
 import { openAiService } from "./services/openai-service";
 import { emailService } from "./services/email-service";
 import { azureStorageService } from "./services/azure-storage-service";
+import { servePdfDocument } from "./pdf-handler";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
