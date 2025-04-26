@@ -99,15 +99,13 @@ export function PDFDocumentDialog({ open, onOpenChange, onUrlCreated }: PDFDocum
       return;
     }
 
-    // Create a temporary URL object to properly format the URL
-    const domainUrl = window.location.origin;
-    const placeholderUrl = `${domainUrl}/pdf-document-url-${Date.now()}`;
-
+    // Use the Azure storage URL as the originalUrl
+    // This ensures proper schema validation but the URL won't be directly accessed
+    // Instead, our shortcode will serve the PDF through our custom viewer
+    
     createUrlMutation.mutate({
       ...data,
-      // Using a domain-based URL as originalUrl to satisfy schema validation
-      // but we'll use isPdfDocument flag on server side for custom handling
-      originalUrl: placeholderUrl,
+      originalUrl: pdfFileData.fileUrl, // Use the actual PDF URL as originalUrl
       pdfDocumentUrl: pdfFileData.fileUrl,
       pdfDocumentName: pdfFileData.fileName,
       pdfDocumentSize: pdfFileData.fileSize,
