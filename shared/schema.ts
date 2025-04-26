@@ -109,6 +109,7 @@ export const userApprovalSchema = z.object({
   isApproved: z.boolean(),
   isActive: z.boolean(),
   role: z.enum(["admin", "user"]).optional(),
+  userType: z.enum(["internal", "external"]).optional(),
 });
 
 export const userInviteSchema = z.object({

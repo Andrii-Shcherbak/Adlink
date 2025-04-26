@@ -138,13 +138,14 @@ export function setupAuth(app: Express) {
             });
           } else if (user.userType !== 'internal') {
             // If a user with this email exists but is not marked as internal,
-            // update them to be an internal user
-            await db.update(users)
-              .set({ userType: 'internal' })
-              .where(eq(users.id, user.id));
+            // update them to be an internal user using the storage interface
+            const updatedUser = await storage.updateUserApproval({
+              userId: user.id,
+              isApproved: true,
+              isActive: true,
+              userType: 'internal'
+            });
             
-            // Refresh user data
-            const updatedUser = await storage.getUserByEmail(email);
             if (updatedUser) {
               user = updatedUser;
             }

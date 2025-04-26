@@ -326,12 +326,24 @@ export class DatabaseStorage implements IStorage {
 
   async updateUserApproval(approval: UserApproval): Promise<User> {
     try {
+      // Build the update object dynamically to include optional fields
+      const updateData: Partial<User> = {
+        isApproved: approval.isApproved,
+        isActive: approval.isActive
+      };
+      
+      // Add optional fields if provided
+      if (approval.role) {
+        updateData.role = approval.role;
+      }
+      
+      if (approval.userType) {
+        updateData.userType = approval.userType;
+      }
+      
       const [user] = await db
         .update(users)
-        .set({
-          isApproved: approval.isApproved,
-          isActive: approval.isActive,
-        })
+        .set(updateData)
         .where(eq(users.id, approval.userId))
         .returning();
 
