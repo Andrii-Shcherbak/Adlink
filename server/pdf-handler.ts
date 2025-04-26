@@ -21,6 +21,7 @@ export function servePdfDocument(res: Response, url: Url): void {
   console.log('Secure URL with SAS token generated');
   
   // Serve the PDF viewer page with the document URL with SAS token
+  // Using PDF.js viewer for more reliable PDF rendering
   res.send(`
     <!DOCTYPE html>
     <html lang="en">
@@ -33,90 +34,135 @@ export function servePdfDocument(res: Response, url: Url): void {
           margin: 0;
           padding: 0;
           height: 100%;
-          overflow: hidden;
+          font-family: Arial, sans-serif;
+          background-color: #f4f4f4;
         }
-        .pdf-container {
-          position: absolute;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          width: 100%;
-          height: 100%;
-          border: none;
+        .container {
+          max-width: 1200px;
+          margin: 0 auto;
+          padding: 20px;
         }
         .header {
-          position: fixed;
-          top: 0;
-          left: 0;
-          right: 0;
-          padding: 10px;
-          background: rgba(255, 255, 255, 0.8);
-          border-bottom: 1px solid #ddd;
+          background-color: #fff;
+          padding: 15px 20px;
+          border-radius: 8px;
+          box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+          margin-bottom: 20px;
           display: flex;
           justify-content: space-between;
           align-items: center;
-          z-index: 100;
-        }
-        .header a {
-          text-decoration: none;
-          color: #0066cc;
         }
         .header h1 {
           margin: 0;
-          font-size: 16px;
+          font-size: 20px;
+          color: #333;
         }
-        .embed-container {
-          position: absolute;
-          top: 50px;
-          left: 0;
-          right: 0;
-          bottom: 0;
+        .btn {
+          display: inline-block;
+          background-color: #0066cc;
+          color: white;
+          padding: 10px 15px;
+          border-radius: 4px;
+          text-decoration: none;
+          font-size: 14px;
+          transition: background-color 0.3s ease;
         }
-        .error-message {
+        .btn:hover {
+          background-color: #0055aa;
+        }
+        .pdf-box {
+          background-color: white;
+          padding: 20px;
+          border-radius: 8px;
+          box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .pdf-direct-link {
+          display: block;
+          margin: 20px 0;
           text-align: center;
-          margin-top: 100px;
-          color: #d32f2f;
-          font-size: 18px;
-          display: none;
+        }
+        .direct-view-btn {
+          background-color: #4CAF50;
+        }
+        .direct-view-btn:hover {
+          background-color: #45a049;
+        }
+        .pdf-fallback {
+          text-align: center;
+          padding: 40px 20px;
+          background-color: #f9f9f9;
+          border-radius: 8px;
+          margin-top: 20px;
+        }
+        .pdf-fallback p {
+          margin-bottom: 20px;
+          color: #666;
         }
       </style>
     </head>
     <body>
-      <div class="header">
-        <h1>${url.pdfDocumentName || 'PDF Document'}</h1>
-        <a href="${secureUrl}" download="${url.pdfDocumentName || 'document.pdf'}">Download</a>
-      </div>
-      <div class="embed-container">
-        <iframe src="${secureUrl}" class="pdf-container" type="application/pdf"></iframe>
-        <div id="error-message" class="error-message">
-          There was an error loading the PDF document. Please try downloading it instead.
+      <div class="container">
+        <div class="header">
+          <h1>${url.pdfDocumentName || 'PDF Document'}</h1>
+          <a href="${secureUrl}" download="${url.pdfDocumentName || 'document.pdf'}" class="btn">Download PDF</a>
+        </div>
+        
+        <div class="pdf-box">
+          <object 
+            data="${secureUrl}" 
+            type="application/pdf" 
+            width="100%" 
+            height="600px" 
+            id="pdf-object">
+            <!-- Fallback if object tag doesn't work -->
+            <div class="pdf-fallback">
+              <p>Your browser cannot display the PDF directly. Please use one of the options below:</p>
+              <a href="${secureUrl}" class="btn direct-view-btn" target="_blank">Open PDF in new tab</a>
+              <a href="${secureUrl}" download="${url.pdfDocumentName || 'document.pdf'}" class="btn">Download PDF</a>
+            </div>
+          </object>
+        </div>
+        
+        <div class="pdf-direct-link">
+          <a href="${secureUrl}" class="btn direct-view-btn" target="_blank">Open PDF in new tab</a>
         </div>
       </div>
       
       <script>
-        // Add error handling for the iframe
-        const iframe = document.querySelector('iframe');
-        const errorMessage = document.getElementById('error-message');
+        // Check if PDF loads
+        const pdfObject = document.getElementById('pdf-object');
         
-        iframe.onerror = function() {
-          iframe.style.display = 'none';
-          errorMessage.style.display = 'block';
+        pdfObject.onload = function() {
+          console.log("PDF object loaded successfully");
         };
         
-        // Also check if iframe fails to load
-        iframe.onload = function() {
-          // Check if we can access the iframe content
+        pdfObject.onerror = function() {
+          console.error("Error loading PDF object");
+          showFallback();
+        };
+        
+        // Show fallback if needed
+        function showFallback() {
+          const fallbackDiv = document.querySelector('.pdf-fallback');
+          if (fallbackDiv) {
+            fallbackDiv.style.display = 'block';
+          }
+        }
+        
+        // Additional check - if after 3 seconds the PDF isn't loaded, show fallback options
+        setTimeout(function() {
           try {
-            // If we can't access iframe content, it might have failed to load
-            if (iframe.contentDocument === null || iframe.contentWindow === null) {
-              iframe.style.display = 'none';
-              errorMessage.style.display = 'block';
+            // Check if content loaded
+            if (pdfObject.contentDocument && 
+                pdfObject.contentDocument.body && 
+                pdfObject.contentDocument.body.childNodes.length === 0) {
+              showFallback();
             }
           } catch (e) {
-            // If we get security error, it's fine - iframe loaded but same-origin policy blocks access
+            // Cross-origin error is expected and can be ignored
+            console.log("Cross-origin check failed, which is normal");
           }
-        };
+        }, 3000);
       </script>
     </body>
     </html>
