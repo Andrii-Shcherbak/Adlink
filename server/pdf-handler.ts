@@ -1,16 +1,26 @@
 import { Response } from "express";
 import { Url } from "@shared/schema";
+import { azureStorageService } from "./services/azure-storage-service";
 
 export function servePdfDocument(res: Response, url: Url): void {
+  // Make sure pdfDocumentUrl is not null
+  if (!url.pdfDocumentUrl) {
+    res.status(404).send("PDF document URL not found");
+    return;
+  }
+
+  // Generate SAS token for secure access
+  const secureUrl = azureStorageService.getBlobUrlWithSAS(url.pdfDocumentUrl);
+  
   console.log(`PDF Document URL: Serving PDF document:`, {
     title: url.title,
     shortCode: url.shortCode,
-    pdfDocumentUrl: url.pdfDocumentUrl,
     pdfDocumentName: url.pdfDocumentName,
     pdfDocumentSize: url.pdfDocumentSize
   });
+  console.log('Secure URL with SAS token generated');
   
-  // Serve the PDF viewer page with the document URL
+  // Serve the PDF viewer page with the document URL with SAS token
   res.send(`
     <!DOCTYPE html>
     <html lang="en">
@@ -63,16 +73,51 @@ export function servePdfDocument(res: Response, url: Url): void {
           right: 0;
           bottom: 0;
         }
+        .error-message {
+          text-align: center;
+          margin-top: 100px;
+          color: #d32f2f;
+          font-size: 18px;
+          display: none;
+        }
       </style>
     </head>
     <body>
       <div class="header">
         <h1>${url.pdfDocumentName || 'PDF Document'}</h1>
-        <a href="${url.pdfDocumentUrl}" download="${url.pdfDocumentName || 'document.pdf'}">Download</a>
+        <a href="${secureUrl}" download="${url.pdfDocumentName || 'document.pdf'}">Download</a>
       </div>
       <div class="embed-container">
-        <iframe src="${url.pdfDocumentUrl}" class="pdf-container" type="application/pdf"></iframe>
+        <iframe src="${secureUrl}" class="pdf-container" type="application/pdf"></iframe>
+        <div id="error-message" class="error-message">
+          There was an error loading the PDF document. Please try downloading it instead.
+        </div>
       </div>
+      
+      <script>
+        // Add error handling for the iframe
+        const iframe = document.querySelector('iframe');
+        const errorMessage = document.getElementById('error-message');
+        
+        iframe.onerror = function() {
+          iframe.style.display = 'none';
+          errorMessage.style.display = 'block';
+        };
+        
+        // Also check if iframe fails to load
+        iframe.onload = function() {
+          // Check if we can access the iframe content
+          try {
+            // If we can't access iframe content, it might have failed to load
+            if (iframe.contentDocument === null || iframe.contentWindow === null) {
+              iframe.style.display = 'none';
+              errorMessage.style.display = 'block';
+            }
+          } catch (e) {
+            // If we get security error, it's fine - iframe loaded but same-origin policy blocks access
+          }
+        };
+      </script>
     </body>
     </html>
   `);

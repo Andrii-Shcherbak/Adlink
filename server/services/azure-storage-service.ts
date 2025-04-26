@@ -1,4 +1,4 @@
-import { BlobServiceClient, ContainerClient, BlockBlobClient } from '@azure/storage-blob';
+import { BlobServiceClient, ContainerClient, BlockBlobClient, StorageSharedKeyCredential, generateBlobSASQueryParameters, BlobSASPermissions } from '@azure/storage-blob';
 
 // Check if Azure Storage credentials are available
 if (!process.env.AZURE_STORAGE_CONNECTION_STRING || !process.env.AZURE_STORAGE_CONTAINER_NAME) {
@@ -9,6 +9,8 @@ export class AzureStorageService {
   private blobServiceClient: BlobServiceClient;
   private containerClient: ContainerClient;
   private containerName: string;
+  private accountName: string;
+  private accountKey: string;
 
   constructor() {
     // Initialize Azure Storage client
@@ -20,6 +22,18 @@ export class AzureStorageService {
     }
 
     try {
+      // Parse connection string to get account name and key
+      const connectionStringParts = connectionString.split(';');
+      const accountNamePart = connectionStringParts.find(part => part.startsWith('AccountName='));
+      const accountKeyPart = connectionStringParts.find(part => part.startsWith('AccountKey='));
+      
+      if (!accountNamePart || !accountKeyPart) {
+        throw new Error('Invalid connection string format');
+      }
+      
+      this.accountName = accountNamePart.split('=')[1];
+      this.accountKey = accountKeyPart.split('=')[1];
+      
       this.blobServiceClient = BlobServiceClient.fromConnectionString(connectionString);
       this.containerClient = this.blobServiceClient.getContainerClient(this.containerName);
       
@@ -56,6 +70,52 @@ export class AzureStorageService {
     return this.containerClient.getBlockBlobClient(blobName);
   }
 
+  // Generate a SAS token for a blob
+  private generateBlobSASToken(blobName: string): string {
+    // Create a shared key credential
+    const sharedKeyCredential = new StorageSharedKeyCredential(
+      this.accountName,
+      this.accountKey
+    );
+
+    // Set start time to 5 minutes ago to avoid clock skew issues
+    const startDate = new Date();
+    startDate.setMinutes(startDate.getMinutes() - 5);
+
+    // Set expiry time to 7 days from now
+    const expiryDate = new Date();
+    expiryDate.setDate(expiryDate.getDate() + 7);
+
+    // Generate SAS token with read permissions
+    const permissions = new BlobSASPermissions();
+    permissions.read = true; // Only allow read operations
+    
+    const sasOptions = {
+      containerName: this.containerName,
+      blobName: blobName,
+      permissions: permissions,
+      startsOn: startDate,
+      expiresOn: expiryDate,
+    };
+
+    const sasToken = generateBlobSASQueryParameters(
+      sasOptions,
+      sharedKeyCredential
+    ).toString();
+
+    return sasToken;
+  }
+
+  // Extract blob name from full URL
+  private getBlobNameFromUrl(url: string): string {
+    // Extract the blob name from the URL
+    const urlObj = new URL(url);
+    const path = urlObj.pathname;
+    // Format: /containername/blobname
+    const parts = path.split('/');
+    return parts[parts.length - 1];
+  }
+
   // Upload a file to Azure Storage
   async uploadFile(buffer: Buffer, fileName: string, contentType: string): Promise<string> {
     try {
@@ -72,17 +132,40 @@ export class AzureStorageService {
         }
       });
       
-      // Return the URL to the uploaded blob
-      return blockBlobClient.url;
+      // Generate a SAS token for the blob and append it to the URL
+      const sasToken = this.generateBlobSASToken(uniqueBlobName);
+      const blobUrlWithSAS = `${blockBlobClient.url}?${sasToken}`;
+      
+      console.log(`File uploaded to Azure Storage: ${blockBlobClient.url}`);
+      console.log(`Secured URL with SAS token generated (token valid for 7 days)`);
+      
+      // Return the URL with SAS token
+      return blobUrlWithSAS;
     } catch (error) {
       console.error('Error uploading file to Azure Storage:', error);
       throw new Error('Failed to upload file to Azure Storage');
     }
   }
 
-  // Get a blob's download URL
-  getBlobUrl(blobName: string): string {
-    return this.getBlockBlobClient(blobName).url;
+  // Get a blob's download URL with SAS token
+  getBlobUrlWithSAS(url: string): string {
+    try {
+      // Extract the blob name from the URL
+      const blobName = this.getBlobNameFromUrl(url);
+      
+      // Get the blob client
+      const blockBlobClient = this.getBlockBlobClient(blobName);
+      
+      // Generate a SAS token for the blob
+      const sasToken = this.generateBlobSASToken(blobName);
+      
+      // Return the URL with SAS token
+      return `${blockBlobClient.url}?${sasToken}`;
+    } catch (error) {
+      console.error('Error generating SAS token for blob:', error);
+      // Return original URL as fallback
+      return url;
+    }
   }
 
   // Delete a blob from Azure Storage
