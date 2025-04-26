@@ -106,9 +106,14 @@ export function setupAuth(app: Express) {
             return done(new Error("No email found in Microsoft profile"));
           }
 
+          // Special handling for Microsoft auth
+          console.log(`Microsoft auth: Looking up user by email ${email}`);
+          
+          // Search for all user accounts with this email to handle invitations properly
           let user = await storage.getUserByEmail(email);
-
+          
           if (!user) {
+            console.log(`Microsoft auth: No existing user found for email ${email}, creating new user`);
             // For Microsoft auth users, we automatically create them as internal users
             const username = profile.displayName?.replace(/\s+/g, "") || email.split("@")[0];
             const firstName = profile.name?.givenName || "";
@@ -136,30 +141,54 @@ export function setupAuth(app: Express) {
                 email: user.email
               }
             });
-          } else if (user.userType !== 'internal') {
-            // If a user with this email exists but is not marked as internal,
-            // update them to be an internal user using the storage interface
-            const updatedUser = await storage.updateUserApproval({
-              userId: user.id,
-              isApproved: true,
-              isActive: true,
-              userType: 'internal'
-            });
+          } else {
+            console.log(`Microsoft auth: Found existing user for email ${email}, id: ${user.id}`);
             
-            if (updatedUser) {
-              user = updatedUser;
+            if (user.userType !== 'internal') {
+              console.log(`Microsoft auth: Updating user ${user.id} to internal type`);
+              // If a user with this email exists but is not marked as internal,
+              // update them to be an internal user using the storage interface
+              const updatedUser = await storage.updateUserApproval({
+                userId: user.id,
+                isApproved: true,
+                isActive: true,
+                userType: 'internal'
+              });
+              
+              if (updatedUser) {
+                user = updatedUser;
+              }
+            }
+            
+            // Always set microsoftId if not already set
+            if (!user.microsoftId && profile.id) {
+              console.log(`Microsoft auth: Setting Microsoft ID for user ${user.id}`);
+              try {
+                const [updatedUser] = await db.update(users)
+                  .set({ microsoftId: profile.id })
+                  .where(eq(users.id, user.id))
+                  .returning();
+                  
+                if (updatedUser) {
+                  user = updatedUser;
+                }
+              } catch (err) {
+                console.error('Error updating Microsoft ID:', err);
+              }
             }
           }
           
           // Check if this is an invited user that hasn't accepted their invitation yet
           if (user.inviteToken) {
+            console.log(`Microsoft auth: User ${user.id} has an active invitation, accepting automatically`);
             // Accept the invitation automatically for Microsoft users
             try {
               const acceptedUser = await db.update(users)
                 .set({
                   inviteAcceptedAt: new Date(),
                   inviteToken: null, // Clear the invite token
-                  isActive: true
+                  isActive: true,
+                  isApproved: true // Ensure the user is approved
                 })
                 .where(eq(users.id, user.id))
                 .returning();
@@ -173,6 +202,8 @@ export function setupAuth(app: Express) {
                   type: 'invitation_accepted',
                   metadata: { method: 'microsoft' }
                 });
+                
+                console.log(`Microsoft auth: Invitation accepted successfully for user ${user.id}`);
               }
             } catch (err) {
               console.error('Error automatically accepting invitation for Microsoft user:', err);
