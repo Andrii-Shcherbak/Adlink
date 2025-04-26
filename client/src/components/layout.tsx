@@ -42,9 +42,30 @@ export function Layout({ children }: { children: ReactNode }) {
             </nav>
           </div>
           <div className="flex items-center gap-4">
-            <span className="text-sm text-muted-foreground">
-              {user?.username}
-            </span>
+            <div className="flex flex-col items-end">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium">
+                  {user?.firstName} {user?.lastName}
+                </span>
+                {user?.userType && (
+                  <span className={`text-xs px-2 py-0.5 rounded-full ${
+                    user.userType === 'internal' 
+                      ? 'bg-blue-500/20 text-blue-600 dark:text-blue-300' 
+                      : 'bg-amber-500/20 text-amber-600 dark:text-amber-300'
+                  }`}>
+                    {user.userType === 'internal' ? 'Internal' : 'External'}
+                  </span>
+                )}
+                {user?.role === 'admin' && (
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-primary/20 text-primary">
+                    Admin
+                  </span>
+                )}
+              </div>
+              <span className="text-xs text-muted-foreground">
+                {user?.email}
+              </span>
+            </div>
             <Button
               variant="outline"
               size="sm"

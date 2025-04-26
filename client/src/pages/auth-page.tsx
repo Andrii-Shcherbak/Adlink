@@ -66,11 +66,11 @@ export default function AuthPage() {
             </div>
             <CardDescription className="text-base text-white/90">
               Welcome to ADLink! Choose your authentication method below.
-              <div className="mt-2 flex items-center gap-2">
-                <span className="text-xs px-2 py-1 rounded-full bg-blue-500/20 text-blue-300">Internal Users: Microsoft</span>
-                <span className="text-xs px-2 py-1 rounded-full bg-amber-500/20 text-amber-300">External Users: Username/Password</span>
-              </div>
             </CardDescription>
+            <div className="mt-2 flex items-center gap-2">
+              <span className="text-xs px-2 py-1 rounded-full bg-blue-500/20 text-blue-300">Internal Users: Microsoft</span>
+              <span className="text-xs px-2 py-1 rounded-full bg-amber-500/20 text-amber-300">External Users: Username/Password</span>
+            </div>
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="login" className="w-full text-white [&_label]:text-white">

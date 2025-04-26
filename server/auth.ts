@@ -6,9 +6,11 @@ import session from "express-session";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import { storage } from "./storage";
-import { User as SelectUser } from "@shared/schema";
+import { User as SelectUser, users } from "@shared/schema";
 import { getAuthDomain } from "./utils/appConfig";
 import { emailService } from "./services/email-service";
+import { db } from "./db";
+import { eq } from "drizzle-orm";
 
 declare global {
   namespace Express {
@@ -107,6 +109,7 @@ export function setupAuth(app: Express) {
           let user = await storage.getUserByEmail(email);
 
           if (!user) {
+            // For Microsoft auth users, we automatically create them as internal users
             const username = profile.displayName?.replace(/\s+/g, "") || email.split("@")[0];
             const firstName = profile.name?.givenName || "";
             const lastName = profile.name?.familyName || "";
@@ -119,7 +122,32 @@ export function setupAuth(app: Express) {
               firstName,
               lastName,
               company: "",
+              userType: 'internal', // Set user type as internal for Microsoft auth
+              role: 'user', // Default role is user
+              isApproved: true // Auto-approve Microsoft users since they're authenticated by the organization
             });
+            
+            // Log activity for new Microsoft user
+            await storage.logActivity({
+              userId: user.id,
+              type: 'user_created',
+              metadata: { 
+                method: 'microsoft',
+                email: user.email
+              }
+            });
+          } else if (user.userType !== 'internal') {
+            // If a user with this email exists but is not marked as internal,
+            // update them to be an internal user
+            await db.update(users)
+              .set({ userType: 'internal' })
+              .where(eq(users.id, user.id));
+            
+            // Refresh user data
+            const updatedUser = await storage.getUserByEmail(email);
+            if (updatedUser) {
+              user = updatedUser;
+            }
           }
 
           // Check if user is active and approved (for both existing and new users)
