@@ -1,4 +1,4 @@
-import { users, urls, activities, type User, type InsertUser, type Url, type InsertUrl, type UserUpdate, type Activity, type InsertActivity } from "@shared/schema";
+import { users, urls, activities, type User, type InsertUser, type Url, type InsertUrl, type UserApproval, type Activity, type InsertActivity } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, sql, and } from "drizzle-orm";
 import session from "express-session";
@@ -34,7 +34,7 @@ export interface IStorage {
   updateUrl(id: number, userId: number, update: Partial<Url>): Promise<Url>;
   deleteUrl(id: number, userId: number): Promise<void>;
   getAllUsers(): Promise<User[]>;
-  updateUser(update: UserUpdate): Promise<User>;
+  updateUserApproval(approval: UserApproval): Promise<User>;
   deleteUser(userId: number): Promise<void>;
   
   // Invite-related methods
@@ -113,6 +113,7 @@ export class DatabaseStorage implements IStorage {
       const [user] = await db.insert(users).values({
         ...insertUser,
         role: 'user',
+        isApproved: false,
         isActive: true
       }).returning();
       return user;
@@ -332,26 +333,27 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async updateUser(update: UserUpdate): Promise<User> {
+  async updateUserApproval(approval: UserApproval): Promise<User> {
     try {
       // Build the update object dynamically to include optional fields
       const updateData: Partial<User> = {
-        isActive: update.isActive
+        isApproved: approval.isApproved,
+        isActive: approval.isActive
       };
       
       // Add optional fields if provided
-      if (update.role) {
-        updateData.role = update.role;
+      if (approval.role) {
+        updateData.role = approval.role;
       }
       
-      if (update.userType) {
-        updateData.userType = update.userType;
+      if (approval.userType) {
+        updateData.userType = approval.userType;
       }
       
       const [user] = await db
         .update(users)
         .set(updateData)
-        .where(eq(users.id, update.userId))
+        .where(eq(users.id, approval.userId))
         .returning();
 
       if (!user) {
@@ -360,7 +362,7 @@ export class DatabaseStorage implements IStorage {
 
       return user;
     } catch (error) {
-      console.error('Error updating user:', error);
+      console.error('Error updating user approval:', error);
       throw error;
     }
   }
@@ -444,6 +446,7 @@ export class DatabaseStorage implements IStorage {
         company: inviteData.company || "",
         role,
         userType,
+        isApproved: true, // Pre-approved since it's an admin-created invite
         isActive: true, // Mark as active by default so users can log in immediately
         inviteToken: token,
         inviteSentAt: new Date()

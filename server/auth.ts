@@ -74,9 +74,12 @@ export function setupAuth(app: Express) {
         if (!user || !(await comparePasswords(password, user.password))) {
           return done(null, false, { message: "Invalid credentials" });
         }
-        // Check if user is active
+        // Check if user is active and approved
         if (!user.isActive) {
           return done(null, false, { message: "Account is deactivated" });
+        }
+        if (!user.isApproved && user.role !== "admin") {
+          return done(null, false, { message: "Account pending approval" });
         }
         return done(null, user);
       } catch (error) {
@@ -155,7 +158,7 @@ export function setupAuth(app: Express) {
               company: "",
               userType: 'internal', // Set user type as internal for Microsoft auth
               role: 'user', // Default role is user
-              // Microsoft users are auto-active since they're authenticated by the organization
+              isApproved: true // Auto-approve Microsoft users since they're authenticated by the organization
             });
             
             // Log activity for new Microsoft user
@@ -174,8 +177,9 @@ export function setupAuth(app: Express) {
               console.log(`Microsoft auth: Updating user ${user.id} to internal type`);
               // If a user with this email exists but is not marked as internal,
               // update them to be an internal user using the storage interface
-              const updatedUser = await storage.updateUser({
+              const updatedUser = await storage.updateUserApproval({
                 userId: user.id,
+                isApproved: true,
                 isActive: true,
                 userType: 'internal'
               });
@@ -212,7 +216,8 @@ export function setupAuth(app: Express) {
                 .set({
                   inviteAcceptedAt: new Date(),
                   inviteToken: null, // Clear the invite token
-                  isActive: true
+                  isActive: true,
+                  isApproved: true // Ensure the user is approved
                 })
                 .where(eq(users.id, user.id))
                 .returning();
@@ -241,14 +246,19 @@ export function setupAuth(app: Express) {
             delete req.session.microsoftInviteData;
           }
 
-          // Check if user is active (for both existing and new users)
+          // Check if user is active and approved (for both existing and new users)
           if (!user.isActive) {
             console.log(`Microsoft auth: User ${user.id} account is deactivated, denying login`);
             return done(null, false, { message: "Account is deactivated. Please contact an administrator." });
           }
           
+          if (!user.isApproved && user.role !== "admin") {
+            console.log(`Microsoft auth: User ${user.id} account is pending approval, denying login`);
+            return done(null, false, { message: "Account pending approval. Please contact an administrator." });
+          }
+          
           // Log successful authentication check
-          console.log(`Microsoft auth: User ${user.id} active status verified`)
+          console.log(`Microsoft auth: User ${user.id} active and approved status verified`)
 
           return done(null, user);
         } catch (error) {
@@ -370,6 +380,7 @@ export function setupAuth(app: Express) {
         ...req.body,
         password: hashedPassword,
         role: 'user', // Always create regular users through admin interface
+        isApproved: true, // Admins can create pre-approved users
         isActive: true,
       });
       res.status(201).json(user);
@@ -378,16 +389,15 @@ export function setupAuth(app: Express) {
     }
   });
 
-  app.patch("/api/admin/users/:userId", isAdmin, async (req, res) => {
+  app.patch("/api/admin/users/:userId/approval", isAdmin, async (req, res) => {
     try {
       const { userId } = req.params;
-      const { isActive, role, userType } = req.body;
+      const { isApproved, isActive } = req.body;
 
-      const user = await storage.updateUser({
+      const user = await storage.updateUserApproval({
         userId: parseInt(userId),
+        isApproved,
         isActive,
-        role,
-        userType,
       });
 
       // Log user status change
@@ -397,16 +407,15 @@ export function setupAuth(app: Express) {
         metadata: {
           targetUserId: parseInt(userId),
           changes: {
-            isActive,
-            role,
-            userType
+            isApproved,
+            isActive
           }
         }
       });
 
       res.json(user);
     } catch (error) {
-      res.status(500).json({ error: "Failed to update user status" });
+      res.status(500).json({ error: "Failed to update user approval status" });
     }
   });
 
@@ -659,6 +668,7 @@ async function createAdminUser() {
         email: 'admin@example.com',
         company: '',
         role: 'admin',
+        isApproved: true,
         isActive: true
       });
       console.log('Admin user created successfully');

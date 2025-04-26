@@ -124,11 +124,11 @@ export default function AdminPage() {
   });
 
   const updateUserMutation = useMutation({
-    mutationFn: async ({ userId, isActive, role, userType }: { userId: number; isActive: boolean; role?: string; userType?: string }) => {
-      const res = await fetch(`/api/users/${userId}/status`, {
+    mutationFn: async ({ userId, isApproved, isActive }: { userId: number; isApproved: boolean; isActive: boolean }) => {
+      const res = await fetch(`/api/admin/users/${userId}/approval`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ isActive, role, userType }),
+        body: JSON.stringify({ isApproved, isActive }),
       });
       if (!res.ok) throw new Error("Failed to update user");
       return res.json();
@@ -684,8 +684,20 @@ export default function AdminPage() {
                           updateUserMutation.mutate({
                             userId: user.id,
                             isActive,
-                            role: user.role,
-                            userType: user.userType
+                            isApproved: user.isApproved,
+                          })
+                        }
+                      />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-muted-foreground">Approved</span>
+                      <Switch
+                        checked={user.isApproved}
+                        onCheckedChange={(isApproved) =>
+                          updateUserMutation.mutate({
+                            userId: user.id,
+                            isApproved,
+                            isActive: user.isActive,
                           })
                         }
                       />

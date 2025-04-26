@@ -33,11 +33,17 @@ export default function AuthStatus() {
       <Card className="max-w-md w-full p-6">
         <div className="flex flex-col items-center gap-4 text-center">
           <FiAlertTriangle className="h-12 w-12 text-destructive" />
-          <h1 className="text-2xl font-bold">Account Status Issue</h1>
+          <h1 className="text-2xl font-bold">Account {!user.isApproved ? "Pending Approval" : "Disabled"}</h1>
 
-          <p className="text-muted-foreground">
-            {statusData?.message || "Your account is currently inactive. Please contact the administrator for assistance."}
-          </p>
+          {!user.isApproved ? (
+            <p className="text-muted-foreground">
+              {statusData?.message || "Your account is pending administrator approval. Please contact the administrator to get your account approved."}
+            </p>
+          ) : (
+            <p className="text-muted-foreground">
+              {statusData?.message || "Your account has been disabled. Please contact the administrator for more information."}
+            </p>
+          )}
 
           <Button onClick={handleLogout} variant="outline" className="mt-4">
             Return to Login
