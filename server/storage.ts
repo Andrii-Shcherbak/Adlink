@@ -34,7 +34,7 @@ export interface IStorage {
   updateUrl(id: number, userId: number, update: Partial<Url>): Promise<Url>;
   deleteUrl(id: number, userId: number): Promise<void>;
   getAllUsers(): Promise<User[]>;
-  updateUserApproval(approval: UserApproval): Promise<User>;
+  updateUser(update: UserUpdate): Promise<User>;
   deleteUser(userId: number): Promise<void>;
   
   // Invite-related methods
@@ -113,7 +113,6 @@ export class DatabaseStorage implements IStorage {
       const [user] = await db.insert(users).values({
         ...insertUser,
         role: 'user',
-        isApproved: false,
         isActive: true
       }).returning();
       return user;
@@ -445,7 +444,6 @@ export class DatabaseStorage implements IStorage {
         company: inviteData.company || "",
         role,
         userType,
-        isApproved: true, // Pre-approved since it's an admin-created invite
         isActive: true, // Mark as active by default so users can log in immediately
         inviteToken: token,
         inviteSentAt: new Date()
