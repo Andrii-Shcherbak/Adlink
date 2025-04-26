@@ -1068,6 +1068,9 @@ export default function HomePage() {
                               }
                             }}
                           />
+                          {/* Multi Destination Button */}
+                          <MultiDestinationDialog url={url} />
+                          
                           {/* Expiry Date Button */}
                           <ExpiryDialog url={url} />
                           
