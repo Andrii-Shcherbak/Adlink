@@ -36,6 +36,11 @@ export const urls = pgTable("urls", {
     android: "",
     desktop: ""
   }),
+  // PDF document support
+  isPdfDocument: boolean("is_pdf_document").notNull().default(false),
+  pdfDocumentUrl: text("pdf_document_url"),
+  pdfDocumentName: text("pdf_document_name"),
+  pdfDocumentSize: integer("pdf_document_size"),
   analytics: jsonb("analytics").notNull().default({
     devices: {
       desktop: 0,
@@ -89,6 +94,10 @@ export const insertUrlSchema = createInsertSchema(urls).pick({
   expiresAt: z.string().optional().transform((val) => val ? new Date(val) : undefined),
   isMultiDestination: z.boolean().optional().default(false),
   destinations: destinationsSchema.optional(),
+  isPdfDocument: z.boolean().optional().default(false),
+  pdfDocumentUrl: z.string().optional(),
+  pdfDocumentName: z.string().optional(),
+  pdfDocumentSize: z.number().optional(),
 });
 
 export const qrConfigSchema = z.object({

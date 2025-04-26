@@ -10,6 +10,7 @@ import { scrypt, timingSafeEqual, randomBytes } from "crypto";
 import { promisify } from "util";
 import { openAiService } from "./services/openai-service";
 import { emailService } from "./services/email-service";
+import { azureStorageService } from "./services/azure-storage-service";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
@@ -45,6 +46,64 @@ async function hashPassword(password: string) {
 
 export async function registerRoutes(app: Express): Promise<Server> {
   setupAuth(app);
+
+  // Configure multer for PDF uploads
+  const pdfStorage = multer.memoryStorage();
+  const pdfUpload = multer({
+    storage: pdfStorage,
+    limits: {
+      fileSize: 10 * 1024 * 1024, // 10MB max file size
+    },
+    fileFilter: (req, file, cb) => {
+      // Only allow PDF files
+      if (file.mimetype === 'application/pdf') {
+        cb(null, true);
+      } else {
+        cb(null, false);
+        return cb(new Error('Only PDF format is allowed'));
+      }
+    }
+  });
+
+  // PDF document upload endpoint
+  app.post("/api/pdf-upload", pdfUpload.single('pdfFile'), async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: "No PDF file provided" });
+      }
+      
+      // Upload file to Azure Storage
+      const fileBuffer = req.file.buffer;
+      const originalName = req.file.originalname;
+      const fileSize = req.file.size;
+      const contentType = req.file.mimetype;
+      
+      // Upload to Azure Storage
+      const fileUrl = await azureStorageService.uploadFile(
+        fileBuffer,
+        originalName,
+        contentType
+      );
+      
+      // Return success with file info
+      res.status(200).json({
+        success: true,
+        fileUrl,
+        fileName: originalName,
+        fileSize,
+        message: "PDF successfully uploaded"
+      });
+      
+    } catch (error) {
+      console.error("Error uploading PDF:", error);
+      res.status(500).json({ 
+        error: "PDF upload failed", 
+        message: error instanceof Error ? error.message : "Unknown error" 
+      });
+    }
+  });
 
   // Add admin-only data migration endpoint
   app.post('/api/admin/migrate-analytics', async (req, res) => {
