@@ -447,7 +447,7 @@ export class DatabaseStorage implements IStorage {
         role,
         userType,
         isApproved: true, // Pre-approved since it's an admin-created invite
-        isActive: false, // Not active until invitation is accepted
+        isActive: true, // Mark as active by default so users can log in immediately
         inviteToken: token,
         inviteSentAt: new Date()
       }).returning();

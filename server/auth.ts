@@ -248,11 +248,17 @@ export function setupAuth(app: Express) {
 
           // Check if user is active and approved (for both existing and new users)
           if (!user.isActive) {
-            return done(null, false, { message: "Account is deactivated" });
+            console.log(`Microsoft auth: User ${user.id} account is deactivated, denying login`);
+            return done(null, false, { message: "Account is deactivated. Please contact an administrator." });
           }
+          
           if (!user.isApproved && user.role !== "admin") {
-            return done(null, false, { message: "Account pending approval" });
+            console.log(`Microsoft auth: User ${user.id} account is pending approval, denying login`);
+            return done(null, false, { message: "Account pending approval. Please contact an administrator." });
           }
+          
+          // Log successful authentication check
+          console.log(`Microsoft auth: User ${user.id} active and approved status verified`)
 
           return done(null, user);
         } catch (error) {
