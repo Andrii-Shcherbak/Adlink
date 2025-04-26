@@ -4,13 +4,14 @@ import { z } from "zod";
 
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
-  username: text("username").notNull().unique(),
-  password: text("password").notNull(),
+  username: text("username").unique(), // No longer required
+  password: text("password"), // Can be null for Microsoft authentication
   firstName: text("first_name").notNull(),
   lastName: text("last_name").notNull(),
-  email: text("email").notNull(),
+  email: text("email").notNull().unique(), // Email is now unique and the primary identifier
   company: text("company"),
   role: text("role").notNull().default("user"),
+  userType: text("user_type").notNull().default("external"), // 'internal' or 'external'
   isApproved: boolean("is_approved").notNull().default(false),
   isActive: boolean("is_active").notNull().default(true),
   microsoftId: text("microsoft_id").unique(),
@@ -101,11 +102,13 @@ export type Activity = typeof activities.$inferSelect;
 export type InsertActivity = z.infer<typeof insertActivitySchema>;
 
 export type UserRole = "admin" | "user";
+export type UserType = "internal" | "external";
 
 export const userApprovalSchema = z.object({
   userId: z.number(),
   isApproved: z.boolean(),
   isActive: z.boolean(),
+  role: z.enum(["admin", "user"]).optional(),
 });
 
 export const userInviteSchema = z.object({
@@ -113,12 +116,14 @@ export const userInviteSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
   lastName: z.string().min(1, "Last name is required"),
   company: z.string().optional(),
+  userType: z.enum(["internal", "external"]).default("external"),
+  role: z.enum(["admin", "user"]).default("user"),
 });
 
 export const inviteAcceptSchema = z.object({
   token: z.string().min(1, "Invite token is required"),
-  username: z.string().min(1, "Username is required"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
+  username: z.string().optional(), // Username is now optional
+  password: z.string().min(6, "Password must be at least 6 characters").optional(), // Password is optional for internal users
 });
 
 export type UserApproval = z.infer<typeof userApprovalSchema>;

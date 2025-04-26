@@ -31,6 +31,8 @@ type InviteUserForm = {
   firstName: string;
   lastName: string;
   company: string;
+  userType: 'internal' | 'external';
+  role: 'admin' | 'user';
 };
 
 export default function AdminPage() {
@@ -81,13 +83,17 @@ export default function AdminPage() {
         firstName: z.string().min(2, "First name must be at least 2 characters"),
         lastName: z.string().min(2, "Last name must be at least 2 characters"),
         company: z.string().optional(),
+        userType: z.enum(['internal', 'external']),
+        role: z.enum(['admin', 'user']),
       })
     ),
     defaultValues: {
       email: '',
       firstName: '',
       lastName: '',
-      company: ''
+      company: '',
+      userType: 'external',
+      role: 'user'
     }
   });
 
