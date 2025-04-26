@@ -150,6 +150,35 @@ export function setupAuth(app: Express) {
               user = updatedUser;
             }
           }
+          
+          // Check if this is an invited user that hasn't accepted their invitation yet
+          if (user.inviteToken) {
+            // Accept the invitation automatically for Microsoft users
+            try {
+              const acceptedUser = await db.update(users)
+                .set({
+                  inviteAcceptedAt: new Date(),
+                  inviteToken: null, // Clear the invite token
+                  isActive: true
+                })
+                .where(eq(users.id, user.id))
+                .returning();
+                
+              if (acceptedUser.length > 0) {
+                user = acceptedUser[0];
+                
+                // Log that the invitation was accepted via Microsoft login
+                await storage.logActivity({
+                  userId: user.id,
+                  type: 'invitation_accepted',
+                  metadata: { method: 'microsoft' }
+                });
+              }
+            } catch (err) {
+              console.error('Error automatically accepting invitation for Microsoft user:', err);
+              // Continue with login even if invitation acceptance fails
+            }
+          }
 
           // Check if user is active and approved (for both existing and new users)
           if (!user.isActive) {
