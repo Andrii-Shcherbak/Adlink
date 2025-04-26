@@ -90,6 +90,23 @@ export const destinationsSchema = z.object({
 export const insertUrlSchema = createInsertSchema(urls).pick({
   originalUrl: true,
 }).extend({
+  originalUrl: z.string()
+    .min(1, "URL is required")
+    .url("Please enter a valid URL (e.g., https://example.com)")
+    .refine(
+      (url) => {
+        try {
+          // Additional validation to ensure it's a complete URL with protocol
+          const parsedUrl = new URL(url);
+          return !!parsedUrl.protocol && !!parsedUrl.host;
+        } catch (e) {
+          return false;
+        }
+      },
+      {
+        message: "Please enter a complete URL including https:// or http://"
+      }
+    ),
   password: z.string().optional(),
   expiresAt: z.string().optional().transform((val) => val ? new Date(val) : undefined),
   isMultiDestination: z.boolean().optional().default(false),

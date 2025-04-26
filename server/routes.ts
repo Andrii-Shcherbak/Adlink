@@ -198,9 +198,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/urls", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
 
+    // Check for empty URL
+    if (!req.body.originalUrl || req.body.originalUrl.trim() === '') {
+      return res.status(400).json({ 
+        error: {
+          message: "URL is required",
+          path: ["originalUrl"]
+        }
+      });
+    }
+
+    // Validate URL format using our schema
     const parseResult = insertUrlSchema.safeParse(req.body);
     if (!parseResult.success) {
       return res.status(400).json(parseResult.error);
+    }
+    
+    // Additional URL validation for extra security
+    try {
+      new URL(parseResult.data.originalUrl);
+    } catch (error) {
+      return res.status(400).json({
+        error: {
+          message: "Invalid URL format. Please include http:// or https://",
+          path: ["originalUrl"]
+        }
+      });
     }
 
     const urlData = {
