@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, timestamp, jsonb, boolean } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, timestamp, jsonb, boolean, varchar } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -169,6 +169,76 @@ export const inviteAcceptSchema = z.object({
   password: z.string().min(6, "Password must be at least 6 characters").optional(), // Password is optional for internal users
 });
 
+// Digital asset management schema
+export const assetFolders = pgTable("asset_folders", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  name: varchar("name", { length: 255 }).notNull(),
+  parentId: integer("parent_id"),
+  path: text("path").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const assetFiles = pgTable("asset_files", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  folderId: integer("folder_id"),
+  name: varchar("name", { length: 255 }).notNull(),
+  originalName: varchar("original_name", { length: 255 }).notNull(),
+  fileUrl: text("file_url").notNull(),
+  fileType: varchar("file_type", { length: 100 }).notNull(),
+  fileSize: integer("file_size").notNull(),
+  contentType: varchar("content_type", { length: 100 }).notNull(),
+  description: text("description"),
+  metadata: jsonb("metadata").notNull().default({}),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+// Folder schema
+export const insertFolderSchema = createInsertSchema(assetFolders).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  name: z.string().min(1, "Folder name is required").max(255, "Folder name is too long"),
+  parentId: z.number().optional().nullable(),
+});
+
+// File schema with security validation
+export const insertFileSchema = createInsertSchema(assetFiles).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  name: z.string().min(1, "File name is required").max(255, "File name is too long"),
+  folderId: z.number().optional().nullable(),
+  fileType: z.string().refine(
+    (type) => {
+      // Allowed file types - block executable and script files
+      const allowedTypes = [
+        'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml',
+        'application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'application/vnd.ms-powerpoint', 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+        'text/plain', 'text/csv', 'application/json',
+        'audio/mpeg', 'audio/wav', 'audio/ogg',
+        'video/mp4', 'video/mpeg', 'video/webm'
+      ];
+      return allowedTypes.includes(type);
+    },
+    {
+      message: "This file type is not allowed for security reasons"
+    }
+  ),
+  fileSize: z.number().max(50 * 1024 * 1024, "File exceeds the 50MB size limit"),
+});
+
+export type AssetFolder = typeof assetFolders.$inferSelect;
+export type InsertAssetFolder = z.infer<typeof insertFolderSchema>;
+export type AssetFile = typeof assetFiles.$inferSelect;
+export type InsertAssetFile = z.infer<typeof insertFileSchema>;
 export type UserApproval = z.infer<typeof userApprovalSchema>;
 export type UserInvite = z.infer<typeof userInviteSchema>;
 export type InviteAccept = z.infer<typeof inviteAcceptSchema>;

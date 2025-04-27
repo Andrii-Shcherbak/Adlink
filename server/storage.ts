@@ -1,4 +1,9 @@
-import { users, urls, activities, type User, type InsertUser, type Url, type InsertUrl, type UserApproval, type Activity, type InsertActivity } from "@shared/schema";
+import { 
+  users, urls, activities, assetFolders, assetFiles,
+  type User, type InsertUser, type Url, type InsertUrl, 
+  type UserApproval, type Activity, type InsertActivity,
+  type AssetFolder, type InsertAssetFolder, type AssetFile, type InsertAssetFile
+} from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, sql, and } from "drizzle-orm";
 import session from "express-session";
@@ -46,6 +51,19 @@ export interface IStorage {
   getUserActivitiesCount(userId: number): Promise<number>;
   getAllActivities(limit?: number, offset?: number): Promise<Activity[]>;
   getAllActivitiesCount(): Promise<number>;
+  
+  // Digital Asset Management methods
+  createFolder(folder: InsertAssetFolder): Promise<AssetFolder>;
+  getFolderById(id: number, userId: number): Promise<AssetFolder | undefined>;
+  getUserFolders(userId: number): Promise<AssetFolder[]>;
+  updateFolder(id: number, userId: number, data: Partial<AssetFolder>): Promise<AssetFolder | undefined>;
+  deleteFolder(id: number, userId: number): Promise<void>;
+  
+  createFile(file: InsertAssetFile): Promise<AssetFile>;
+  getFileById(id: number, userId: number): Promise<AssetFile | undefined>;
+  getUserFiles(userId: number, folderId?: number): Promise<AssetFile[]>;
+  updateFile(id: number, userId: number, data: Partial<AssetFile>): Promise<AssetFile | undefined>;
+  deleteFile(id: number, userId: number): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
