@@ -8,19 +8,74 @@ async function throwIfResNotOk(res: Response) {
 }
 
 export async function apiRequest(
-  method: string,
-  url: string,
-  data?: unknown | undefined,
-): Promise<Response> {
-  const res = await fetch(url, {
-    method,
-    headers: data ? { "Content-Type": "application/json" } : {},
-    body: data ? JSON.stringify(data) : undefined,
-    credentials: "include",
-  });
+  urlOrOptions: string | { url: string; method?: string; body?: any; headers?: Record<string, string>; customConfig?: any },
+  optionsOrData?: { method?: string; body?: any; headers?: Record<string, string>; customConfig?: any } | unknown,
+): Promise<any> {
+  let url: string;
+  let options: any = { credentials: "include" };
 
+  // Handle overloaded function signature
+  if (typeof urlOrOptions === 'string') {
+    url = urlOrOptions;
+    
+    // If second parameter is an object with method, treat it as options
+    if (optionsOrData && typeof optionsOrData === 'object' && 'method' in optionsOrData) {
+      options = {
+        ...options,
+        ...optionsOrData,
+      };
+    } 
+    // Otherwise treat it as data for a POST request
+    else if (optionsOrData !== undefined) {
+      options.method = 'POST';
+      options.headers = { 'Content-Type': 'application/json' };
+      options.body = JSON.stringify(optionsOrData);
+    }
+  } else {
+    // First parameter is an options object with url
+    url = urlOrOptions.url;
+    options = {
+      ...options,
+      method: urlOrOptions.method || 'GET',
+      ...urlOrOptions,
+    };
+    
+    // Handle body content type 
+    if (options.body) {
+      if (options.customConfig?.isFormData) {
+        // Don't set Content-Type for FormData (browser will set it with boundary)
+        delete options.headers['Content-Type'];
+      } else {
+        // Set JSON Content-Type for non-FormData
+        options.headers = {
+          'Content-Type': 'application/json',
+          ...options.headers,
+        };
+        
+        if (typeof options.body !== 'string') {
+          options.body = JSON.stringify(options.body);
+        }
+      }
+    }
+    
+    // Remove url and customConfig from fetch options
+    delete options.url;
+    delete options.customConfig;
+  }
+
+  const res = await fetch(url, options);
   await throwIfResNotOk(res);
-  return res;
+  
+  // Try to parse as JSON, fall back to text or raw response
+  try {
+    return await res.json();
+  } catch (error) {
+    try {
+      return await res.text();
+    } catch {
+      return res;
+    }
+  }
 }
 
 type UnauthorizedBehavior = "returnNull" | "throw";

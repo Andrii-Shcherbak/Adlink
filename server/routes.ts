@@ -1349,7 +1349,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (!req.isAuthenticated()) return res.sendStatus(401);
     
     try {
-      const folderId = req.query.folderId ? parseInt(req.query.folderId as string) : undefined;
+      // Parse folderId from query string
+      let folderId: number | null = null;
+      if (req.query.folderId) {
+        if (req.query.folderId === 'null') {
+          folderId = null; // Explicitly set null
+        } else {
+          const parsedId = parseInt(req.query.folderId as string);
+          if (!isNaN(parsedId)) {
+            folderId = parsedId;
+          } else {
+            console.error('Invalid folderId in query:', req.query.folderId);
+          }
+        }
+      }
+      
+      console.log(`Getting files for user ${req.user!.id} in folder:`, folderId);
+      
       const files = await storage.getUserFiles(req.user!.id, folderId);
       
       // Generate secure access URLs for each file
@@ -1360,7 +1376,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json(filesWithUrls);
     } catch (error) {
-      console.error('Error fetching files:', error);
+      console.error('Error getting user files:', error);
       res.status(500).json({ error: "Failed to fetch files" });
     }
   });

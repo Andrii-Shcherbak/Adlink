@@ -61,7 +61,7 @@ export interface IStorage {
   
   createFile(file: InsertAssetFile): Promise<AssetFile>;
   getFileById(id: number, userId: number): Promise<AssetFile | undefined>;
-  getUserFiles(userId: number, folderId?: number): Promise<AssetFile[]>;
+  getUserFiles(userId: number, folderId?: number | null): Promise<AssetFile[]>;
   updateFile(id: number, userId: number, data: Partial<AssetFile>): Promise<AssetFile | undefined>;
   deleteFile(id: number, userId: number): Promise<void>;
 }
@@ -813,31 +813,39 @@ export class DatabaseStorage implements IStorage {
     }
   }
   
-  async getUserFiles(userId: number, folderId?: number): Promise<AssetFile[]> {
+  async getUserFiles(userId: number, folderId: number | null | undefined = undefined): Promise<AssetFile[]> {
     try {
-      // Build conditions array
-      const conditions = [eq(assetFiles.userId, userId)];
+      console.log(`Storage: Getting files for user ${userId} in folder:`, folderId);
       
-      // Add folder condition if needed
-      if (folderId !== undefined) {
-        if (folderId === null) {
-          // Get files without a folder (root level)
-          return await db
-            .select()
-            .from(assetFiles)
-            .where(and(eq(assetFiles.userId, userId), sql`${assetFiles.folderId} IS NULL`))
-            .orderBy(assetFiles.name);
-        } else {
-          // Get files in a specific folder
-          conditions.push(eq(assetFiles.folderId, folderId));
-        }
+      // If no folder specified, return all files
+      if (folderId === undefined) {
+        return await db
+          .select()
+          .from(assetFiles)
+          .where(eq(assetFiles.userId, userId))
+          .orderBy(assetFiles.name);
       }
       
-      // Execute the query with all conditions
+      // Get files without a folder (root level)
+      if (folderId === null) {
+        return await db
+          .select()
+          .from(assetFiles)
+          .where(and(
+            eq(assetFiles.userId, userId), 
+            sql`${assetFiles.folderId} IS NULL`
+          ))
+          .orderBy(assetFiles.name);
+      }
+      
+      // Get files in a specific folder
       return await db
         .select()
         .from(assetFiles)
-        .where(and(...conditions))
+        .where(and(
+          eq(assetFiles.userId, userId),
+          eq(assetFiles.folderId, folderId)
+        ))
         .orderBy(assetFiles.name);
     } catch (error) {
       console.error('Error getting user files:', error);
