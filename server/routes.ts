@@ -3,7 +3,10 @@ import express from "express";
 import { createServer, type Server } from "http";
 import { setupAuth } from "./auth";
 import { storage } from "./storage";
-import { insertUrlSchema, destinationsSchema, userApprovalSchema, userInviteSchema, inviteAcceptSchema, urls } from "@shared/schema";
+import { 
+  insertUrlSchema, destinationsSchema, userApprovalSchema, userInviteSchema, inviteAcceptSchema, 
+  insertFolderSchema, insertFileSchema, urls 
+} from "@shared/schema";
 import { qrConfigSchema } from "@shared/schema";
 import { UAParser } from "ua-parser-js";
 import { scrypt, timingSafeEqual, randomBytes } from "crypto";

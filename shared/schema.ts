@@ -187,6 +187,7 @@ export const assetFiles = pgTable("asset_files", {
   name: varchar("name", { length: 255 }).notNull(),
   originalName: varchar("original_name", { length: 255 }).notNull(),
   fileUrl: text("file_url").notNull(),
+  storageFileName: text("storage_file_name").notNull(),
   fileType: varchar("file_type", { length: 100 }).notNull(),
   fileSize: integer("file_size").notNull(),
   contentType: varchar("content_type", { length: 100 }).notNull(),
