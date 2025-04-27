@@ -75,7 +75,7 @@ export default function AuthPage() {
               <span className="bg-gradient-to-r from-blue-500 to-violet-500 text-transparent bg-clip-text">ADLink</span>
             </h1>
             <p className="text-xl md:text-2xl font-light text-white/80 max-w-md mt-4">
-              Enterprise URL management with powerful analytics and QR code generation
+              Enterprise URL shortener with custom QR codes, PDF sharing, and digital asset management
             </p>
           </div>
           
@@ -83,23 +83,63 @@ export default function AuthPage() {
             <div className="grid grid-cols-2 gap-8 mt-8">
               <Feature 
                 icon={<FiLink className="h-6 w-6 text-blue-400" />}
-                title="Smart Shortening"
-                description="Create concise, branded URLs with AI-enhanced title generation"
+                title="AI-Powered Links"
+                description="Generate titles and custom shortcodes with our AI integration"
               />
               <Feature 
                 icon={<FiCode className="h-6 w-6 text-blue-400" />}
-                title="Custom QR Codes"
-                description="Design beautiful QR codes with your logo and custom colors"
+                title="Advanced QR Codes"
+                description="Create customizable QR codes with your logo, patterns, and frames"
               />
               <Feature 
                 icon={<FiBarChart2 className="h-6 w-6 text-blue-400" />}
-                title="Detailed Analytics"
-                description="Get insights on geography, devices, and user behavior"
+                title="Geo-Analytics"
+                description="Track link usage with detailed geographic and device data"
               />
               <Feature 
                 icon={<FiGlobe className="h-6 w-6 text-blue-400" />}
-                title="Device Targeting"
-                description="Direct users to different destinations based on their device"
+                title="Multi-Destination"
+                description="Smart redirection based on the user's device type"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-8 mt-8">
+              <Feature 
+                icon={<svg className="h-6 w-6 text-blue-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                  <polyline points="14 2 14 8 20 8"></polyline>
+                  <line x1="16" y1="13" x2="8" y2="13"></line>
+                  <line x1="16" y1="17" x2="8" y2="17"></line>
+                  <polyline points="10 9 9 9 8 9"></polyline>
+                </svg>}
+                title="PDF Document Sharing"
+                description="Share PDF documents through secure, expiring links"
+              />
+              <Feature 
+                icon={<svg className="h-6 w-6 text-blue-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                  <line x1="8" y1="21" x2="16" y2="21"></line>
+                  <line x1="12" y1="17" x2="12" y2="21"></line>
+                </svg>}
+                title="Digital Asset Management"
+                description="Organize and manage your files with folders and drag-and-drop"
+              />
+              <Feature 
+                icon={<svg className="h-6 w-6 text-blue-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="8.5" cy="7" r="4"></circle>
+                  <polyline points="17 11 19 13 23 9"></polyline>
+                </svg>}
+                title="Dual User Types"
+                description="Support for internal (Microsoft) and external account authentication"
+              />
+              <Feature 
+                icon={<svg className="h-6 w-6 text-blue-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                </svg>}
+                title="Secure Storage"
+                description="Azure-powered secure file storage with SAS token protection"
               />
             </div>
           </div>
@@ -107,12 +147,15 @@ export default function AuthPage() {
         
         {/* Right side - Auth Forms */}
         <div className="w-full md:w-1/2 flex justify-center transition-all duration-700 delay-500">
-          <Card className="w-full max-w-md bg-gray-900/40 border border-white/10 shadow-2xl backdrop-blur-xl rounded-2xl p-1 overflow-hidden">
+          <Card className="w-full max-w-md bg-gradient-to-br from-gray-900/60 to-gray-900/40 border border-white/10 shadow-2xl backdrop-blur-xl rounded-2xl p-1 overflow-hidden">
             <div className="absolute opacity-50 -top-32 -right-32 w-64 h-64" style={{ 
               backgroundImage: "url('/images/blob-shape.svg')",
               backgroundSize: "contain",
               backgroundRepeat: "no-repeat"
             }} />
+            {/* Add a subtle glow effect */}
+            <div className="absolute -top-20 -right-20 w-60 h-60 bg-blue-500/10 rounded-full blur-3xl"></div>
+            <div className="absolute -bottom-20 -left-20 w-60 h-60 bg-violet-500/10 rounded-full blur-3xl"></div>
             
             <CardHeader className="space-y-2 relative z-10">
               <CardTitle className="text-2xl font-medium text-white">Welcome</CardTitle>
