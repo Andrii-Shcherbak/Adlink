@@ -124,23 +124,28 @@ const FolderItem: React.FC<{
     }),
   }));
 
-  // Setup drop functionality
+  // Setup drop functionality (only for grid view)
+  // In tree view, we'll handle this separately
   const [{ isOver, canDrop }, drop] = useDrop(() => ({
     accept: [ItemTypes.FOLDER, ItemTypes.FILE],
     drop: (item: { type: string, id: number }) => {
-      if (onMoveItem) onMoveItem(item, folder.id);
+      if (onMoveItem && !isTreeView) onMoveItem(item, folder.id);
       return { folderId: folder.id };
     },
     canDrop: (item) => item.id !== folder.id, // Can't drop a folder onto itself
     collect: (monitor) => ({
-      isOver: monitor.isOver(),
-      canDrop: monitor.canDrop(),
+      isOver: monitor.isOver() && !isTreeView,
+      canDrop: monitor.canDrop() && !isTreeView,
     }),
   }));
 
-  // Combine drag and drop refs
+  // Combine drag and drop refs for grid view only
   const ref = useRef<HTMLDivElement>(null);
-  drag(drop(ref));
+  if (!isTreeView) {
+    drag(drop(ref));
+  } else {
+    drag(ref);
+  }
 
   // For tree view (Replit-style)
   if (isTreeView) {
@@ -347,15 +352,17 @@ const FileItem: React.FC<{
           <span className="ml-1.5 text-[10px] text-gray-500">{formatFileSize(file.fileSize)}</span>
         </div>
         <div className="flex space-x-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-          <a 
-            href={file.secureUrl} 
-            target="_blank" 
-            rel="noopener noreferrer" 
-            className="inline-flex h-6 w-6 items-center justify-center rounded-md text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-background"
-            onClick={(e) => e.stopPropagation()}
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="h-6 w-6"
+            onClick={(e) => {
+              e.stopPropagation();
+              window.open(file.secureUrl, '_blank', 'noopener,noreferrer');
+            }}
           >
             <ExternalLinkIcon className="h-3 w-3" />
-          </a>
+          </Button>
           <Button 
             variant="ghost" 
             size="icon" 
@@ -411,7 +418,7 @@ const FileItem: React.FC<{
   return (
     <div 
       ref={drag}
-      className={`group flex items-center rounded-md p-2.5 transition-colors bg-transparent hover:bg-opacity-5 ${
+      className={`group flex items-center rounded-md p-2.5 transition-colors hover:bg-gray-50/50 dark:hover:bg-gray-900/10 ${
         isDragging ? 'opacity-50' : 'opacity-100'
       }`}
     >
@@ -433,19 +440,37 @@ const FileItem: React.FC<{
         </div>
       </div>
       <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
-        <a 
-          href={file.secureUrl} 
-          target="_blank" 
-          rel="noopener noreferrer" 
-          className="inline-flex h-7 w-7 items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none"
-          onClick={(e) => e.stopPropagation()}
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className="h-7 w-7"
+          onClick={(e) => {
+            e.stopPropagation();
+            window.open(file.secureUrl, '_blank', 'noopener,noreferrer');
+          }}
         >
           <ExternalLinkIcon className="h-3.5 w-3.5" />
-        </a>
-        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onRename(file)}>
+        </Button>
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className="h-7 w-7" 
+          onClick={(e) => {
+            e.stopPropagation();
+            onRename(file);
+          }}
+        >
           <PenSquare className="h-3.5 w-3.5" />
         </Button>
-        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onDelete(file.id)}>
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className="h-7 w-7" 
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete(file.id);
+          }}
+        >
           <Trash className="h-3.5 w-3.5" />
         </Button>
       </div>
@@ -1327,7 +1352,7 @@ export default function AssetsPage() {
                   </div>
                 </div>
               ) : (
-                <div className="h-[75vh] p-1 flex flex-col">
+                <div className="h-[calc(100vh-220px)] p-1 flex flex-col">
                   <div className="flex-1 overflow-y-auto">
                     {currentFolders.length > 0 && (
                       <div className="mb-4">
