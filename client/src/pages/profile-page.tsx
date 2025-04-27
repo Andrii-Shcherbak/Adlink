@@ -32,8 +32,8 @@ export default function ProfilePage() {
   const totalUrls = urlStats?.pagination.total || 0;
 
   return (
-    <div className="p-8">
-      <div className="max-w-6xl mx-auto space-y-8">
+    <div className="py-8">
+      <div className="space-y-8">
         <h1 className="text-3xl font-bold">Profile</h1>
 
         <div className="grid gap-8 grid-cols-1 md:grid-cols-2">
