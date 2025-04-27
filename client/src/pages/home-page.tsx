@@ -1027,36 +1027,6 @@ export default function HomePage() {
                                   : undefined
                               }
                             />
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => {
-                                const canvas = document.createElement("canvas");
-                                const svgElement = document.getElementById(`qr-${url.id}`);
-                                if (svgElement) {
-                                  const svgData = new XMLSerializer().serializeToString(svgElement);
-                                  const img = new Image();
-                                  img.onload = () => {
-                                    canvas.width = img.width;
-                                    canvas.height = img.height;
-                                    const ctx = canvas.getContext("2d");
-                                    if (ctx) {
-                                      ctx.fillStyle = qrConfig.bgColor;
-                                      ctx.fillRect(0, 0, canvas.width, canvas.height);
-                                      ctx.drawImage(img, 0, 0);
-                                      const pngFile = canvas.toDataURL("image/png");
-                                      const downloadLink = document.createElement("a");
-                                      downloadLink.download = `qr-${url.shortCode}.png`;
-                                      downloadLink.href = pngFile;
-                                      downloadLink.click();
-                                    }
-                                  };
-                                  img.src = `data:image/svg+xml;base64,${btoa(svgData)}`;
-                                }
-                              }}
-                            >
-                              <Download className="h-4 w-4" />
-                            </Button>
                           </div>
                           <QrCustomizer
                             url={`${domain}/${url.shortCode}`}
