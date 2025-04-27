@@ -277,7 +277,7 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="p-8">
+    <div className="py-8">
       {/* Invite Link Dialog */}
       <Dialog open={showInviteDialog} onOpenChange={setShowInviteDialog}>
         <DialogContent className="sm:max-w-md">
@@ -355,7 +355,7 @@ export default function AdminPage() {
         </DialogContent>
       </Dialog>
       
-      <div className="max-w-6xl mx-auto space-y-8">
+      <div className="space-y-8">
         <Card className="mb-8">
           <CardHeader>
             <CardTitle>System Maintenance</CardTitle>

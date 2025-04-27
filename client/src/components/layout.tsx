@@ -281,7 +281,7 @@ export function Layout({ children }: { children: ReactNode }) {
         </div>
       </header>
       
-      <main className="relative z-10">
+      <main className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         {children}
       </main>
     </div>
