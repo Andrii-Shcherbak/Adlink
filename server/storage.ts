@@ -631,6 +631,11 @@ export class DatabaseStorage implements IStorage {
   
   async createFolder(folder: InsertAssetFolder): Promise<AssetFolder> {
     try {
+      // Ensure userId is provided
+      if (!folder.userId) {
+        throw new Error('User ID is required');
+      }
+      
       // Normalize and validate the path
       let folderPath = folder.path || '/';
       if (!folderPath.startsWith('/')) folderPath = `/${folderPath}`;
@@ -648,7 +653,9 @@ export class DatabaseStorage implements IStorage {
       const [newFolder] = await db
         .insert(assetFolders)
         .values({
-          ...folder,
+          userId: folder.userId,
+          name: folder.name,
+          parentId: folder.parentId,
           path: folderPath,
           createdAt: new Date(),
           updatedAt: new Date()

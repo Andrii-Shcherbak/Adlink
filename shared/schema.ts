@@ -202,9 +202,11 @@ export const insertFolderSchema = createInsertSchema(assetFolders).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
+  userId: true, // Remove userId requirement for client validation - server will add it from session
 }).extend({
   name: z.string().min(1, "Folder name is required").max(255, "Folder name is too long"),
   parentId: z.number().optional().nullable(),
+  userId: z.number().optional(), // Make userId optional
 });
 
 // File schema with security validation
@@ -212,7 +214,9 @@ export const insertFileSchema = createInsertSchema(assetFiles).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
+  userId: true, // Remove userId requirement for client validation - server will add it from session
 }).extend({
+  userId: z.number().optional(), // Make userId optional
   name: z.string().min(1, "File name is required").max(255, "File name is too long"),
   folderId: z.number().optional().nullable(),
   fileType: z.string().refine(
