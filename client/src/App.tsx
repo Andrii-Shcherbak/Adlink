@@ -12,6 +12,7 @@ import AdminPage from "@/pages/admin-page";
 import ActivityDashboard from "@/pages/activity-dashboard";
 import AuthStatus from "@/pages/auth-status";
 import InvitePage from "@/pages/invite-page";
+import AssetsPage from "@/pages/assets-page";
 import { ProtectedRoute } from "./lib/protected-route";
 import { AdminRoute } from "./lib/admin-route";
 import { Layout } from "@/components/layout";
@@ -31,6 +32,7 @@ function Router() {
       <ProtectedRoute path="/" component={() => <ProtectedLayout component={HomePage} />} />
       <ProtectedRoute path="/analytics" component={() => <ProtectedLayout component={AnalyticsPage} />} />
       <ProtectedRoute path="/profile" component={() => <ProtectedLayout component={ProfilePage} />} />
+      <ProtectedRoute path="/assets" component={AssetsPage} />
       <AdminRoute path="/admin" component={() => <ProtectedLayout component={AdminPage} />} />
       <AdminRoute path="/activities" component={() => <ProtectedLayout component={ActivityDashboard} />} />
       <Route path="/auth" component={AuthPage} />
