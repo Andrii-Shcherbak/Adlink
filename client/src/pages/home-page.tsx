@@ -1,22 +1,97 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { insertUrlSchema, type InsertUrl, type Url, type QrConfig, type Destinations } from "@shared/schema";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import {
+  insertUrlSchema,
+  type InsertUrl,
+  type Url,
+  type QrConfig,
+  type Destinations,
+} from "@shared/schema";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { QRCodeSVG } from "qrcode.react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { Loader2, Copy, ExternalLink, LinkIcon, ChevronLeft, ChevronRight, Trash2, Download, Calendar, Clock, AlertTriangle, Smartphone, Monitor, Tablet } from "lucide-react";
+import {
+  Loader2,
+  Copy,
+  ExternalLink,
+  LinkIcon,
+  ChevronLeft,
+  ChevronRight,
+  Trash2,
+  Download,
+  Calendar,
+  Clock,
+  AlertTriangle,
+  Smartphone,
+  Monitor,
+  Tablet,
+} from "lucide-react";
 import { QrCustomizer } from "@/components/qr-customizer";
 import { useState } from "react";
-import { format, addDays, isAfter, isPast, formatDistanceToNow } from "date-fns";
-import { AlertDialog, AlertDialogTrigger, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from "@/components/ui/alert-dialog";
-import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { FiLock, FiUnlock, FiBarChart2, FiEdit2, FiEdit3, FiRefreshCw, FiArrowRight, FiCheck, FiClock, FiSmartphone, FiTablet, FiFile } from "react-icons/fi";
+import {
+  format,
+  addDays,
+  isAfter,
+  isPast,
+  formatDistanceToNow,
+} from "date-fns";
+import {
+  AlertDialog,
+  AlertDialogTrigger,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+  AlertDialogAction,
+} from "@/components/ui/alert-dialog";
+import {
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+} from "@/components/ui/popover";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  FiLock,
+  FiUnlock,
+  FiBarChart2,
+  FiEdit2,
+  FiEdit3,
+  FiRefreshCw,
+  FiArrowRight,
+  FiCheck,
+  FiClock,
+  FiSmartphone,
+  FiTablet,
+  FiFile,
+} from "react-icons/fi";
 import { SecurityBadge } from "@/components/security-badge";
 import { getUrlSecurityLevel, getSecurityColorClasses, cn } from "@/lib/utils";
 import { Label } from "@/components/ui/label";
@@ -35,7 +110,7 @@ function TitleEditDialog({ url }: { url: Url }) {
   const [isOpen, setIsOpen] = useState(false);
   const [title, setTitle] = useState(url.title || "");
   const [isGenerating, setIsGenerating] = useState(false);
-  
+
   const updateTitleMutation = useMutation({
     mutationFn: async ({ id, title }: { id: number; title: string }) => {
       const res = await apiRequest("PATCH", `/api/urls/${id}/title`, { title });
@@ -46,37 +121,38 @@ function TitleEditDialog({ url }: { url: Url }) {
       setIsOpen(false);
       toast({
         title: "Title updated",
-        description: "The URL title has been updated successfully"
+        description: "The URL title has been updated successfully",
       });
     },
     onError: (error: Error) => {
       toast({
         title: "Failed to update title",
         description: error.message,
-        variant: "destructive"
+        variant: "destructive",
       });
-    }
+    },
   });
-  
+
   const generateTitle = async () => {
     try {
       setIsGenerating(true);
-      const res = await apiRequest("POST", "/api/ai/generate-title", { 
-        url: url.originalUrl 
+      const res = await apiRequest("POST", "/api/ai/generate-title", {
+        url: url.originalUrl,
       });
       const data = await res.json();
       setTitle(data.title);
     } catch (error) {
       toast({
         title: "Failed to generate title",
-        description: error instanceof Error ? error.message : "An error occurred",
-        variant: "destructive"
+        description:
+          error instanceof Error ? error.message : "An error occurred",
+        variant: "destructive",
       });
     } finally {
       setIsGenerating(false);
     }
   };
-  
+
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
@@ -104,9 +180,9 @@ function TitleEditDialog({ url }: { url: Url }) {
                 className="flex-1"
                 placeholder="Enter a descriptive title"
               />
-              <Button 
-                variant="outline" 
-                size="icon" 
+              <Button
+                variant="outline"
+                size="icon"
                 onClick={generateTitle}
                 disabled={isGenerating}
               >
@@ -120,13 +196,10 @@ function TitleEditDialog({ url }: { url: Url }) {
           </div>
         </div>
         <DialogFooter>
-          <Button 
-            variant="outline" 
-            onClick={() => setIsOpen(false)}
-          >
+          <Button variant="outline" onClick={() => setIsOpen(false)}>
             Cancel
           </Button>
-          <Button 
+          <Button
             onClick={() => updateTitleMutation.mutate({ id: url.id, title })}
             disabled={updateTitleMutation.isPending}
           >
@@ -147,12 +220,22 @@ function TitleEditDialog({ url }: { url: Url }) {
 function ExpiryDialog({ url }: { url: Url }) {
   const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
-  const [expiryDate, setExpiryDate] = useState<Date | null>(url.expiresAt ? new Date(url.expiresAt) : null);
+  const [expiryDate, setExpiryDate] = useState<Date | null>(
+    url.expiresAt ? new Date(url.expiresAt) : null,
+  );
   const [expiryDays, setExpiryDays] = useState<number | null>(null);
-  
+
   const updateExpiryMutation = useMutation({
-    mutationFn: async ({ id, expiresAt }: { id: number; expiresAt: string | null }) => {
-      const res = await apiRequest("PATCH", `/api/urls/${id}/expiry`, { expiresAt });
+    mutationFn: async ({
+      id,
+      expiresAt,
+    }: {
+      id: number;
+      expiresAt: string | null;
+    }) => {
+      const res = await apiRequest("PATCH", `/api/urls/${id}/expiry`, {
+        expiresAt,
+      });
       return res.json();
     },
     onSuccess: () => {
@@ -160,8 +243,8 @@ function ExpiryDialog({ url }: { url: Url }) {
       setIsOpen(false);
       toast({
         title: expiryDate ? "Expiry date set" : "Expiry date removed",
-        description: expiryDate 
-          ? `The URL will expire on ${format(expiryDate, 'MMM d, yyyy')}`
+        description: expiryDate
+          ? `The URL will expire on ${format(expiryDate, "MMM d, yyyy")}`
           : "The URL will not expire automatically",
       });
     },
@@ -173,30 +256,30 @@ function ExpiryDialog({ url }: { url: Url }) {
       });
     },
   });
-  
+
   const setExpirationPeriod = (days: number) => {
     setExpiryDays(days);
     setExpiryDate(addDays(new Date(), days));
   };
-  
+
   const removeExpiration = () => {
     setExpiryDate(null);
     setExpiryDays(null);
   };
-  
+
   const applyExpiration = () => {
     updateExpiryMutation.mutate({
       id: url.id,
-      expiresAt: expiryDate ? expiryDate.toISOString() : null
+      expiresAt: expiryDate ? expiryDate.toISOString() : null,
     });
   };
-  
+
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button 
-          variant="ghost" 
-          size="sm" 
+        <Button
+          variant="ghost"
+          size="sm"
           className={url.expiresAt ? "text-amber-500 dark:text-amber-400" : ""}
         >
           <Clock className="h-4 w-4" />
@@ -206,55 +289,56 @@ function ExpiryDialog({ url }: { url: Url }) {
         <DialogHeader>
           <DialogTitle>Set Expiry Date</DialogTitle>
           <DialogDescription>
-            Choose when this link should expire. Expired links will no longer work.
+            Choose when this link should expire. Expired links will no longer
+            work.
           </DialogDescription>
         </DialogHeader>
-        
+
         <div className="space-y-4 py-4">
           <div className="flex flex-wrap gap-2">
-            <Button 
-              variant={expiryDays === 1 ? "default" : "outline"} 
-              size="sm" 
+            <Button
+              variant={expiryDays === 1 ? "default" : "outline"}
+              size="sm"
               onClick={() => setExpirationPeriod(1)}
             >
               1 Day
             </Button>
-            <Button 
-              variant={expiryDays === 7 ? "default" : "outline"} 
-              size="sm" 
+            <Button
+              variant={expiryDays === 7 ? "default" : "outline"}
+              size="sm"
               onClick={() => setExpirationPeriod(7)}
             >
               7 Days
             </Button>
-            <Button 
-              variant={expiryDays === 30 ? "default" : "outline"} 
-              size="sm" 
+            <Button
+              variant={expiryDays === 30 ? "default" : "outline"}
+              size="sm"
               onClick={() => setExpirationPeriod(30)}
             >
               30 Days
             </Button>
-            <Button 
-              variant={expiryDays === 90 ? "default" : "outline"} 
-              size="sm" 
+            <Button
+              variant={expiryDays === 90 ? "default" : "outline"}
+              size="sm"
               onClick={() => setExpirationPeriod(90)}
             >
               90 Days
             </Button>
-            <Button 
-              variant={expiryDate === null ? "default" : "outline"} 
-              size="sm" 
+            <Button
+              variant={expiryDate === null ? "default" : "outline"}
+              size="sm"
               onClick={removeExpiration}
             >
               No Expiry
             </Button>
           </div>
-          
+
           <div className="space-y-1">
             <Label>Custom Date</Label>
-            <Input 
-              type="date" 
-              value={expiryDate ? format(expiryDate, 'yyyy-MM-dd') : ''}
-              min={format(new Date(), 'yyyy-MM-dd')}
+            <Input
+              type="date"
+              value={expiryDate ? format(expiryDate, "yyyy-MM-dd") : ""}
+              min={format(new Date(), "yyyy-MM-dd")}
               onChange={(e) => {
                 setExpiryDays(null);
                 if (e.target.value) {
@@ -265,25 +349,28 @@ function ExpiryDialog({ url }: { url: Url }) {
               }}
             />
           </div>
-          
+
           {expiryDate && (
             <div className="rounded-md bg-muted p-3 text-sm">
-              This link will expire on {format(expiryDate, 'MMMM d, yyyy')}
+              This link will expire on {format(expiryDate, "MMMM d, yyyy")}
               {isPast(expiryDate) && (
                 <div className="mt-2 flex items-center text-destructive">
                   <AlertTriangle className="h-4 w-4 mr-1" />
-                  <span>This date is in the past. The link will be immediately expired.</span>
+                  <span>
+                    This date is in the past. The link will be immediately
+                    expired.
+                  </span>
                 </div>
               )}
             </div>
           )}
         </div>
-        
+
         <DialogFooter>
           <Button variant="outline" onClick={() => setIsOpen(false)}>
             Cancel
           </Button>
-          <Button 
+          <Button
             onClick={applyExpiration}
             disabled={updateExpiryMutation.isPending}
           >
@@ -292,7 +379,7 @@ function ExpiryDialog({ url }: { url: Url }) {
             ) : (
               <FiCheck className="h-4 w-4 mr-2" />
             )}
-            {expiryDate ? 'Set Expiry' : 'Remove Expiry'}
+            {expiryDate ? "Set Expiry" : "Remove Expiry"}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -304,58 +391,67 @@ function ExpiryDialog({ url }: { url: Url }) {
 function MultiDestinationDialog({ url }: { url: Url }) {
   const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
-  const [isMultiDestination, setIsMultiDestination] = useState(!!url.isMultiDestination);
-  
+  const [isMultiDestination, setIsMultiDestination] = useState(
+    !!url.isMultiDestination,
+  );
+
   // Initialize destinations from URL or with empty values
-  const initialDestinations = url.destinations 
-    ? typeof url.destinations === 'string' 
-      ? JSON.parse(url.destinations) 
+  const initialDestinations = url.destinations
+    ? typeof url.destinations === "string"
+      ? JSON.parse(url.destinations)
       : url.destinations
-    : { ios: '', android: '', desktop: '' };
-    
-  const [destinations, setDestinations] = useState<Destinations>(initialDestinations);
-  
+    : { ios: "", android: "", desktop: "" };
+
+  const [destinations, setDestinations] =
+    useState<Destinations>(initialDestinations);
+
   const updateDestinationsMutation = useMutation({
-    mutationFn: async ({ id, isMultiDestination, destinations }: { 
-      id: number; 
-      isMultiDestination: boolean; 
-      destinations: Destinations 
+    mutationFn: async ({
+      id,
+      isMultiDestination,
+      destinations,
+    }: {
+      id: number;
+      isMultiDestination: boolean;
+      destinations: Destinations;
     }) => {
-      const res = await apiRequest(
-        "PATCH", 
-        `/api/urls/${id}/destinations`, 
-        { isMultiDestination, destinations }
-      );
+      const res = await apiRequest("PATCH", `/api/urls/${id}/destinations`, {
+        isMultiDestination,
+        destinations,
+      });
       return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/urls"] });
       setIsOpen(false);
       toast({
-        title: isMultiDestination 
-          ? "Multi-destination enabled" 
+        title: isMultiDestination
+          ? "Multi-destination enabled"
           : "Multi-destination disabled",
         description: isMultiDestination
           ? "Your QR code will now redirect to different URLs based on device type."
-          : "Your QR code will now redirect to a single URL."
+          : "Your QR code will now redirect to a single URL.",
       });
     },
     onError: (error: Error) => {
       toast({
         title: "Failed to update destinations",
         description: error.message,
-        variant: "destructive"
+        variant: "destructive",
       });
-    }
+    },
   });
-  
-  const handleDestinationChange = (platform: keyof Destinations, value: string) => {
-    setDestinations(prev => ({
+
+  const handleDestinationChange = (
+    platform: keyof Destinations,
+    value: string,
+  ) => {
+    setDestinations((prev) => ({
       ...prev,
-      [platform]: value
+      [platform]: value,
     }));
   };
-  
+
   const handleSubmit = () => {
     // Validation
     if (isMultiDestination) {
@@ -364,11 +460,11 @@ function MultiDestinationDialog({ url }: { url: Url }) {
         toast({
           title: "Validation Error",
           description: "At least one platform destination must be provided",
-          variant: "destructive"
+          variant: "destructive",
         });
         return;
       }
-      
+
       // Validate URLs
       for (const [platform, url] of Object.entries(destinations)) {
         if (url) {
@@ -378,28 +474,30 @@ function MultiDestinationDialog({ url }: { url: Url }) {
             toast({
               title: "Invalid URL",
               description: `The URL for ${platform} is not valid`,
-              variant: "destructive"
+              variant: "destructive",
             });
             return;
           }
         }
       }
     }
-    
+
     updateDestinationsMutation.mutate({
       id: url.id,
       isMultiDestination,
-      destinations
+      destinations,
     });
   };
-  
+
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          className={url.isMultiDestination ? "text-green-500 dark:text-green-400" : ""}
+        <Button
+          variant="ghost"
+          size="sm"
+          className={
+            url.isMultiDestination ? "text-green-500 dark:text-green-400" : ""
+          }
         >
           <Tablet className="h-4 w-4" />
         </Button>
@@ -408,10 +506,11 @@ function MultiDestinationDialog({ url }: { url: Url }) {
         <DialogHeader>
           <DialogTitle>Multi-Platform Destinations</DialogTitle>
           <DialogDescription>
-            Configure your URL to redirect to different destinations based on the user's device type.
+            Configure your URL to redirect to different destinations based on
+            the user's device type.
           </DialogDescription>
         </DialogHeader>
-        
+
         <div className="space-y-4 py-4">
           <div className="flex items-center justify-between space-x-2">
             <Label htmlFor="multi-destination" className="flex-1">
@@ -423,61 +522,79 @@ function MultiDestinationDialog({ url }: { url: Url }) {
               onCheckedChange={setIsMultiDestination}
             />
           </div>
-          
+
           {isMultiDestination && (
             <div className="space-y-4 pt-2">
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
                   <Smartphone className="h-4 w-4 text-blue-500" />
-                  <Label htmlFor="ios-url" className="font-medium">iOS Destination</Label>
+                  <Label htmlFor="ios-url" className="font-medium">
+                    iOS Destination
+                  </Label>
                 </div>
                 <Input
                   id="ios-url"
                   placeholder="https://example.com/ios"
-                  value={destinations.ios || ''}
-                  onChange={(e) => handleDestinationChange('ios', e.target.value)}
+                  value={destinations.ios || ""}
+                  onChange={(e) =>
+                    handleDestinationChange("ios", e.target.value)
+                  }
                 />
               </div>
-              
+
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
                   <Smartphone className="h-4 w-4 text-green-500" />
-                  <Label htmlFor="android-url" className="font-medium">Android Destination</Label>
+                  <Label htmlFor="android-url" className="font-medium">
+                    Android Destination
+                  </Label>
                 </div>
                 <Input
                   id="android-url"
                   placeholder="https://example.com/android"
-                  value={destinations.android || ''}
-                  onChange={(e) => handleDestinationChange('android', e.target.value)}
+                  value={destinations.android || ""}
+                  onChange={(e) =>
+                    handleDestinationChange("android", e.target.value)
+                  }
                 />
               </div>
-              
+
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
                   <Monitor className="h-4 w-4 text-purple-500" />
-                  <Label htmlFor="desktop-url" className="font-medium">Desktop Destination</Label>
+                  <Label htmlFor="desktop-url" className="font-medium">
+                    Desktop Destination
+                  </Label>
                 </div>
                 <Input
                   id="desktop-url"
                   placeholder="https://example.com/desktop"
-                  value={destinations.desktop || ''}
-                  onChange={(e) => handleDestinationChange('desktop', e.target.value)}
+                  value={destinations.desktop || ""}
+                  onChange={(e) =>
+                    handleDestinationChange("desktop", e.target.value)
+                  }
                 />
               </div>
-              
+
               <div className="rounded-md bg-muted p-3 text-sm">
-                <p>Leave a field empty to use the original URL as fallback for that platform.</p>
-                <p className="mt-1">Original URL: <span className="font-mono text-xs">{url.originalUrl}</span></p>
+                <p>
+                  Leave a field empty to use the original URL as fallback for
+                  that platform.
+                </p>
+                <p className="mt-1">
+                  Original URL:{" "}
+                  <span className="font-mono text-xs">{url.originalUrl}</span>
+                </p>
               </div>
             </div>
           )}
         </div>
-        
+
         <DialogFooter>
           <Button variant="outline" onClick={() => setIsOpen(false)}>
             Cancel
           </Button>
-          <Button 
+          <Button
             onClick={handleSubmit}
             disabled={updateDestinationsMutation.isPending}
           >
@@ -501,10 +618,18 @@ function ShortcodeEditDialog({ url }: { url: Url }) {
   const [shortCode, setShortCode] = useState(url.shortCode);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
-  
+
   const updateShortcodeMutation = useMutation({
-    mutationFn: async ({ id, shortCode }: { id: number; shortCode: string }) => {
-      const res = await apiRequest("PATCH", `/api/urls/${id}/shortcode`, { shortCode });
+    mutationFn: async ({
+      id,
+      shortCode,
+    }: {
+      id: number;
+      shortCode: string;
+    }) => {
+      const res = await apiRequest("PATCH", `/api/urls/${id}/shortcode`, {
+        shortCode,
+      });
       return res.json();
     },
     onSuccess: () => {
@@ -512,39 +637,40 @@ function ShortcodeEditDialog({ url }: { url: Url }) {
       setIsOpen(false);
       toast({
         title: "Shortcode updated",
-        description: "The URL shortcode has been updated successfully"
+        description: "The URL shortcode has been updated successfully",
       });
     },
     onError: (error: Error) => {
       toast({
         title: "Failed to update shortcode",
         description: error.message,
-        variant: "destructive"
+        variant: "destructive",
       });
-    }
+    },
   });
-  
+
   const generateShortcodes = async () => {
     try {
       setIsGenerating(true);
-      const res = await apiRequest("POST", "/api/ai/generate-shortcodes", { 
+      const res = await apiRequest("POST", "/api/ai/generate-shortcodes", {
         url: url.originalUrl,
         title: url.title || undefined,
-        count: 5
+        count: 5,
       });
       const data = await res.json();
       setSuggestions(data.shortcodes || []);
     } catch (error) {
       toast({
         title: "Failed to generate shortcodes",
-        description: error instanceof Error ? error.message : "An error occurred",
-        variant: "destructive"
+        description:
+          error instanceof Error ? error.message : "An error occurred",
+        variant: "destructive",
       });
     } finally {
       setIsGenerating(false);
     }
   };
-  
+
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
@@ -572,9 +698,9 @@ function ShortcodeEditDialog({ url }: { url: Url }) {
                 className="flex-1"
                 placeholder="Enter a custom shortcode"
               />
-              <Button 
-                variant="outline" 
-                size="icon" 
+              <Button
+                variant="outline"
+                size="icon"
                 onClick={generateShortcodes}
                 disabled={isGenerating}
               >
@@ -586,7 +712,7 @@ function ShortcodeEditDialog({ url }: { url: Url }) {
               </Button>
             </div>
           </div>
-          
+
           {suggestions.length > 0 && (
             <div className="space-y-2">
               <Label>AI Suggestions</Label>
@@ -608,14 +734,13 @@ function ShortcodeEditDialog({ url }: { url: Url }) {
           )}
         </div>
         <DialogFooter>
-          <Button 
-            variant="outline" 
-            onClick={() => setIsOpen(false)}
-          >
+          <Button variant="outline" onClick={() => setIsOpen(false)}>
             Cancel
           </Button>
-          <Button 
-            onClick={() => updateShortcodeMutation.mutate({ id: url.id, shortCode })}
+          <Button
+            onClick={() =>
+              updateShortcodeMutation.mutate({ id: url.id, shortCode })
+            }
             disabled={updateShortcodeMutation.isPending}
           >
             {updateShortcodeMutation.isPending ? (
@@ -642,13 +767,18 @@ export default function HomePage() {
     resolver: zodResolver(insertUrlSchema),
     defaultValues: {
       originalUrl: "",
-      password: ""
+      password: "",
     },
   });
 
   const { data, isLoading } = useQuery<{
     urls: Url[];
-    pagination: { total: number; page: number; totalPages: number; hasMore: boolean; }
+    pagination: {
+      total: number;
+      page: number;
+      totalPages: number;
+      hasMore: boolean;
+    };
   }>({
     queryKey: ["/api/urls", page, ITEMS_PER_PAGE],
     queryFn: async () => {
@@ -702,7 +832,9 @@ export default function HomePage() {
 
   const updatePasswordMutation = useMutation({
     mutationFn: async ({ id, password }: { id: number; password?: string }) => {
-      const res = await apiRequest("PATCH", `/api/urls/${id}/password`, { password });
+      const res = await apiRequest("PATCH", `/api/urls/${id}/password`, {
+        password,
+      });
       return res.json();
     },
     onSuccess: () => {
@@ -758,7 +890,7 @@ export default function HomePage() {
                     onSubmit={form.handleSubmit((data) => {
                       const formData = {
                         ...data,
-                        password: data.password || undefined
+                        password: data.password || undefined,
                       };
                       createUrlMutation.mutate(formData);
                     })}
@@ -771,7 +903,10 @@ export default function HomePage() {
                         <FormItem>
                           <FormLabel>URL to shorten</FormLabel>
                           <FormControl>
-                            <Input placeholder="https://example.com" {...field} />
+                            <Input
+                              placeholder="https://example.com"
+                              {...field}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -811,8 +946,8 @@ export default function HomePage() {
                   </form>
                 </Form>
                 <div className="mt-4 pt-4 border-t">
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     className="w-full flex items-center gap-2"
                     onClick={() => setShowPdfDocumentDialog(true)}
                   >
@@ -822,7 +957,7 @@ export default function HomePage() {
                 </div>
               </CardContent>
             </Card>
-            
+
             <PDFDocumentDialog
               open={showPdfDocumentDialog}
               onOpenChange={setShowPdfDocumentDialog}
@@ -833,7 +968,9 @@ export default function HomePage() {
 
             <Card className="overflow-hidden border-0 shadow-md">
               <CardHeader className="pb-2">
-                <CardTitle className="text-lg font-medium">Quick Stats</CardTitle>
+                <CardTitle className="text-lg font-medium">
+                  Quick Stats
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 gap-4">
@@ -846,9 +983,7 @@ export default function HomePage() {
                         <div className="text-sm font-medium text-muted-foreground">
                           Total URLs
                         </div>
-                        <div className="text-2xl font-bold mt-1">
-                          {total}
-                        </div>
+                        <div className="text-2xl font-bold mt-1">{total}</div>
                       </div>
                     </div>
                   </div>
@@ -891,7 +1026,7 @@ export default function HomePage() {
                       key={url.id}
                       className={cn(
                         "p-5 rounded-lg border shadow-sm transition-all hover:shadow-md",
-                        securityColors.border
+                        securityColors.border,
                       )}
                     >
                       <div className="flex flex-col gap-4">
@@ -907,7 +1042,9 @@ export default function HomePage() {
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                onClick={() => copyToClipboard(`${domain}/${url.shortCode}`)}
+                                onClick={() =>
+                                  copyToClipboard(`${domain}/${url.shortCode}`)
+                                }
                               >
                                 <Copy className="h-4 w-4" />
                               </Button>
@@ -928,15 +1065,23 @@ export default function HomePage() {
                                 </AlertDialogTrigger>
                                 <AlertDialogContent>
                                   <AlertDialogHeader>
-                                    <AlertDialogTitle>Delete URL</AlertDialogTitle>
+                                    <AlertDialogTitle>
+                                      Delete URL
+                                    </AlertDialogTitle>
                                     <AlertDialogDescription>
-                                      Are you sure you want to delete this shortened URL? This action cannot be undone.
+                                      Are you sure you want to delete this
+                                      shortened URL? This action cannot be
+                                      undone.
                                     </AlertDialogDescription>
                                   </AlertDialogHeader>
                                   <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogCancel>
+                                      Cancel
+                                    </AlertDialogCancel>
                                     <AlertDialogAction
-                                      onClick={() => deleteUrlMutation.mutate(url.id)}
+                                      onClick={() =>
+                                        deleteUrlMutation.mutate(url.id)
+                                      }
                                       className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                                     >
                                       Delete
@@ -948,7 +1093,11 @@ export default function HomePage() {
                           </div>
                           <div className="flex flex-col sm:flex-row sm:items-center gap-2 text-sm text-muted-foreground flex-wrap">
                             <span>
-                              Created: {format(new Date(url.createdAt), 'MMM d, yyyy HH:mm')}
+                              Created:{" "}
+                              {format(
+                                new Date(url.createdAt),
+                                "MMM d, yyyy HH:mm",
+                              )}
                             </span>
                             <span className="hidden sm:inline">•</span>
                             <span>Clicks: {url.clicks}</span>
@@ -958,37 +1107,49 @@ export default function HomePage() {
                                 <span className="flex items-center gap-1">
                                   <FiClock className="h-3 w-3" />
                                   {isPast(new Date(url.expiresAt)) ? (
-                                    <Badge variant="destructive" className="text-xs py-0 h-5">Expired</Badge>
+                                    <Badge
+                                      variant="destructive"
+                                      className="text-xs py-0 h-5"
+                                    >
+                                      Expired
+                                    </Badge>
                                   ) : (
                                     <span>
-                                      Expires: {formatDistanceToNow(new Date(url.expiresAt), { addSuffix: true })}
+                                      Expires:{" "}
+                                      {formatDistanceToNow(
+                                        new Date(url.expiresAt),
+                                        { addSuffix: true },
+                                      )}
                                     </span>
                                   )}
                                 </span>
                               </>
                             )}
                           </div>
-                          
+
                           {/* Title display with edit option */}
                           <div className="flex items-center justify-between">
                             <p className="text-sm font-medium">
                               {url.title ? (
                                 <span>{url.title}</span>
                               ) : (
-                                <span className="text-muted-foreground italic">No title</span>
+                                <span className="text-muted-foreground italic">
+                                  No title
+                                </span>
                               )}
                             </p>
                             <TitleEditDialog url={url} />
                           </div>
-                          
+
                           <p className="text-sm text-muted-foreground break-all">
                             Original: {url.originalUrl}
                           </p>
-                          
+
                           {/* Custom Shortcode Edit */}
                           <div className="flex items-center justify-between">
                             <p className="text-sm text-muted-foreground">
-                              <span className="font-medium">Short Code:</span> {url.shortCode}
+                              <span className="font-medium">Short Code:</span>{" "}
+                              {url.shortCode}
                             </p>
                             <ShortcodeEditDialog url={url} />
                           </div>
@@ -996,8 +1157,8 @@ export default function HomePage() {
                           {/* Multi-destination indicator */}
                           {url.isMultiDestination && (
                             <div className="mt-2 flex items-center gap-2">
-                              <Badge 
-                                variant="outline" 
+                              <Badge
+                                variant="outline"
                                 className="bg-green-50 text-green-700 border-green-200 dark:bg-green-950 dark:text-green-300 dark:border-green-800"
                               >
                                 <Tablet className="h-3 w-3 mr-1" />
@@ -1032,9 +1193,14 @@ export default function HomePage() {
                               size="icon"
                               onClick={() => {
                                 const canvas = document.createElement("canvas");
-                                const svgElement = document.getElementById(`qr-${url.id}`);
+                                const svgElement = document.getElementById(
+                                  `qr-${url.id}`,
+                                );
                                 if (svgElement) {
-                                  const svgData = new XMLSerializer().serializeToString(svgElement);
+                                  const svgData =
+                                    new XMLSerializer().serializeToString(
+                                      svgElement,
+                                    );
                                   const img = new Image();
                                   img.onload = () => {
                                     canvas.width = img.width;
@@ -1042,10 +1208,17 @@ export default function HomePage() {
                                     const ctx = canvas.getContext("2d");
                                     if (ctx) {
                                       ctx.fillStyle = qrConfig.bgColor;
-                                      ctx.fillRect(0, 0, canvas.width, canvas.height);
+                                      ctx.fillRect(
+                                        0,
+                                        0,
+                                        canvas.width,
+                                        canvas.height,
+                                      );
                                       ctx.drawImage(img, 0, 0);
-                                      const pngFile = canvas.toDataURL("image/png");
-                                      const downloadLink = document.createElement("a");
+                                      const pngFile =
+                                        canvas.toDataURL("image/png");
+                                      const downloadLink =
+                                        document.createElement("a");
                                       downloadLink.download = `qr-${url.shortCode}.png`;
                                       downloadLink.href = pngFile;
                                       downloadLink.click();
@@ -1063,26 +1236,39 @@ export default function HomePage() {
                             config={qrConfig}
                             onSave={async (newConfig) => {
                               try {
-                                await apiRequest("PATCH", `/api/urls/${url.id}/qr-config`, newConfig);
+                                await apiRequest(
+                                  "PATCH",
+                                  `/api/urls/${url.id}/qr-config`,
+                                  newConfig,
+                                );
 
-                                queryClient.setQueryData<{ urls: Url[] }>(["/api/urls", page, ITEMS_PER_PAGE], (oldData) => {
-                                  if (!oldData) return oldData;
-                                  return {
-                                    ...oldData,
-                                    urls: oldData.urls.map((oldUrl) =>
-                                      oldUrl.id === url.id ? { ...oldUrl, qrConfig: newConfig } : oldUrl
-                                    )
-                                  };
-                                });
+                                queryClient.setQueryData<{ urls: Url[] }>(
+                                  ["/api/urls", page, ITEMS_PER_PAGE],
+                                  (oldData) => {
+                                    if (!oldData) return oldData;
+                                    return {
+                                      ...oldData,
+                                      urls: oldData.urls.map((oldUrl) =>
+                                        oldUrl.id === url.id
+                                          ? { ...oldUrl, qrConfig: newConfig }
+                                          : oldUrl,
+                                      ),
+                                    };
+                                  },
+                                );
 
                                 toast({
                                   title: "QR code updated",
-                                  description: "Your QR code customization has been saved",
+                                  description:
+                                    "Your QR code customization has been saved",
                                 });
                               } catch (error) {
                                 toast({
                                   title: "Failed to update QR code",
-                                  description: error instanceof Error ? error.message : "An error occurred",
+                                  description:
+                                    error instanceof Error
+                                      ? error.message
+                                      : "An error occurred",
                                   variant: "destructive",
                                 });
                               }
@@ -1090,17 +1276,14 @@ export default function HomePage() {
                           />
                           {/* Multi Destination Button */}
                           <MultiDestinationDialog url={url} />
-                          
+
                           {/* Expiry Date Button */}
                           <ExpiryDialog url={url} />
-                          
+
                           {/* Password Protection Button */}
                           <Popover>
                             <PopoverTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                              >
+                              <Button variant="ghost" size="icon">
                                 {url.isPasswordProtected ? (
                                   <FiLock className="h-4 w-4" />
                                 ) : (
@@ -1110,7 +1293,9 @@ export default function HomePage() {
                             </PopoverTrigger>
                             <PopoverContent className="w-80">
                               <div className="space-y-4">
-                                <div className="font-medium">Password Protection</div>
+                                <div className="font-medium">
+                                  Password Protection
+                                </div>
                                 {url.isPasswordProtected ? (
                                   <>
                                     <Input
@@ -1118,7 +1303,9 @@ export default function HomePage() {
                                       placeholder="Enter new password"
                                       className="mb-2"
                                       onChange={(e) => {
-                                        (e.target as HTMLInputElement).dataset.newPassword = e.target.value;
+                                        (
+                                          e.target as HTMLInputElement
+                                        ).dataset.newPassword = e.target.value;
                                       }}
                                     />
                                     <div className="flex justify-between gap-2">
@@ -1140,8 +1327,12 @@ export default function HomePage() {
                                         size="sm"
                                         className="flex-1"
                                         onClick={(e) => {
-                                          const input = e.currentTarget.parentElement?.parentElement?.querySelector('input');
-                                          const newPassword = input?.dataset.newPassword;
+                                          const input =
+                                            e.currentTarget.parentElement?.parentElement?.querySelector(
+                                              "input",
+                                            );
+                                          const newPassword =
+                                            input?.dataset.newPassword;
                                           if (newPassword) {
                                             updatePasswordMutation.mutate({
                                               id: url.id,
@@ -1161,14 +1352,20 @@ export default function HomePage() {
                                       placeholder="Enter password"
                                       className="mb-2"
                                       onChange={(e) => {
-                                        (e.target as HTMLInputElement).dataset.newPassword = e.target.value;
+                                        (
+                                          e.target as HTMLInputElement
+                                        ).dataset.newPassword = e.target.value;
                                       }}
                                     />
                                     <Button
                                       className="w-full"
                                       onClick={(e) => {
-                                        const input = e.currentTarget.parentElement?.querySelector('input');
-                                        const newPassword = input?.dataset.newPassword;
+                                        const input =
+                                          e.currentTarget.parentElement?.querySelector(
+                                            "input",
+                                          );
+                                        const newPassword =
+                                          input?.dataset.newPassword;
                                         if (newPassword) {
                                           updatePasswordMutation.mutate({
                                             id: url.id,
@@ -1201,7 +1398,7 @@ export default function HomePage() {
                     <Button
                       variant="outline"
                       size="icon"
-                      onClick={() => setPage(p => Math.max(1, p - 1))}
+                      onClick={() => setPage((p) => Math.max(1, p - 1))}
                       disabled={page === 1}
                     >
                       <ChevronLeft className="h-4 w-4" />
@@ -1212,7 +1409,9 @@ export default function HomePage() {
                     <Button
                       variant="outline"
                       size="icon"
-                      onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                      onClick={() =>
+                        setPage((p) => Math.min(totalPages, p + 1))
+                      }
                       disabled={page === totalPages}
                     >
                       <ChevronRight className="h-4 w-4" />

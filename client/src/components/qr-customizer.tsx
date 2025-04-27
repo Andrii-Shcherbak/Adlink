@@ -497,9 +497,7 @@ export function QrCustomizer({ url, config, onSave }: QrCustomizerProps) {
         </DialogContent>
       </Dialog>
 
-      <Button variant="ghost" size="icon" onClick={handleDownload} className="hover:bg-primary/10 transition-colors">
-        <Download className="h-4 w-4" />
-      </Button>
+
     </div>
   );
 }
