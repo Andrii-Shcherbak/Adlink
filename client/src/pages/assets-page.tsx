@@ -146,13 +146,39 @@ const FolderItem: React.FC<{
   if (isTreeView) {
     const hasChildren = childFolders.length > 0 || childFiles.length > 0;
     const paddingLeft = depth * 16; // Reduced padding for more compact view
+    
+    // Setup drop functionality for folders
+    const [{ isOver, canDrop }, drop] = useDrop(() => ({
+      accept: [ItemTypes.FOLDER, ItemTypes.FILE],
+      drop: (item: { type: string, id: number }) => {
+        if (onMoveItem) {
+          onMoveItem(item, folder.id);
+        }
+        return { folderId: folder.id };
+      },
+      collect: (monitor) => ({
+        isOver: monitor.isOver(),
+        canDrop: monitor.canDrop(),
+      }),
+    }));
+    
+    // Combine refs
+    const combinedRef = (element: HTMLDivElement) => {
+      if (ref) {
+        // @ts-ignore - ref.current assignment
+        ref.current = element;
+      }
+      drop(element);
+    };
 
     return (
       <div>
         <div 
-          ref={ref}
-          className={`group flex items-center px-1 py-0.5 text-sm hover:bg-gray-100 dark:hover:bg-gray-800 rounded ${
-            isOver && canDrop ? 'bg-blue-50 dark:bg-blue-900/30' : ''
+          ref={combinedRef}
+          className={`group flex items-center px-1 py-0.5 text-sm rounded transition-colors ${
+            isOver && canDrop 
+              ? 'bg-blue-50 dark:bg-blue-900/20' 
+              : 'hover:bg-gray-50/80 dark:hover:bg-gray-800/50'
           } ${isDragging ? 'opacity-50' : 'opacity-100'}`}
           style={{ paddingLeft: `${paddingLeft}px` }}
         >
@@ -242,8 +268,8 @@ const FolderItem: React.FC<{
   return (
     <div 
       ref={ref}
-      className={`group flex items-center rounded-md border border-gray-200 dark:border-gray-800 cursor-pointer p-2.5 hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors ${
-        isOver && canDrop ? 'border-blue-300 bg-blue-50 dark:border-blue-700 dark:bg-blue-900/30' : ''
+      className={`group flex items-center rounded-md cursor-pointer p-2.5 transition-colors ${
+        isOver && canDrop ? 'bg-blue-50 dark:bg-blue-900/10' : 'hover:bg-gray-50/50 dark:hover:bg-gray-900/10'
       } ${isDragging ? 'opacity-50' : 'opacity-100'}`}
     >
       <div className="flex-1 flex items-center space-x-2 overflow-hidden" onClick={() => onSelect(folder)}>
@@ -307,7 +333,7 @@ const FileItem: React.FC<{
     return (
       <div 
         ref={drag}
-        className={`group flex items-center px-1 py-0.5 text-sm hover:bg-gray-100 dark:hover:bg-gray-800 rounded ${
+        className={`group flex items-center px-1 py-0.5 text-sm hover:bg-gray-50/80 dark:hover:bg-gray-800/50 rounded transition-colors ${
           isDragging ? 'opacity-50' : 'opacity-100'
         }`}
         style={{ paddingLeft: `${paddingLeft + 4}px` }}
@@ -385,7 +411,7 @@ const FileItem: React.FC<{
   return (
     <div 
       ref={drag}
-      className={`group flex items-center rounded-md border border-gray-200 dark:border-gray-800 p-2.5 hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors ${
+      className={`group flex items-center rounded-md p-2.5 transition-colors bg-transparent hover:bg-opacity-5 ${
         isDragging ? 'opacity-50' : 'opacity-100'
       }`}
     >
@@ -1136,7 +1162,7 @@ export default function AssetsPage() {
   return (
     <Layout>
       <DndProvider backend={HTML5Backend}>
-        <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 py-6">
+        <div className="container mx-auto py-4">
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 gap-4">
             <h1 className="text-2xl font-bold">Digital Asset Management</h1>
             <div className="flex flex-wrap items-center gap-3">
@@ -1201,9 +1227,9 @@ export default function AssetsPage() {
           ) : (
             <>
               {viewMode === 'tree' ? (
-                <div className="mt-3 flex flex-col md:flex-row gap-4 h-[75vh]">
-                  <div className="w-full md:w-72 border-r border-gray-200 dark:border-gray-800 h-full">
-                    <div className="px-3 py-2 mb-2 flex items-center justify-between">
+                <div className="mt-3 flex flex-col md:flex-row gap-4 h-[calc(100vh-220px)]">
+                  <div className="w-full md:w-72 border-r border-gray-200 dark:border-gray-800 h-full overflow-auto">
+                    <div className="sticky top-0 px-3 py-2 mb-2 flex items-center justify-between bg-background z-10">
                       <h2 className="text-sm font-semibold flex items-center text-blue-600 dark:text-blue-400">
                         <Folder className="mr-1.5 h-3.5 w-3.5" />
                         File Explorer
@@ -1222,7 +1248,7 @@ export default function AssetsPage() {
                         } 
                       />
                     </div>
-                    <div className="overflow-auto max-h-full pr-1 scrollbar-thin">
+                    <div className="pr-1 scrollbar-thin">
                       <TreeNode 
                         folders={folders}
                         files={allFiles}
