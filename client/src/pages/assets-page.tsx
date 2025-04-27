@@ -769,18 +769,18 @@ const FolderBreadcrumb: React.FC<{
   onNavigate: (id: number | null) => void;
 }> = ({ currentPath, onNavigate }) => {
   return (
-    <div className="flex items-center text-sm mb-4 overflow-x-auto">
+    <div className="flex items-center text-xs overflow-x-auto whitespace-nowrap scrollbar-thin">
       {currentPath.map((folder, index) => (
         <React.Fragment key={index}>
-          {index > 0 && <span className="mx-2">/</span>}
-          <Button
+          {index > 0 && <ChevronRight className="mx-0.5 h-3 w-3 text-gray-400 shrink-0" />}
+          <button
             type="button"
-            variant="link"
-            className="h-auto p-0"
+            className="hover:text-blue-500 transition-colors py-0.5 px-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800 inline-flex items-center"
             onClick={() => onNavigate(folder.id)}
           >
-            {folder.name}
-          </Button>
+            {index === 0 && <Folder className="mr-1 h-3 w-3 text-blue-500" />}
+            <span className="max-w-[120px] truncate">{folder.name}</span>
+          </button>
         </React.Fragment>
       ))}
     </div>
@@ -892,12 +892,15 @@ const RootDropArea: React.FC<{
   return (
     <div 
       ref={drop} 
-      className={`p-2 rounded border border-dashed ${
-        isOver && canDrop ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' : 'border-gray-200 dark:border-gray-700'
-      }`}
+      className={`rounded-md border-2 border-dashed mb-2 ${
+        isOver && canDrop 
+          ? 'border-blue-400 bg-blue-50/40 dark:border-blue-600 dark:bg-blue-900/10' 
+          : 'border-gray-200 dark:border-gray-800 hover:bg-gray-50/50 dark:hover:bg-gray-900/10'
+      } transition-colors`}
     >
-      <div className="text-center p-4 text-sm text-gray-500">
-        Drop here to move to root folder
+      <div className="text-center py-1.5 text-xs text-gray-500 flex items-center justify-center gap-1.5">
+        <Folder className="h-3 w-3 text-gray-400" />
+        <span>Root folder drop zone</span>
       </div>
     </div>
   );
