@@ -12,9 +12,9 @@ type AuthContextType = {
   user: SelectUser | null;
   isLoading: boolean;
   error: Error | null;
-  loginMutation: UseMutationResult<SelectUser, Error, LoginData>;
-  logoutMutation: UseMutationResult<void, Error, void>;
-  registerMutation: UseMutationResult<SelectUser, Error, InsertUser>;
+  loginMutation: UseMutationResult<any, Error, LoginData>;
+  logoutMutation: UseMutationResult<any, Error, void>;
+  registerMutation: UseMutationResult<any, Error, InsertUser>;
 };
 
 type LoginData = Pick<InsertUser, "username" | "password">;
@@ -33,8 +33,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const loginMutation = useMutation({
     mutationFn: async (credentials: LoginData) => {
-      const res = await apiRequest("POST", "/api/login", credentials);
-      return await res.json();
+      const res = await apiRequest("/api/login", {
+        method: 'POST',
+        body: JSON.stringify(credentials),
+        headers: { 'Content-Type': 'application/json' }
+      });
+      return res;
     },
     onSuccess: (user: SelectUser) => {
       queryClient.setQueryData(["/api/user"], user);
@@ -50,8 +54,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const registerMutation = useMutation({
     mutationFn: async (credentials: InsertUser) => {
-      const res = await apiRequest("POST", "/api/register", credentials);
-      return await res.json();
+      const res = await apiRequest("/api/register", {
+        method: 'POST',
+        body: JSON.stringify(credentials),
+        headers: { 'Content-Type': 'application/json' }
+      });
+      return res;
     },
     onSuccess: (user: SelectUser) => {
       queryClient.setQueryData(["/api/user"], user);
@@ -67,7 +75,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logoutMutation = useMutation({
     mutationFn: async () => {
-      await apiRequest("POST", "/api/logout");
+      await apiRequest("/api/logout", {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
     },
     onSuccess: () => {
       queryClient.setQueryData(["/api/user"], null);
