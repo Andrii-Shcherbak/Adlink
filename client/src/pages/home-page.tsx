@@ -114,8 +114,11 @@ function TitleEditDialog({ url }: { url: Url }) {
 
   const updateTitleMutation = useMutation({
     mutationFn: async ({ id, title }: { id: number; title: string }) => {
-      const res = await apiRequest("PATCH", `/api/urls/${id}/title`, { title });
-      return res.json();
+      return apiRequest(`/api/urls/${id}/title`, {
+        method: 'PATCH',
+        body: JSON.stringify({ title }),
+        headers: { 'Content-Type': 'application/json' }
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/urls"] });
@@ -137,10 +140,11 @@ function TitleEditDialog({ url }: { url: Url }) {
   const generateTitle = async () => {
     try {
       setIsGenerating(true);
-      const res = await apiRequest("POST", "/api/ai/generate-title", {
-        url: url.originalUrl,
+      const data = await apiRequest("/api/ai/generate-title", { 
+        method: 'POST',
+        body: JSON.stringify({ url: url.originalUrl }),
+        headers: { 'Content-Type': 'application/json' }
       });
-      const data = await res.json();
       setTitle(data.title);
     } catch (error) {
       toast({
@@ -234,10 +238,11 @@ function ExpiryDialog({ url }: { url: Url }) {
       id: number;
       expiresAt: string | null;
     }) => {
-      const res = await apiRequest("PATCH", `/api/urls/${id}/expiry`, {
-        expiresAt,
+      return apiRequest(`/api/urls/${id}/expiry`, {
+        method: 'PATCH',
+        body: JSON.stringify({ expiresAt }),
+        headers: { 'Content-Type': 'application/json' }
       });
-      return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/urls"] });
@@ -416,11 +421,11 @@ function MultiDestinationDialog({ url }: { url: Url }) {
       isMultiDestination: boolean;
       destinations: Destinations;
     }) => {
-      const res = await apiRequest("PATCH", `/api/urls/${id}/destinations`, {
-        isMultiDestination,
-        destinations,
+      return apiRequest(`/api/urls/${id}/destinations`, {
+        method: 'PATCH',
+        body: JSON.stringify({ isMultiDestination, destinations }),
+        headers: { 'Content-Type': 'application/json' }
       });
-      return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/urls"] });
@@ -1255,11 +1260,11 @@ export default function HomePage() {
                             config={qrConfig}
                             onSave={async (newConfig) => {
                               try {
-                                await apiRequest(
-                                  "PATCH",
-                                  `/api/urls/${url.id}/qr-config`,
-                                  newConfig,
-                                );
+                                await apiRequest(`/api/urls/${url.id}/qr-config`, {
+                                  method: 'PATCH',
+                                  body: JSON.stringify({ qrConfig: newConfig }),
+                                  headers: { 'Content-Type': 'application/json' }
+                                });
 
                                 queryClient.setQueryData<{ urls: Url[] }>(
                                   ["/api/urls", page, ITEMS_PER_PAGE],
