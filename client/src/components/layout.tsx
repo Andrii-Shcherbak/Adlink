@@ -25,16 +25,7 @@ import {
 export function Layout({ children }: { children: ReactNode }) {
   const { user, logoutMutation } = useAuth();
   const [location] = useLocation();
-  const [isScrolled, setIsScrolled] = useState(false);
-
-  // Track scroll position to add blur effect
-  useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 10);
-    };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  // No need for scroll state anymore since the header is not sticky
 
   // Main navigation items - keep this minimal
   const mainNavItems = [
@@ -66,7 +57,7 @@ export function Layout({ children }: { children: ReactNode }) {
         />
       </div>
 
-      <header className={`sticky top-0 z-50 transition-all duration-300 ${isScrolled ? 'backdrop-blur-lg bg-gray-950/70' : 'bg-transparent'}`}>
+      <header className="relative z-50 transition-all duration-300 bg-transparent">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-8">
             <div onClick={() => {

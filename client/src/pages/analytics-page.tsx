@@ -31,10 +31,10 @@ export default function AnalyticsPage() {
   // No data message when user has no URLs
   if (urls.length === 0) {
     return (
-      <div className="min-h-screen bg-background p-8">
+      <div className="p-8">
         <div className="max-w-6xl mx-auto">
-          <h1 className="text-3xl font-bold mb-8">Analytics Dashboard</h1>
-          <div className="text-center py-8 text-muted-foreground">
+          <h1 className="text-3xl font-bold mb-8 text-white">Analytics Dashboard</h1>
+          <div className="text-center py-8 text-white/70">
             No URLs found. Create some shortened URLs to see analytics!
           </div>
         </div>
@@ -43,9 +43,9 @@ export default function AnalyticsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background p-8">
+    <div className="p-8">
       <div className="max-w-6xl mx-auto space-y-8">
-        <h1 className="text-3xl font-bold">Analytics Dashboard</h1>
+        <h1 className="text-3xl font-bold text-white">Analytics Dashboard</h1>
 
         <div className="grid gap-8 grid-cols-1 lg:grid-cols-2">
           <Card>

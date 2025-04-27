@@ -277,7 +277,7 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background p-8">
+    <div className="p-8">
       {/* Invite Link Dialog */}
       <Dialog open={showInviteDialog} onOpenChange={setShowInviteDialog}>
         <DialogContent className="sm:max-w-md">
