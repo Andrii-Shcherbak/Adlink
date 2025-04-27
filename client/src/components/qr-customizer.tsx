@@ -442,7 +442,7 @@ export function QrCustomizer({ url, domain }: QrCustomizerProps) {
                 >
                   <div className="qr-code-wrapper">
                     <QRCodeSVG
-                      value={url}
+                      value={`${domain}/${url.shortCode}`}
                       size={250}
                       level="H"
                       fgColor={localConfig.fgColor}
