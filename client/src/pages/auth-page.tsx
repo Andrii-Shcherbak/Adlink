@@ -3,12 +3,36 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertUserSchema, InsertUser } from "@shared/schema";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Redirect } from "wouter";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
-import { FiLink, FiBarChart2, FiGlobe, FiCode, FiUser, FiLock, FiMail, FiBriefcase, FiArrowRight } from "react-icons/fi";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardFooter,
+} from "@/components/ui/card";
+import {
+  FiLink,
+  FiBarChart2,
+  FiGlobe,
+  FiCode,
+  FiUser,
+  FiLock,
+  FiMail,
+  FiBriefcase,
+  FiArrowRight,
+} from "react-icons/fi";
 import { useState, useEffect } from "react";
 
 export default function AuthPage() {
@@ -24,7 +48,9 @@ export default function AuthPage() {
   }, []);
 
   const loginForm = useForm<Pick<InsertUser, "username" | "password">>({
-    resolver: zodResolver(insertUserSchema.pick({ username: true, password: true })),
+    resolver: zodResolver(
+      insertUserSchema.pick({ username: true, password: true }),
+    ),
     defaultValues: { username: "", password: "" },
   });
 
@@ -48,55 +74,62 @@ export default function AuthPage() {
     <div className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden bg-gray-950">
       {/* Background Elements */}
       <div className="absolute inset-0 z-0 overflow-hidden">
-        <div 
+        <div
           className="absolute inset-0 opacity-30"
-          style={{ 
+          style={{
             backgroundImage: "url('/images/gradient-bg.svg')",
             backgroundSize: "cover",
           }}
         />
-        <div 
+        <div
           className="absolute opacity-10 top-0 left-0 right-0 bottom-0"
-          style={{ 
+          style={{
             backgroundImage: "url('/images/light-dots.svg')",
             backgroundSize: "cover",
           }}
         />
         <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] blur-3xl rounded-full bg-blue-500/10 animate-pulse" />
-        <div className="absolute top-[45%] left-[48%] transform -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] blur-3xl rounded-full bg-purple-500/10 animate-pulse" style={{ animationDelay: "1s" }} />
+        <div
+          className="absolute top-[45%] left-[48%] transform -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] blur-3xl rounded-full bg-purple-500/10 animate-pulse"
+          style={{ animationDelay: "1s" }}
+        />
       </div>
-      
-      <div className={`container max-w-screen-xl mx-auto px-4 py-8 md:py-12 relative z-10 flex flex-col md:flex-row gap-12 items-center transition-opacity duration-1000 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}>
+
+      <div
+        className={`container max-w-screen-xl mx-auto px-4 py-8 md:py-12 relative z-10 flex flex-col md:flex-row gap-12 items-center transition-opacity duration-1000 ${isLoaded ? "opacity-100" : "opacity-0"}`}
+      >
         {/* Left side - Branding and Features */}
         <div className="w-full md:w-1/2 text-white space-y-6 md:space-y-12">
           <div className="space-y-4 text-center md:text-left transition-all duration-700 delay-100">
-            <img src="/images/adlink-logo.svg" alt="ADLink Logo" className="h-24 w-24 mx-auto md:mx-0" />
             <h1 className="text-4xl md:text-6xl font-bold tracking-tight text-white">
-              <span className="bg-gradient-to-r from-blue-500 to-violet-500 text-transparent bg-clip-text">ADLink</span>
+              <span className="bg-gradient-to-r from-blue-500 to-violet-500 text-transparent bg-clip-text">
+                ADLink
+              </span>
             </h1>
             <p className="text-xl md:text-2xl font-light text-white/80 max-w-md mt-4">
-              Enterprise URL shortener with custom QR codes, PDF sharing, and digital asset management
+              Enterprise URL shortener with custom QR codes, PDF sharing, and
+              digital asset management
             </p>
           </div>
-          
+
           <div className="hidden md:block transition-all duration-700 delay-300">
             <div className="grid grid-cols-2 gap-8 mt-8">
-              <Feature 
+              <Feature
                 icon={<FiLink className="h-6 w-6 text-blue-400" />}
                 title="AI-Powered Links"
                 description="Generate titles and custom shortcodes with our AI integration"
               />
-              <Feature 
+              <Feature
                 icon={<FiCode className="h-6 w-6 text-blue-400" />}
                 title="Advanced QR Codes"
                 description="Create customizable QR codes with your logo, patterns, and frames"
               />
-              <Feature 
+              <Feature
                 icon={<FiBarChart2 className="h-6 w-6 text-blue-400" />}
                 title="Geo-Analytics"
                 description="Track link usage with detailed geographic and device data"
               />
-              <Feature 
+              <Feature
                 icon={<FiGlobe className="h-6 w-6 text-blue-400" />}
                 title="Multi-Destination"
                 description="Smart redirection based on the user's device type"
@@ -104,98 +137,178 @@ export default function AuthPage() {
             </div>
 
             <div className="grid grid-cols-2 gap-8 mt-8">
-              <Feature 
-                icon={<svg className="h-6 w-6 text-blue-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                  <polyline points="14 2 14 8 20 8"></polyline>
-                  <line x1="16" y1="13" x2="8" y2="13"></line>
-                  <line x1="16" y1="17" x2="8" y2="17"></line>
-                  <polyline points="10 9 9 9 8 9"></polyline>
-                </svg>}
+              <Feature
+                icon={
+                  <svg
+                    className="h-6 w-6 text-blue-400"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                    <polyline points="10 9 9 9 8 9"></polyline>
+                  </svg>
+                }
                 title="PDF Document Sharing"
                 description="Share PDF documents through secure, expiring links"
               />
-              <Feature 
-                icon={<svg className="h-6 w-6 text-blue-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
-                  <line x1="8" y1="21" x2="16" y2="21"></line>
-                  <line x1="12" y1="17" x2="12" y2="21"></line>
-                </svg>}
+              <Feature
+                icon={
+                  <svg
+                    className="h-6 w-6 text-blue-400"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <rect
+                      x="2"
+                      y="3"
+                      width="20"
+                      height="14"
+                      rx="2"
+                      ry="2"
+                    ></rect>
+                    <line x1="8" y1="21" x2="16" y2="21"></line>
+                    <line x1="12" y1="17" x2="12" y2="21"></line>
+                  </svg>
+                }
                 title="Digital Asset Management"
                 description="Organize and manage your files with folders and drag-and-drop"
               />
-              <Feature 
-                icon={<svg className="h-6 w-6 text-blue-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                  <circle cx="8.5" cy="7" r="4"></circle>
-                  <polyline points="17 11 19 13 23 9"></polyline>
-                </svg>}
+              <Feature
+                icon={
+                  <svg
+                    className="h-6 w-6 text-blue-400"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="8.5" cy="7" r="4"></circle>
+                    <polyline points="17 11 19 13 23 9"></polyline>
+                  </svg>
+                }
                 title="Dual User Types"
                 description="Support for internal (Microsoft) and external account authentication"
               />
-              <Feature 
-                icon={<svg className="h-6 w-6 text-blue-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                  <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                </svg>}
+              <Feature
+                icon={
+                  <svg
+                    className="h-6 w-6 text-blue-400"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <rect
+                      x="3"
+                      y="11"
+                      width="18"
+                      height="11"
+                      rx="2"
+                      ry="2"
+                    ></rect>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                  </svg>
+                }
                 title="Secure Storage"
                 description="Azure-powered secure file storage with SAS token protection"
               />
             </div>
           </div>
         </div>
-        
+
         {/* Right side - Auth Forms */}
         <div className="w-full md:w-1/2 flex justify-center transition-all duration-700 delay-500">
           <Card className="w-full max-w-md bg-gradient-to-br from-gray-900/60 to-gray-900/40 border border-white/10 shadow-2xl backdrop-blur-xl rounded-2xl p-1 overflow-hidden">
-            <div className="absolute opacity-50 -top-32 -right-32 w-64 h-64" style={{ 
-              backgroundImage: "url('/images/blob-shape.svg')",
-              backgroundSize: "contain",
-              backgroundRepeat: "no-repeat"
-            }} />
+            <div
+              className="absolute opacity-50 -top-32 -right-32 w-64 h-64"
+              style={{
+                backgroundImage: "url('/images/blob-shape.svg')",
+                backgroundSize: "contain",
+                backgroundRepeat: "no-repeat",
+              }}
+            />
             {/* Add a subtle glow effect */}
             <div className="absolute -top-20 -right-20 w-60 h-60 bg-blue-500/10 rounded-full blur-3xl"></div>
             <div className="absolute -bottom-20 -left-20 w-60 h-60 bg-violet-500/10 rounded-full blur-3xl"></div>
-            
+
             <CardHeader className="space-y-2 relative z-10">
-              <CardTitle className="text-2xl font-medium text-white">Welcome</CardTitle>
+              <CardTitle className="text-2xl font-medium text-white">
+                Welcome
+              </CardTitle>
               <CardDescription className="text-white/70">
                 Sign in to your account or create a new one
               </CardDescription>
             </CardHeader>
-            
+
             <CardContent className="relative z-10">
               <Tabs defaultValue="login" className="w-full">
                 <TabsList className="grid w-full grid-cols-2 bg-gray-800/50 p-1 rounded-lg mb-6">
-                  <TabsTrigger value="login" className="text-sm font-medium data-[state=active]:bg-gradient-to-r from-blue-600 to-violet-600 data-[state=active]:text-white">
+                  <TabsTrigger
+                    value="login"
+                    className="text-sm font-medium data-[state=active]:bg-gradient-to-r from-blue-600 to-violet-600 data-[state=active]:text-white"
+                  >
                     Sign In
                   </TabsTrigger>
-                  <TabsTrigger value="register" className="text-sm font-medium data-[state=active]:bg-gradient-to-r from-blue-600 to-violet-600 data-[state=active]:text-white">
+                  <TabsTrigger
+                    value="register"
+                    className="text-sm font-medium data-[state=active]:bg-gradient-to-r from-blue-600 to-violet-600 data-[state=active]:text-white"
+                  >
                     Create Account
                   </TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="login">
                   <div className="space-y-2 mb-6">
-                    <h3 className="text-lg font-medium text-white">Sign in to your account</h3>
-                    <p className="text-sm text-white/60">Enter your credentials below to continue</p>
+                    <h3 className="text-lg font-medium text-white">
+                      Sign in to your account
+                    </h3>
+                    <p className="text-sm text-white/60">
+                      Enter your credentials below to continue
+                    </p>
                   </div>
-                  
+
                   <Form {...loginForm}>
-                    <form onSubmit={loginForm.handleSubmit((data) => loginMutation.mutate(data))} className="space-y-4">
+                    <form
+                      onSubmit={loginForm.handleSubmit((data) =>
+                        loginMutation.mutate(data),
+                      )}
+                      className="space-y-4"
+                    >
                       <FormField
                         control={loginForm.control}
                         name="username"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel className="text-sm font-medium text-white/80">Username</FormLabel>
+                            <FormLabel className="text-sm font-medium text-white/80">
+                              Username
+                            </FormLabel>
                             <FormControl>
                               <div className="relative">
                                 <FiUser className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/50" />
-                                <Input 
-                                  className="h-11 pl-10 bg-gray-800/50 border-white/10 text-white placeholder:text-white/30 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" 
-                                  {...field} 
-                                  placeholder="Enter your username" 
+                                <Input
+                                  className="h-11 pl-10 bg-gray-800/50 border-white/10 text-white placeholder:text-white/30 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                                  {...field}
+                                  placeholder="Enter your username"
                                 />
                               </div>
                             </FormControl>
@@ -208,15 +321,17 @@ export default function AuthPage() {
                         name="password"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel className="text-sm font-medium text-white/80">Password</FormLabel>
+                            <FormLabel className="text-sm font-medium text-white/80">
+                              Password
+                            </FormLabel>
                             <FormControl>
                               <div className="relative">
                                 <FiLock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/50" />
-                                <Input 
-                                  type="password" 
-                                  className="h-11 pl-10 bg-gray-800/50 border-white/10 text-white placeholder:text-white/30 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" 
-                                  {...field} 
-                                  placeholder="Enter your password" 
+                                <Input
+                                  type="password"
+                                  className="h-11 pl-10 bg-gray-800/50 border-white/10 text-white placeholder:text-white/30 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                                  {...field}
+                                  placeholder="Enter your password"
                                 />
                               </div>
                             </FormControl>
@@ -229,7 +344,9 @@ export default function AuthPage() {
                         className="w-full h-11 text-base font-medium bg-gradient-to-r from-blue-600 to-violet-600 hover:from-blue-700 hover:to-violet-700 text-white rounded-lg transition-all duration-300 ease-in-out transform hover:scale-[1.02] mt-2"
                         disabled={loginMutation.isPending}
                       >
-                        {loginMutation.isPending ? "Signing in..." : (
+                        {loginMutation.isPending ? (
+                          "Signing in..."
+                        ) : (
                           <span className="flex items-center justify-center">
                             Sign In
                             <FiArrowRight className="ml-2 h-4 w-4" />
@@ -238,7 +355,7 @@ export default function AuthPage() {
                       </Button>
                     </form>
                   </Form>
-                  
+
                   <div className="relative my-6">
                     <div className="absolute inset-0 flex items-center">
                       <div className="w-full border-t border-white/10" />
@@ -249,19 +366,25 @@ export default function AuthPage() {
                       </span>
                     </div>
                   </div>
-                  
+
                   <Button
                     type="button"
                     variant="outline"
                     className="w-full h-11 text-base text-white border-white/10 bg-white/5 hover:bg-white/10 hover:border-white/20 rounded-lg transition-all duration-300"
-                    onClick={() => window.location.href = `/api/auth/microsoft`}
+                    onClick={() =>
+                      (window.location.href = `/api/auth/microsoft`)
+                    }
                   >
-                    <svg className="w-5 h-5 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 23 23">
-                      <path fill="#f3f3f3" d="M0 0h23v23H0z"/>
-                      <path fill="#f35325" d="M1 1h10v10H1z"/>
-                      <path fill="#81bc06" d="M12 1h10v10H12z"/>
-                      <path fill="#05a6f0" d="M1 12h10v10H1z"/>
-                      <path fill="#ffba08" d="M12 12h10v10H12z"/>
+                    <svg
+                      className="w-5 h-5 mr-2"
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 23 23"
+                    >
+                      <path fill="#f3f3f3" d="M0 0h23v23H0z" />
+                      <path fill="#f35325" d="M1 1h10v10H1z" />
+                      <path fill="#81bc06" d="M12 1h10v10H12z" />
+                      <path fill="#05a6f0" d="M1 12h10v10H1z" />
+                      <path fill="#ffba08" d="M12 12h10v10H12z" />
                     </svg>
                     Sign in with Microsoft
                   </Button>
@@ -269,24 +392,35 @@ export default function AuthPage() {
 
                 <TabsContent value="register">
                   <div className="space-y-2 mb-6">
-                    <h3 className="text-lg font-medium text-white">Create a new account</h3>
-                    <p className="text-sm text-white/60">Fill in the details below to get started</p>
+                    <h3 className="text-lg font-medium text-white">
+                      Create a new account
+                    </h3>
+                    <p className="text-sm text-white/60">
+                      Fill in the details below to get started
+                    </p>
                   </div>
-                  
+
                   <Form {...registerForm}>
-                    <form onSubmit={registerForm.handleSubmit((data) => registerMutation.mutate(data))} className="space-y-4">
+                    <form
+                      onSubmit={registerForm.handleSubmit((data) =>
+                        registerMutation.mutate(data),
+                      )}
+                      className="space-y-4"
+                    >
                       <div className="grid grid-cols-2 gap-4">
                         <FormField
                           control={registerForm.control}
                           name="firstName"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel className="text-sm font-medium text-white/80">First Name</FormLabel>
+                              <FormLabel className="text-sm font-medium text-white/80">
+                                First Name
+                              </FormLabel>
                               <FormControl>
-                                <Input 
-                                  className="h-11 bg-gray-800/50 border-white/10 text-white placeholder:text-white/30 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" 
-                                  {...field} 
-                                  placeholder="John" 
+                                <Input
+                                  className="h-11 bg-gray-800/50 border-white/10 text-white placeholder:text-white/30 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                                  {...field}
+                                  placeholder="John"
                                 />
                               </FormControl>
                               <FormMessage className="text-red-400" />
@@ -298,12 +432,14 @@ export default function AuthPage() {
                           name="lastName"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel className="text-sm font-medium text-white/80">Last Name</FormLabel>
+                              <FormLabel className="text-sm font-medium text-white/80">
+                                Last Name
+                              </FormLabel>
                               <FormControl>
-                                <Input 
-                                  className="h-11 bg-gray-800/50 border-white/10 text-white placeholder:text-white/30 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" 
-                                  {...field} 
-                                  placeholder="Doe" 
+                                <Input
+                                  className="h-11 bg-gray-800/50 border-white/10 text-white placeholder:text-white/30 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                                  {...field}
+                                  placeholder="Doe"
                                 />
                               </FormControl>
                               <FormMessage className="text-red-400" />
@@ -316,15 +452,17 @@ export default function AuthPage() {
                         name="email"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel className="text-sm font-medium text-white/80">Email</FormLabel>
+                            <FormLabel className="text-sm font-medium text-white/80">
+                              Email
+                            </FormLabel>
                             <FormControl>
                               <div className="relative">
                                 <FiMail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/50" />
-                                <Input 
-                                  type="email" 
-                                  className="h-11 pl-10 bg-gray-800/50 border-white/10 text-white placeholder:text-white/30 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" 
-                                  {...field} 
-                                  placeholder="you@example.com" 
+                                <Input
+                                  type="email"
+                                  className="h-11 pl-10 bg-gray-800/50 border-white/10 text-white placeholder:text-white/30 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                                  {...field}
+                                  placeholder="you@example.com"
                                 />
                               </div>
                             </FormControl>
@@ -337,14 +475,16 @@ export default function AuthPage() {
                         name="company"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel className="text-sm font-medium text-white/80">Company (Optional)</FormLabel>
+                            <FormLabel className="text-sm font-medium text-white/80">
+                              Company (Optional)
+                            </FormLabel>
                             <FormControl>
                               <div className="relative">
                                 <FiBriefcase className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/50" />
-                                <Input 
-                                  className="h-11 pl-10 bg-gray-800/50 border-white/10 text-white placeholder:text-white/30 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" 
-                                  {...field} 
-                                  placeholder="Your company" 
+                                <Input
+                                  className="h-11 pl-10 bg-gray-800/50 border-white/10 text-white placeholder:text-white/30 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                                  {...field}
+                                  placeholder="Your company"
                                 />
                               </div>
                             </FormControl>
@@ -357,14 +497,16 @@ export default function AuthPage() {
                         name="username"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel className="text-sm font-medium text-white/80">Username</FormLabel>
+                            <FormLabel className="text-sm font-medium text-white/80">
+                              Username
+                            </FormLabel>
                             <FormControl>
                               <div className="relative">
                                 <FiUser className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/50" />
-                                <Input 
-                                  className="h-11 pl-10 bg-gray-800/50 border-white/10 text-white placeholder:text-white/30 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" 
-                                  {...field} 
-                                  placeholder="Choose a username" 
+                                <Input
+                                  className="h-11 pl-10 bg-gray-800/50 border-white/10 text-white placeholder:text-white/30 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                                  {...field}
+                                  placeholder="Choose a username"
                                 />
                               </div>
                             </FormControl>
@@ -377,15 +519,17 @@ export default function AuthPage() {
                         name="password"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel className="text-sm font-medium text-white/80">Password</FormLabel>
+                            <FormLabel className="text-sm font-medium text-white/80">
+                              Password
+                            </FormLabel>
                             <FormControl>
                               <div className="relative">
                                 <FiLock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/50" />
-                                <Input 
-                                  type="password" 
-                                  className="h-11 pl-10 bg-gray-800/50 border-white/10 text-white placeholder:text-white/30 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" 
-                                  {...field} 
-                                  placeholder="Choose a strong password" 
+                                <Input
+                                  type="password"
+                                  className="h-11 pl-10 bg-gray-800/50 border-white/10 text-white placeholder:text-white/30 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                                  {...field}
+                                  placeholder="Choose a strong password"
                                 />
                               </div>
                             </FormControl>
@@ -398,7 +542,9 @@ export default function AuthPage() {
                         className="w-full h-11 text-base font-medium bg-gradient-to-r from-blue-600 to-violet-600 hover:from-blue-700 hover:to-violet-700 text-white rounded-lg transition-all duration-300 ease-in-out transform hover:scale-[1.02] mt-2"
                         disabled={registerMutation.isPending}
                       >
-                        {registerMutation.isPending ? "Creating account..." : (
+                        {registerMutation.isPending ? (
+                          "Creating account..."
+                        ) : (
                           <span className="flex items-center justify-center">
                             Create Account
                             <FiArrowRight className="ml-2 h-4 w-4" />
@@ -410,16 +556,17 @@ export default function AuthPage() {
                 </TabsContent>
               </Tabs>
             </CardContent>
-            
+
             <CardFooter className="pt-0 opacity-70 text-xs text-center text-white/50">
               <p className="w-full">
-                By continuing, you agree to our Terms of Service and Privacy Policy
+                By continuing, you agree to our Terms of Service and Privacy
+                Policy
               </p>
             </CardFooter>
           </Card>
         </div>
       </div>
-      
+
       {/* Decorative floating elements */}
       <div className="hidden md:block absolute bottom-4 left-8 animate-bounce-slow opacity-20">
         <div className="h-16 w-16 rounded-full bg-blue-500/20 blur-lg"></div>
@@ -432,12 +579,18 @@ export default function AuthPage() {
 }
 
 // Feature component for the left side
-function Feature({ icon, title, description }: { icon: React.ReactNode, title: string, description: string }) {
+function Feature({
+  icon,
+  title,
+  description,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+}) {
   return (
     <div className="flex gap-4 items-start p-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all duration-300 transform hover:scale-[1.03]">
-      <div className="flex-shrink-0 mt-1">
-        {icon}
-      </div>
+      <div className="flex-shrink-0 mt-1">{icon}</div>
       <div>
         <h3 className="text-base font-medium text-white mb-1">{title}</h3>
         <p className="text-sm text-white/70">{description}</p>
