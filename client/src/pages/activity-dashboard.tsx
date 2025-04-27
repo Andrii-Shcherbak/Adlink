@@ -61,10 +61,10 @@ export default function ActivityDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-background p-8">
+    <div className="p-8">
       <div className="max-w-6xl mx-auto space-y-8">
         <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold">Activity Log</h1>
+          <h1 className="text-3xl font-bold text-white">Activity Log</h1>
         </div>
         <Card>
           <Table>

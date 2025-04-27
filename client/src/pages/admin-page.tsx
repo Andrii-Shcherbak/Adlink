@@ -395,7 +395,7 @@ export default function AdminPage() {
         </Card>
 
         <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold">User Management</h1>
+          <h1 className="text-3xl font-bold text-white">User Management</h1>
           <div className="flex gap-2">
             <Dialog>
               <DialogTrigger asChild>
