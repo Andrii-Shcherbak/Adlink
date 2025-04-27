@@ -626,6 +626,283 @@ export class DatabaseStorage implements IStorage {
       throw error;
     }
   }
+
+  // Digital Asset Management methods implementation
+  
+  async createFolder(folder: InsertAssetFolder): Promise<AssetFolder> {
+    try {
+      // Normalize and validate the path
+      let folderPath = folder.path || '/';
+      if (!folderPath.startsWith('/')) folderPath = `/${folderPath}`;
+      if (!folderPath.endsWith('/')) folderPath = `${folderPath}/`;
+      
+      // Generate a unique path based on parent and name
+      if (folder.parentId) {
+        const parent = await this.getFolderById(folder.parentId, folder.userId);
+        if (!parent) {
+          throw new Error('Parent folder not found');
+        }
+        folderPath = `${parent.path}${folder.name}/`;
+      }
+      
+      const [newFolder] = await db
+        .insert(assetFolders)
+        .values({
+          ...folder,
+          path: folderPath,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        })
+        .returning();
+        
+      return newFolder;
+    } catch (error) {
+      console.error('Error creating folder:', error);
+      throw error;
+    }
+  }
+  
+  async getFolderById(id: number, userId: number): Promise<AssetFolder | undefined> {
+    try {
+      const [folder] = await db
+        .select()
+        .from(assetFolders)
+        .where(and(eq(assetFolders.id, id), eq(assetFolders.userId, userId)));
+      return folder;
+    } catch (error) {
+      console.error('Error getting folder by ID:', error);
+      return undefined;
+    }
+  }
+  
+  async getUserFolders(userId: number): Promise<AssetFolder[]> {
+    try {
+      return await db
+        .select()
+        .from(assetFolders)
+        .where(eq(assetFolders.userId, userId))
+        .orderBy(assetFolders.path);
+    } catch (error) {
+      console.error('Error getting user folders:', error);
+      return [];
+    }
+  }
+  
+  async updateFolder(id: number, userId: number, data: Partial<AssetFolder>): Promise<AssetFolder | undefined> {
+    try {
+      // Cannot update path directly, it must be generated based on parent and name
+      const updateData: Partial<AssetFolder> = {
+        ...data,
+        updatedAt: new Date()
+      };
+      
+      // Remove path if it's there - we'll recalculate it
+      delete updateData.path;
+      
+      // If name or parentId changes, we need to recalculate path
+      if (data.name || data.parentId !== undefined) {
+        const folder = await this.getFolderById(id, userId);
+        if (!folder) {
+          throw new Error('Folder not found');
+        }
+        
+        let newPath = '/';
+        const newParentId = data.parentId !== undefined ? data.parentId : folder.parentId;
+        const newName = data.name || folder.name;
+        
+        if (newParentId) {
+          const parent = await this.getFolderById(newParentId, userId);
+          if (!parent) {
+            throw new Error('Parent folder not found');
+          }
+          newPath = `${parent.path}${newName}/`;
+        } else {
+          newPath = `/${newName}/`;
+        }
+        
+        updateData.path = newPath;
+      }
+      
+      const [updatedFolder] = await db
+        .update(assetFolders)
+        .set(updateData)
+        .where(and(eq(assetFolders.id, id), eq(assetFolders.userId, userId)))
+        .returning();
+        
+      return updatedFolder;
+    } catch (error) {
+      console.error('Error updating folder:', error);
+      return undefined;
+    }
+  }
+  
+  async deleteFolder(id: number, userId: number): Promise<void> {
+    try {
+      // First, get the folder to check if it exists and get the path
+      const folder = await this.getFolderById(id, userId);
+      if (!folder) {
+        throw new Error('Folder not found');
+      }
+      
+      // Check if it has subfolders
+      const subfolders = await db
+        .select()
+        .from(assetFolders)
+        .where(eq(assetFolders.parentId, id));
+        
+      if (subfolders.length > 0) {
+        throw new Error('Cannot delete folder with subfolders');
+      }
+      
+      // Get and delete all files in the folder
+      const files = await db
+        .select()
+        .from(assetFiles)
+        .where(eq(assetFiles.folderId, id));
+        
+      for (const file of files) {
+        await this.deleteFile(file.id, userId);
+      }
+      
+      // Finally, delete the folder
+      await db
+        .delete(assetFolders)
+        .where(and(eq(assetFolders.id, id), eq(assetFolders.userId, userId)));
+    } catch (error) {
+      console.error('Error deleting folder:', error);
+      throw error;
+    }
+  }
+  
+  async createFile(file: InsertAssetFile): Promise<AssetFile> {
+    try {
+      // Validate folder belongs to user if folderID is provided
+      if (file.folderId) {
+        const folder = await this.getFolderById(file.folderId, file.userId);
+        if (!folder) {
+          throw new Error('Folder not found or unauthorized');
+        }
+      }
+      
+      const [newFile] = await db
+        .insert(assetFiles)
+        .values({
+          ...file,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        })
+        .returning();
+        
+      return newFile;
+    } catch (error) {
+      console.error('Error creating file:', error);
+      throw error;
+    }
+  }
+  
+  async getFileById(id: number, userId: number): Promise<AssetFile | undefined> {
+    try {
+      const [file] = await db
+        .select()
+        .from(assetFiles)
+        .where(and(eq(assetFiles.id, id), eq(assetFiles.userId, userId)));
+      return file;
+    } catch (error) {
+      console.error('Error getting file by ID:', error);
+      return undefined;
+    }
+  }
+  
+  async getUserFiles(userId: number, folderId?: number): Promise<AssetFile[]> {
+    try {
+      // Build conditions array
+      const conditions = [eq(assetFiles.userId, userId)];
+      
+      // Add folder condition if needed
+      if (folderId !== undefined) {
+        if (folderId === null) {
+          // Get files without a folder (root level)
+          return await db
+            .select()
+            .from(assetFiles)
+            .where(and(eq(assetFiles.userId, userId), sql`${assetFiles.folderId} IS NULL`))
+            .orderBy(assetFiles.name);
+        } else {
+          // Get files in a specific folder
+          conditions.push(eq(assetFiles.folderId, folderId));
+        }
+      }
+      
+      // Execute the query with all conditions
+      return await db
+        .select()
+        .from(assetFiles)
+        .where(and(...conditions))
+        .orderBy(assetFiles.name);
+    } catch (error) {
+      console.error('Error getting user files:', error);
+      return [];
+    }
+  }
+  
+  async updateFile(id: number, userId: number, data: Partial<AssetFile>): Promise<AssetFile | undefined> {
+    try {
+      // If changing folder, check it belongs to the user
+      if (data.folderId !== undefined) {
+        if (data.folderId !== null) {
+          const folder = await this.getFolderById(data.folderId, userId);
+          if (!folder) {
+            throw new Error('New folder not found or unauthorized');
+          }
+        }
+      }
+      
+      const [updatedFile] = await db
+        .update(assetFiles)
+        .set({
+          ...data,
+          updatedAt: new Date()
+        })
+        .where(and(eq(assetFiles.id, id), eq(assetFiles.userId, userId)))
+        .returning();
+        
+      return updatedFile;
+    } catch (error) {
+      console.error('Error updating file:', error);
+      return undefined;
+    }
+  }
+  
+  async deleteFile(id: number, userId: number): Promise<void> {
+    try {
+      // Get the file to check if it exists and belongs to the user
+      const file = await this.getFileById(id, userId);
+      if (!file) {
+        throw new Error('File not found or unauthorized');
+      }
+      
+      // Import the Azure Storage Service to delete the file
+      const { azureStorageService } = await import('./services/azure-storage-service');
+      
+      // Delete the actual file from Azure Storage
+      if (file.storageFileName) {
+        try {
+          await azureStorageService.deleteAssetFile(file.storageFileName);
+        } catch (storageError) {
+          console.error('Error deleting file from storage:', storageError);
+          // Continue with database deletion even if storage deletion fails
+        }
+      }
+      
+      // Delete the database record
+      await db
+        .delete(assetFiles)
+        .where(and(eq(assetFiles.id, id), eq(assetFiles.userId, userId)));
+    } catch (error) {
+      console.error('Error deleting file:', error);
+      throw error;
+    }
+  }
 }
 
 export const storage = new DatabaseStorage();

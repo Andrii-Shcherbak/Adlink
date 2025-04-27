@@ -178,6 +178,106 @@ export class AzureStorageService {
       throw new Error('Failed to delete blob from Azure Storage');
     }
   }
+  
+  // Digital Asset Management methods
+  
+  // Upload a digital asset file
+  async uploadAssetFile(buffer: Buffer, originalFileName: string, contentType: string, userId: number): Promise<{fileUrl: string, fileName: string}> {
+    try {
+      // Create a folder structure for user assets
+      const userAssetsFolder = `assets/user-${userId}`;
+      
+      // Generate a unique blob name by adding timestamp and random string
+      const timestamp = new Date().getTime();
+      const randomString = Math.random().toString(36).substring(2, 10);
+      const sanitizedFileName = originalFileName.replace(/[^a-zA-Z0-9.-]/g, '_');
+      const uniqueBlobName = `${userAssetsFolder}/${timestamp}-${randomString}-${sanitizedFileName}`;
+      
+      const blockBlobClient = this.getBlockBlobClient(uniqueBlobName);
+      
+      // Upload the file
+      await blockBlobClient.upload(buffer, buffer.length, {
+        blobHTTPHeaders: {
+          blobContentType: contentType
+        }
+      });
+      
+      console.log(`Asset file uploaded to Azure Storage: ${blockBlobClient.url}`);
+      
+      // Return the URL and generated filename (without the path prefix)
+      return {
+        fileUrl: blockBlobClient.url,
+        fileName: uniqueBlobName
+      };
+    } catch (error) {
+      console.error('Error uploading asset file to Azure Storage:', error);
+      throw new Error('Failed to upload asset file to Azure Storage');
+    }
+  }
+  
+  // Get a secure URL for viewing a digital asset
+  getAssetFileUrl(fileName: string): string {
+    try {
+      // Get the blob client
+      const blockBlobClient = this.getBlockBlobClient(fileName);
+      
+      // Generate a SAS token for the blob with short expiry for security
+      const sasToken = this.generateAssetSASToken(fileName);
+      
+      // Return the URL with SAS token
+      return `${blockBlobClient.url}?${sasToken}`;
+    } catch (error) {
+      console.error('Error generating URL for asset file:', error);
+      throw new Error('Failed to generate URL for asset file');
+    }
+  }
+  
+  // Generate a SAS token with shorter expiry for digital assets
+  private generateAssetSASToken(blobName: string): string {
+    // Create a shared key credential
+    const sharedKeyCredential = new StorageSharedKeyCredential(
+      this.accountName,
+      this.accountKey
+    );
+
+    // Set start time to now
+    const startDate = new Date();
+    
+    // Set expiry time to 1 hour from now for security (can be adjusted)
+    const expiryDate = new Date();
+    expiryDate.setHours(expiryDate.getHours() + 1);
+
+    // Generate SAS token with read permissions only
+    const permissions = new BlobSASPermissions();
+    permissions.read = true;
+    
+    const sasOptions = {
+      containerName: this.containerName,
+      blobName: blobName,
+      permissions: permissions,
+      startsOn: startDate,
+      expiresOn: expiryDate,
+    };
+
+    const sasToken = generateBlobSASQueryParameters(
+      sasOptions,
+      sharedKeyCredential
+    ).toString();
+
+    return sasToken;
+  }
+  
+  // Delete an asset file
+  async deleteAssetFile(fileName: string): Promise<void> {
+    try {
+      const blockBlobClient = this.getBlockBlobClient(fileName);
+      await blockBlobClient.delete();
+      console.log(`Asset file deleted from Azure Storage: ${fileName}`);
+    } catch (error) {
+      console.error('Error deleting asset file from Azure Storage:', error);
+      throw new Error('Failed to delete asset file from Azure Storage');
+    }
+  }
 }
 
 // Singleton instance
