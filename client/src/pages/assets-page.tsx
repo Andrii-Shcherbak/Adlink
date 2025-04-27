@@ -1187,7 +1187,7 @@ export default function AssetsPage() {
   return (
     <Layout>
       <DndProvider backend={HTML5Backend}>
-        <div className="container mx-auto py-4">
+        <div>
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 gap-4">
             <h1 className="text-2xl font-bold">Digital Asset Management</h1>
             <div className="flex flex-wrap items-center gap-3">

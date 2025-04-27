@@ -889,8 +889,8 @@ export default function HomePage() {
   }
 
   return (
-    <div className="p-8">
-      <div className="max-w-6xl mx-auto">
+    <div className="py-8">
+      <div>
         <div className="grid gap-8 grid-cols-1 lg:grid-cols-[400px,1fr]">
           <div className="space-y-8">
             <Card className="overflow-hidden border-0 shadow-lg">
