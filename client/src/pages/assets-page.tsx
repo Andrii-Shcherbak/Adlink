@@ -19,6 +19,7 @@ import { useForm } from 'react-hook-form';
 const folderSchema = z.object({
   name: z.string().min(1, "Folder name is required").max(100, "Folder name is too long"),
   parentId: z.number().nullable().optional(),
+  path: z.string().optional(), // Added for server-side requirement
 });
 
 // Define file upload form schema
@@ -162,15 +163,18 @@ const NewFolderDialog: React.FC<{
   });
 
   const createFolderMutation = useMutation({
-    mutationFn: async (data: FolderFormValues) => {
+    mutationFn: async (data: FolderFormValues & { path?: string }) => {
       // Add required path field with default value, server will calculate the correct path
+      const folderData = {
+        ...data,
+        path: '/', // Default path, will be overridden by server logic
+      };
+      
       return apiRequest('/api/assets/folders', {
         method: 'POST',
-        body: JSON.stringify({
-          ...data,
-          path: '/', // Default path, will be overridden by server logic
-        }),
-      } as any);
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(folderData),
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/assets/folders'] });
@@ -486,6 +490,7 @@ const FolderBreadcrumb: React.FC<{
         <React.Fragment key={index}>
           {index > 0 && <span className="mx-2">/</span>}
           <Button
+            type="button"
             variant="link"
             className="h-auto p-0"
             onClick={() => onNavigate(folder.id)}
