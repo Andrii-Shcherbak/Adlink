@@ -7,11 +7,14 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
 import { QRCodeSVG } from "qrcode.react";
-import type { QrConfig } from "@shared/schema";
+import type { QrConfig, Url } from "@shared/schema";
 import { Settings2, Download, Paintbrush, Layout, Image, Check, Loader2, Upload, Trash2, Link2, RotateCcw } from "lucide-react";
 import { downloadQRCode } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import "./qr-styles.css";
+import { useMutation } from "@tanstack/react-query";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 const colorPresets = [
   { name: "Classic", fg: "#000000", bg: "#FFFFFF" },
@@ -22,9 +25,8 @@ const colorPresets = [
 ];
 
 interface QrCustomizerProps {
-  url: string;
-  config: QrConfig;
-  onSave: (config: QrConfig) => void;
+  url: Url;
+  domain: string;
 }
 
 const defaultConfig: QrConfig = {
@@ -40,29 +42,26 @@ const defaultConfig: QrConfig = {
   frameColor: "#000000"
 };
 
-export function QrCustomizer({ url, config, onSave }: QrCustomizerProps) {
+export function QrCustomizer({ url, domain }: QrCustomizerProps) {
+  const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  
+  // Parse the QR config from the URL or use default values
+  const parsedConfig = url.qrConfig ? 
+    (typeof url.qrConfig === 'string' ? JSON.parse(url.qrConfig) : url.qrConfig) : 
+    {};
+    
   const [localConfig, setLocalConfig] = useState<QrConfig>({
-    ...config,
-    fgColor: config.fgColor || "#000000",
-    bgColor: config.bgColor || "#FFFFFF",
-    includeMargin: config.includeMargin || false,
-    logoUrl: config.logoUrl || "",
-    // Add required fields that were missing
-    pattern: config.pattern || "squares",
-    cornerStyle: config.cornerStyle || "square",
-    frameStyle: config.frameStyle || "none",
-    cornerDotColor: config.cornerDotColor || config.fgColor || "#000000",
-    cornerSquareColor: config.cornerSquareColor || config.fgColor || "#000000",
-    frameColor: config.frameColor || config.fgColor || "#000000"
+    ...defaultConfig,
+    ...parsedConfig
   });
   
   const qrRef = useRef<HTMLDivElement>(null);
   
   const handleDownload = () => {
     if (qrRef.current) {
-      downloadQRCode(qrRef.current, `qr-${url.split('/').pop()}`);
+      downloadQRCode(qrRef.current, `qr-${url.shortCode}`);
     }
   };
   
@@ -77,14 +76,38 @@ export function QrCustomizer({ url, config, onSave }: QrCustomizerProps) {
     }));
   };
   
-  const handleSave = () => {
-    setIsSaving(true);
-    try {
-      onSave(localConfig);
+  // Create a mutation to update the QR code configuration
+  const updateQrConfigMutation = useMutation({
+    mutationFn: async (qrConfig: QrConfig) => {
+      return apiRequest(`/api/urls/${url.id}/qr-config`, {
+        method: 'PATCH',
+        body: JSON.stringify({ qrConfig }),
+        headers: { 'Content-Type': 'application/json' }
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/urls'] });
       setIsOpen(false);
-    } finally {
+      toast({
+        title: "QR Code updated",
+        description: "Your QR code has been customized successfully",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Failed to update QR code",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+    onSettled: () => {
       setIsSaving(false);
     }
+  });
+  
+  const handleSave = () => {
+    setIsSaving(true);
+    updateQrConfigMutation.mutate(localConfig);
   };
 
   return (
