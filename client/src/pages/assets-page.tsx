@@ -162,11 +162,11 @@ const NewFolderDialog: React.FC<{
   });
 
   const createFolderMutation = useMutation({
-    mutationFn: (data: FolderFormValues) => {
+    mutationFn: async (data: FolderFormValues) => {
       return apiRequest('/api/assets/folders', {
         method: 'POST',
         body: JSON.stringify(data),
-      });
+      } as any);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/assets/folders'] });
@@ -177,24 +177,24 @@ const NewFolderDialog: React.FC<{
       onOpenChange(false);
       form.reset();
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast({
         title: "Error",
-        description: `Failed to create folder: ${error.message}`,
+        description: `Failed to create folder: ${error.message || 'Unknown error'}`,
         variant: "destructive",
       });
     },
   });
 
   const updateFolderMutation = useMutation({
-    mutationFn: (data: { id: number, name: string, parentId: number | null }) => {
+    mutationFn: async (data: { id: number, name: string, parentId: number | null }) => {
       return apiRequest(`/api/assets/folders/${data.id}`, {
         method: 'PATCH',
         body: JSON.stringify({
           name: data.name,
           parentId: data.parentId,
         }),
-      });
+      } as any);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/assets/folders'] });
@@ -205,10 +205,10 @@ const NewFolderDialog: React.FC<{
       onOpenChange(false);
       form.reset();
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast({
         title: "Error",
-        description: `Failed to update folder: ${error.message}`,
+        description: `Failed to update folder: ${error.message || 'Unknown error'}`,
         variant: "destructive",
       });
     },
@@ -296,7 +296,7 @@ const FileUploadDialog: React.FC<{
         method: 'POST',
         body: data,
         customConfig: { isFormData: true },
-      });
+      } as any);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/assets/files'] });
@@ -308,17 +308,17 @@ const FileUploadDialog: React.FC<{
       form.reset();
       setFile(null);
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast({
         title: "Error",
-        description: `Failed to upload file: ${error.message}`,
+        description: `Failed to upload file: ${error.message || 'Unknown error'}`,
         variant: "destructive",
       });
     },
   });
 
   const updateFileMutation = useMutation({
-    mutationFn: (data: { id: number, name: string, folderId: number | null, description: string | null }) => {
+    mutationFn: async (data: { id: number, name: string, folderId: number | null, description: string | null }) => {
       return apiRequest(`/api/assets/files/${data.id}`, {
         method: 'PATCH',
         body: JSON.stringify({
@@ -326,7 +326,7 @@ const FileUploadDialog: React.FC<{
           folderId: data.folderId,
           description: data.description,
         }),
-      });
+      } as any);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/assets/files'] });
@@ -337,10 +337,10 @@ const FileUploadDialog: React.FC<{
       onOpenChange(false);
       form.reset();
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast({
         title: "Error",
-        description: `Failed to update file: ${error.message}`,
+        description: `Failed to update file: ${error.message || 'Unknown error'}`,
         variant: "destructive",
       });
     },
@@ -509,7 +509,10 @@ export default function AssetsPage() {
     isLoading: foldersLoading 
   } = useQuery({
     queryKey: ['/api/assets/folders'],
-    queryFn: () => apiRequest('/api/assets/folders'),
+    queryFn: async () => {
+      const response = await apiRequest('/api/assets/folders');
+      return Array.isArray(response) ? response : [];
+    },
   });
 
   // Fetch files for the current folder
@@ -518,15 +521,18 @@ export default function AssetsPage() {
     isLoading: filesLoading 
   } = useQuery({
     queryKey: ['/api/assets/files', currentFolder?.id],
-    queryFn: () => apiRequest(`/api/assets/files${currentFolder ? `?folderId=${currentFolder.id}` : '?folderId=null'}`),
+    queryFn: async () => {
+      const response = await apiRequest(`/api/assets/files${currentFolder ? `?folderId=${currentFolder.id}` : '?folderId=null'}`);
+      return Array.isArray(response) ? response : [];
+    },
   });
 
   // Delete folder mutation
   const deleteFolderMutation = useMutation({
-    mutationFn: (id: number) => {
+    mutationFn: async (id: number) => {
       return apiRequest(`/api/assets/folders/${id}`, {
         method: 'DELETE',
-      });
+      } as any);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/assets/folders'] });
@@ -535,10 +541,10 @@ export default function AssetsPage() {
         description: "Folder deleted successfully",
       });
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast({
         title: "Error",
-        description: `Failed to delete folder: ${error.message}`,
+        description: `Failed to delete folder: ${error.message || 'Unknown error'}`,
         variant: "destructive",
       });
     },
@@ -546,10 +552,10 @@ export default function AssetsPage() {
 
   // Delete file mutation
   const deleteFileMutation = useMutation({
-    mutationFn: (id: number) => {
+    mutationFn: async (id: number) => {
       return apiRequest(`/api/assets/files/${id}`, {
         method: 'DELETE',
-      });
+      } as any);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/assets/files'] });
@@ -558,10 +564,10 @@ export default function AssetsPage() {
         description: "File deleted successfully",
       });
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast({
         title: "Error",
-        description: `Failed to delete file: ${error.message}`,
+        description: `Failed to delete file: ${error.message || 'Unknown error'}`,
         variant: "destructive",
       });
     },
