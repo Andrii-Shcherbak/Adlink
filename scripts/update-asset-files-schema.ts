@@ -13,8 +13,9 @@ async function updateAssetFilesSchema() {
       AND column_name = 'storage_file_name';
     `);
 
-    // If the column doesn't exist, add it
-    if ((checkColumnResult as any[]).length === 0) {
+    // Check if the result is empty (no matching columns found)
+    const rows = (checkColumnResult as any).rows || [];
+    if (rows.length === 0) {
       console.log('Adding storage_file_name column to asset_files table...');
       
       await db.execute(sql`

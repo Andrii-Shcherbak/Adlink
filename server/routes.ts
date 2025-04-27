@@ -1234,6 +1234,233 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
+  // Configure file upload for digital assets
+  const assetStorage = multer.memoryStorage();
+  const assetUpload = multer({
+    storage: assetStorage,
+    limits: {
+      fileSize: 50 * 1024 * 1024, // 50MB max file size
+    },
+    fileFilter: (req, file, cb) => {
+      // Whitelist of allowed file types
+      const allowedTypes = [
+        'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml',
+        'application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'application/vnd.ms-powerpoint', 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+        'text/plain', 'text/csv', 'application/json',
+        'audio/mpeg', 'audio/wav', 'audio/ogg',
+        'video/mp4', 'video/mpeg', 'video/webm'
+      ];
+
+      if (allowedTypes.includes(file.mimetype)) {
+        cb(null, true);
+      } else {
+        cb(null, false);
+        return cb(new Error('This file type is not allowed for security reasons'));
+      }
+    }
+  });
+
+  // Digital Asset Management API Routes
+  
+  // Get all folders for the authenticated user
+  app.get("/api/assets/folders", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const folders = await storage.getUserFolders(req.user!.id);
+      res.json(folders);
+    } catch (error) {
+      console.error('Error fetching folders:', error);
+      res.status(500).json({ error: "Failed to fetch folders" });
+    }
+  });
+
+  // Create a new folder
+  app.post("/api/assets/folders", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const parseResult = insertFolderSchema.safeParse(req.body);
+      if (!parseResult.success) {
+        return res.status(400).json(parseResult.error);
+      }
+      
+      const folder = await storage.createFolder({
+        ...parseResult.data,
+        userId: req.user!.id
+      });
+      
+      res.status(201).json(folder);
+    } catch (error) {
+      console.error('Error creating folder:', error);
+      const errorMessage = error instanceof Error ? error.message : "Failed to create folder";
+      res.status(500).json({ error: errorMessage });
+    }
+  });
+
+  // Update a folder
+  app.patch("/api/assets/folders/:id", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const folderId = parseInt(req.params.id);
+      
+      // Ensure folder exists and belongs to user
+      const folder = await storage.getFolderById(folderId, req.user!.id);
+      if (!folder) {
+        return res.status(404).json({ error: "Folder not found" });
+      }
+      
+      const updatedFolder = await storage.updateFolder(folderId, req.user!.id, req.body);
+      res.json(updatedFolder);
+    } catch (error) {
+      console.error('Error updating folder:', error);
+      const errorMessage = error instanceof Error ? error.message : "Failed to update folder";
+      res.status(500).json({ error: errorMessage });
+    }
+  });
+
+  // Delete a folder
+  app.delete("/api/assets/folders/:id", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const folderId = parseInt(req.params.id);
+      
+      // Ensure folder exists and belongs to user
+      const folder = await storage.getFolderById(folderId, req.user!.id);
+      if (!folder) {
+        return res.status(404).json({ error: "Folder not found" });
+      }
+      
+      await storage.deleteFolder(folderId, req.user!.id);
+      res.sendStatus(200);
+    } catch (error) {
+      console.error('Error deleting folder:', error);
+      const errorMessage = error instanceof Error ? error.message : "Failed to delete folder";
+      res.status(500).json({ error: errorMessage });
+    }
+  });
+
+  // Get files in a folder or all files
+  app.get("/api/assets/files", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const folderId = req.query.folderId ? parseInt(req.query.folderId as string) : undefined;
+      const files = await storage.getUserFiles(req.user!.id, folderId);
+      
+      // Generate secure access URLs for each file
+      const filesWithUrls = files.map(file => ({
+        ...file,
+        secureUrl: azureStorageService.getAssetFileUrl(file.storageFileName)
+      }));
+      
+      res.json(filesWithUrls);
+    } catch (error) {
+      console.error('Error fetching files:', error);
+      res.status(500).json({ error: "Failed to fetch files" });
+    }
+  });
+
+  // Upload a file
+  app.post("/api/assets/files", assetUpload.single('file'), async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: "No file provided" });
+      }
+      
+      // Upload to Azure Storage
+      const { fileUrl, fileName } = await azureStorageService.uploadAssetFile(
+        req.file.buffer,
+        req.file.originalname,
+        req.file.mimetype,
+        req.user!.id
+      );
+      
+      // Create file database record
+      const fileData = {
+        userId: req.user!.id,
+        name: req.body.name || req.file.originalname,
+        originalName: req.file.originalname,
+        fileUrl: fileUrl,
+        storageFileName: fileName,
+        fileType: req.file.mimetype,
+        contentType: req.file.mimetype,
+        fileSize: req.file.size,
+        folderId: req.body.folderId ? parseInt(req.body.folderId) : null,
+        description: req.body.description || null
+      };
+      
+      const file = await storage.createFile(fileData);
+      
+      // Generate secure URL for the response
+      const response = {
+        ...file,
+        secureUrl: azureStorageService.getAssetFileUrl(fileName)
+      };
+      
+      res.status(201).json(response);
+    } catch (error) {
+      console.error('Error uploading file:', error);
+      const errorMessage = error instanceof Error ? error.message : "Failed to upload file";
+      res.status(500).json({ error: errorMessage });
+    }
+  });
+
+  // Update a file
+  app.patch("/api/assets/files/:id", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const fileId = parseInt(req.params.id);
+      
+      // Ensure file exists and belongs to user
+      const file = await storage.getFileById(fileId, req.user!.id);
+      if (!file) {
+        return res.status(404).json({ error: "File not found" });
+      }
+      
+      const updatedFile = await storage.updateFile(fileId, req.user!.id, req.body);
+      if (!updatedFile) {
+        return res.status(500).json({ error: "Failed to update file" });
+      }
+      
+      // Generate secure URL for the response
+      const response = {
+        ...updatedFile,
+        secureUrl: azureStorageService.getAssetFileUrl(updatedFile.storageFileName)
+      };
+      
+      res.json(response);
+    } catch (error) {
+      console.error('Error updating file:', error);
+      const errorMessage = error instanceof Error ? error.message : "Failed to update file";
+      res.status(500).json({ error: errorMessage });
+    }
+  });
+
+  // Delete a file
+  app.delete("/api/assets/files/:id", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const fileId = parseInt(req.params.id);
+      
+      // This will handle both database deletion and Azure Storage deletion
+      await storage.deleteFile(fileId, req.user!.id);
+      res.sendStatus(200);
+    } catch (error) {
+      console.error('Error deleting file:', error);
+      const errorMessage = error instanceof Error ? error.message : "Failed to delete file";
+      res.status(500).json({ error: errorMessage });
+    }
+  });
+
   // Create HTTP server
   const server = createServer(app);
   return server;
