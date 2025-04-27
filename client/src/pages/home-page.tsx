@@ -1260,9 +1260,10 @@ export default function HomePage() {
                             config={qrConfig}
                             onSave={async (newConfig) => {
                               try {
+                                // Send QR config properties directly, not wrapped in qrConfig object
                                 await apiRequest(`/api/urls/${url.id}/qr-config`, {
                                   method: 'PATCH',
-                                  body: JSON.stringify({ qrConfig: newConfig }),
+                                  body: JSON.stringify(newConfig),
                                   headers: { 'Content-Type': 'application/json' }
                                 });
 
