@@ -43,6 +43,7 @@ import {
   Smartphone,
   Monitor,
   Tablet,
+  FileText,
 } from "lucide-react";
 import { QrCustomizer } from "@/components/qr-customizer";
 import { useState } from "react";
@@ -1141,9 +1142,17 @@ export default function HomePage() {
                             <TitleEditDialog url={url} />
                           </div>
 
-                          <p className="text-sm text-muted-foreground break-all">
-                            Original: {url.originalUrl}
-                          </p>
+                          {!url.isPdfDocument && (
+                            <p className="text-sm text-muted-foreground break-all">
+                              Original: {url.originalUrl}
+                            </p>
+                          )}
+                          {url.isPdfDocument && (
+                            <p className="text-sm text-muted-foreground flex items-center gap-1">
+                              <FileText className="h-3.5 w-3.5" />
+                              <span>PDF Document</span>
+                            </p>
+                          )}
 
                           {/* Custom Shortcode Edit */}
                           <div className="flex items-center justify-between">
