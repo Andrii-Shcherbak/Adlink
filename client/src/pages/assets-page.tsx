@@ -163,9 +163,13 @@ const NewFolderDialog: React.FC<{
 
   const createFolderMutation = useMutation({
     mutationFn: async (data: FolderFormValues) => {
+      // Add required path field with default value, server will calculate the correct path
       return apiRequest('/api/assets/folders', {
         method: 'POST',
-        body: JSON.stringify(data),
+        body: JSON.stringify({
+          ...data,
+          path: '/', // Default path, will be overridden by server logic
+        }),
       } as any);
     },
     onSuccess: () => {
@@ -222,7 +226,11 @@ const NewFolderDialog: React.FC<{
         parentId: data.parentId,
       });
     } else {
-      createFolderMutation.mutate(data);
+      // Add path to the data we're sending
+      createFolderMutation.mutate({
+        ...data,
+        path: '/', // Default path that server will override
+      });
     }
   };
 
