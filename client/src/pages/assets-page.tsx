@@ -1002,125 +1002,306 @@ export default function AssetsPage() {
 
   const isLoading = foldersLoading || filesLoading;
 
+  // Toggle folder expansion
+  const handleToggleFolder = (folderId: number) => {
+    setExpandedFolders(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(folderId)) {
+        newSet.delete(folderId);
+      } else {
+        newSet.add(folderId);
+      }
+      return newSet;
+    });
+  };
+
+  // Handle moving items (drag & drop)
+  const moveItemMutation = useMutation({
+    mutationFn: async ({ item, targetFolderId }: { item: { type: string, id: number }, targetFolderId: number | null }) => {
+      // Different endpoints for files and folders
+      const endpoint = item.type === ItemTypes.FOLDER
+        ? `/api/assets/folders/${item.id}`
+        : `/api/assets/files/${item.id}`;
+      
+      return apiRequest(endpoint, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          parentId: targetFolderId, // For folders
+          folderId: targetFolderId, // For files
+        }),
+      } as any);
+    },
+    onSuccess: () => {
+      // Refresh both folders and files
+      queryClient.invalidateQueries({ queryKey: ['/api/assets/folders'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/assets/files'] });
+      toast({
+        title: "Success",
+        description: "Item moved successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: `Failed to move item: ${error.message || 'Unknown error'}`,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Get all files for tree view (not just current folder)
+  const { 
+    data: allFiles = [], 
+    isLoading: allFilesLoading 
+  } = useQuery({
+    queryKey: ['/api/assets/files', 'all'],
+    queryFn: async () => {
+      const response = await apiRequest('/api/assets/files');
+      return Array.isArray(response) ? response : [];
+    },
+    // Only fetch all files when in tree view
+    enabled: viewMode === 'tree',
+  });
+
   return (
     <Layout>
-      <div className="container py-6">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold">Digital Asset Management</h1>
-          <div className="flex space-x-2">
-            <Button onClick={() => {
-              setEditingFolder(null);
-              setFolderDialogOpen(true);
-            }}>
-              <Folder className="mr-2 h-4 w-4" />
-              New Folder
-            </Button>
-            <Button onClick={() => {
-              setEditingFile(null);
-              setFileDialogOpen(true);
-            }}>
-              <Upload className="mr-2 h-4 w-4" />
-              Upload File
-            </Button>
-          </div>
-        </div>
-
-        <FolderBreadcrumb 
-          currentPath={folderPath} 
-          onNavigate={handleBreadcrumbNavigate} 
-        />
-
-        {isLoading ? (
-          <div className="flex justify-center p-8">
-            <p>Loading assets...</p>
-          </div>
-        ) : (
-          <div className="space-y-6">
-            {currentFolders.length > 0 && (
-              <div>
-                <h2 className="text-lg font-medium mb-3">Folders</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {currentFolders.map((folder: Folder) => (
-                    <FolderItem 
-                      key={folder.id} 
-                      folder={folder} 
-                      onSelect={handleFolderSelect}
-                      onDelete={handleDeleteFolder}
-                      onRename={handleEditFolder}
-                    />
-                  ))}
-                </div>
+      <DndProvider backend={HTML5Backend}>
+        <div className="container py-6">
+          <div className="flex justify-between items-center mb-6">
+            <h1 className="text-2xl font-bold">Digital Asset Management</h1>
+            <div className="flex items-center space-x-4">
+              <div className="flex border rounded-md overflow-hidden">
+                <Button 
+                  variant={viewMode === 'tree' ? 'default' : 'ghost'} 
+                  size="sm"
+                  className="rounded-none"
+                  onClick={() => setViewMode('tree')}
+                >
+                  <ChevronRight className="mr-2 h-4 w-4" />
+                  Tree View
+                </Button>
+                <Button 
+                  variant={viewMode === 'grid' ? 'default' : 'ghost'} 
+                  size="sm"
+                  className="rounded-none"
+                  onClick={() => setViewMode('grid')}
+                >
+                  <div className="grid grid-cols-2 gap-0.5 mr-2 h-4 w-4">
+                    <div className="bg-current rounded-sm" />
+                    <div className="bg-current rounded-sm" />
+                    <div className="bg-current rounded-sm" />
+                    <div className="bg-current rounded-sm" />
+                  </div>
+                  Grid View
+                </Button>
               </div>
-            )}
-
-            {currentFiles.length > 0 && (
-              <div>
-                <h2 className="text-lg font-medium mb-3">Files</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {currentFiles.map((file: File) => (
-                    <FileItem 
-                      key={file.id} 
-                      file={file}
-                      onDelete={handleDeleteFile}
-                      onRename={handleEditFile}
-                    />
-                  ))}
-                </div>
+              
+              <div className="flex space-x-2">
+                <Button onClick={() => {
+                  setEditingFolder(null);
+                  setFolderDialogOpen(true);
+                }}>
+                  <Folder className="mr-2 h-4 w-4" />
+                  New Folder
+                </Button>
+                <Button onClick={() => {
+                  setEditingFile(null);
+                  setFileDialogOpen(true);
+                }}>
+                  <Upload className="mr-2 h-4 w-4" />
+                  Upload File
+                </Button>
               </div>
-            )}
+            </div>
+          </div>
 
-            {currentFolders.length === 0 && currentFiles.length === 0 && (
-              <div className="text-center p-8 border rounded-lg">
-                <div className="mb-3">
-                  {currentFolder ? (
-                    <Folder className="mx-auto h-12 w-12 text-gray-400" />
-                  ) : (
-                    <File className="mx-auto h-12 w-12 text-gray-400" />
+          {viewMode === 'grid' && (
+            <FolderBreadcrumb 
+              currentPath={folderPath} 
+              onNavigate={handleBreadcrumbNavigate} 
+            />
+          )}
+
+          {isLoading ? (
+            <div className="flex justify-center p-8">
+              <p>Loading assets...</p>
+            </div>
+          ) : (
+            <>
+              {viewMode === 'tree' ? (
+                <div className="mt-4 flex flex-col md:flex-row gap-6">
+                  <div className="w-full md:w-80 bg-gray-50 dark:bg-gray-900 rounded-lg p-4 border">
+                    <h2 className="text-lg font-medium mb-3 flex items-center">
+                      <Folder className="mr-2 h-5 w-5" />
+                      File Browser
+                    </h2>
+                    <div className="mb-4">
+                      <RootDropArea 
+                        onMoveItem={(item, targetId) => 
+                          moveItemMutation.mutate({ item, targetFolderId: targetId })
+                        } 
+                      />
+                    </div>
+                    <div className="overflow-auto max-h-[600px] pr-2">
+                      <TreeNode 
+                        folders={folders}
+                        files={allFiles}
+                        onFolderSelect={handleFolderSelect}
+                        onDeleteFolder={handleDeleteFolder}
+                        onRenameFolder={handleEditFolder}
+                        onDeleteFile={handleDeleteFile}
+                        onRenameFile={handleEditFile}
+                        onMoveItem={(item, targetId) => 
+                          moveItemMutation.mutate({ item, targetFolderId: targetId })
+                        }
+                        expandedFolders={expandedFolders}
+                        onToggleFolder={handleToggleFolder}
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="flex-1">
+                    <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border">
+                      <h2 className="text-lg font-medium mb-4">Preview Area</h2>
+                      {currentFolder && (
+                        <div className="mb-3 text-sm breadcrumbs">
+                          <FolderBreadcrumb 
+                            currentPath={folderPath} 
+                            onNavigate={handleBreadcrumbNavigate} 
+                          />
+                        </div>
+                      )}
+                      
+                      {currentFiles.length > 0 ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {currentFiles.map((file: File) => (
+                            <FileItem 
+                              key={file.id} 
+                              file={file}
+                              onDelete={handleDeleteFile}
+                              onRename={handleEditFile}
+                              onMove={(item, targetId) => 
+                                moveItemMutation.mutate({ item, targetFolderId: targetId })
+                              }
+                            />
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-center p-8 border rounded-lg">
+                          <div className="mb-3">
+                            <FileIcon className="mx-auto h-12 w-12 text-gray-400" />
+                          </div>
+                          <h3 className="text-lg font-medium">No files in this {currentFolder ? 'folder' : 'location'}</h3>
+                          <p className="text-gray-500 mt-1">
+                            Upload files to view them here
+                          </p>
+                          <div className="mt-4 flex justify-center">
+                            <Button variant="outline" onClick={() => setFileDialogOpen(true)}>
+                              <Upload className="mr-2 h-4 w-4" />
+                              Upload File
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {currentFolders.length > 0 && (
+                    <div>
+                      <h2 className="text-lg font-medium mb-3">Folders</h2>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {currentFolders.map((folder: Folder) => (
+                          <FolderItem 
+                            key={folder.id} 
+                            folder={folder} 
+                            onSelect={handleFolderSelect}
+                            onDelete={handleDeleteFolder}
+                            onRename={handleEditFolder}
+                            onMoveItem={(item, targetId) => 
+                              moveItemMutation.mutate({ item, targetFolderId: targetId })
+                            }
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {currentFiles.length > 0 && (
+                    <div>
+                      <h2 className="text-lg font-medium mb-3">Files</h2>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {currentFiles.map((file: File) => (
+                          <FileItem 
+                            key={file.id} 
+                            file={file}
+                            onDelete={handleDeleteFile}
+                            onRename={handleEditFile}
+                            onMove={(item, targetId) => 
+                              moveItemMutation.mutate({ item, targetFolderId: targetId })
+                            }
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {currentFolders.length === 0 && currentFiles.length === 0 && (
+                    <div className="text-center p-8 border rounded-lg">
+                      <div className="mb-3">
+                        {currentFolder ? (
+                          <Folder className="mx-auto h-12 w-12 text-gray-400" />
+                        ) : (
+                          <FileIcon className="mx-auto h-12 w-12 text-gray-400" />
+                        )}
+                      </div>
+                      <h3 className="text-lg font-medium">{currentFolder ? 'This folder is empty' : 'No assets yet'}</h3>
+                      <p className="text-gray-500 mt-1">
+                        {currentFolder 
+                          ? 'Upload files or create folders to organize your assets'
+                          : 'Start by creating folders or uploading files to manage your digital assets'}
+                      </p>
+                      <div className="mt-4 flex justify-center space-x-3">
+                        <Button variant="outline" onClick={() => {
+                          setEditingFolder(null);
+                          setFolderDialogOpen(true);
+                        }}>
+                          <Folder className="mr-2 h-4 w-4" />
+                          New Folder
+                        </Button>
+                        <Button variant="default" onClick={() => {
+                          setEditingFile(null);
+                          setFileDialogOpen(true);
+                        }}>
+                          <Upload className="mr-2 h-4 w-4" />
+                          Upload File
+                        </Button>
+                      </div>
+                    </div>
                   )}
                 </div>
-                <h3 className="text-lg font-medium">{currentFolder ? 'This folder is empty' : 'No assets yet'}</h3>
-                <p className="text-gray-500 mt-1">
-                  {currentFolder 
-                    ? 'Upload files or create folders to organize your assets'
-                    : 'Start by creating folders or uploading files to manage your digital assets'}
-                </p>
-                <div className="mt-4 flex justify-center space-x-3">
-                  <Button variant="outline" onClick={() => {
-                    setEditingFolder(null);
-                    setFolderDialogOpen(true);
-                  }}>
-                    <Plus className="mr-2 h-4 w-4" />
-                    New Folder
-                  </Button>
-                  <Button variant="default" onClick={() => {
-                    setEditingFile(null);
-                    setFileDialogOpen(true);
-                  }}>
-                    <Upload className="mr-2 h-4 w-4" />
-                    Upload File
-                  </Button>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
+              )}
+            </>
+          )}
+        </div>
 
-      <NewFolderDialog 
-        open={folderDialogOpen} 
-        onOpenChange={handleFolderDialogClose} 
-        currentFolder={currentFolder}
-        isEditing={!!editingFolder}
-        folderToEdit={editingFolder}
-      />
+        <NewFolderDialog 
+          open={folderDialogOpen} 
+          onOpenChange={handleFolderDialogClose} 
+          currentFolder={currentFolder}
+          isEditing={!!editingFolder}
+          folderToEdit={editingFolder}
+        />
 
-      <FileUploadDialog 
-        open={fileDialogOpen} 
-        onOpenChange={handleFileDialogClose}
-        currentFolder={currentFolder}
-        isEditing={!!editingFile}
-        fileToEdit={editingFile}
-      />
+        <FileUploadDialog 
+          open={fileDialogOpen} 
+          onOpenChange={handleFileDialogClose}
+          currentFolder={currentFolder}
+          isEditing={!!editingFile}
+          fileToEdit={editingFile}
+        />
+      </DndProvider>
     </Layout>
   );
 }
