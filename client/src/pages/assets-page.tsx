@@ -9,7 +9,12 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Folder, File as FileIcon, Upload, Plus, X, PenSquare, Trash, ChevronRight, ChevronDown } from 'lucide-react';
+import { 
+  Folder, File as FileIcon, Upload, Plus, X, PenSquare, Trash, ChevronRight, ChevronDown,
+  Image as ImageIcon, Video as VideoIcon, AudioLines as AudioLinesIcon, 
+  FileText as FileTextIcon, Table as TableIcon, FileType as FileTypeIcon, 
+  ExternalLink as ExternalLinkIcon
+} from 'lucide-react';
 import { apiRequest } from '@/lib/queryClient';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -137,68 +142,72 @@ const FolderItem: React.FC<{
   const ref = useRef<HTMLDivElement>(null);
   drag(drop(ref));
 
-  // For tree view
+  // For tree view (Replit-style)
   if (isTreeView) {
     const hasChildren = childFolders.length > 0 || childFiles.length > 0;
-    const paddingLeft = depth * 20;
+    const paddingLeft = depth * 16; // Reduced padding for more compact view
 
     return (
       <div>
         <div 
           ref={ref}
-          className={`flex items-center p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded ${
-            isOver && canDrop ? 'bg-blue-100 dark:bg-blue-900' : ''
+          className={`group flex items-center px-1 py-0.5 text-sm hover:bg-gray-100 dark:hover:bg-gray-800 rounded ${
+            isOver && canDrop ? 'bg-blue-50 dark:bg-blue-900/30' : ''
           } ${isDragging ? 'opacity-50' : 'opacity-100'}`}
           style={{ paddingLeft: `${paddingLeft}px` }}
         >
-          {hasChildren && (
+          {hasChildren ? (
             <button 
-              onClick={() => onToggleExpand && onToggleExpand(folder.id)}
-              className="mr-1 focus:outline-none"
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleExpand && onToggleExpand(folder.id);
+              }}
+              className="w-4 h-4 flex items-center justify-center focus:outline-none"
             >
               {expanded ? (
-                <ChevronDown className="h-4 w-4 text-gray-500" />
+                <ChevronDown className="h-3 w-3 text-gray-500" />
               ) : (
-                <ChevronRight className="h-4 w-4 text-gray-500" />
+                <ChevronRight className="h-3 w-3 text-gray-500" />
               )}
             </button>
+          ) : (
+            <div className="w-4 h-4" />
           )}
-          {!hasChildren && <div className="w-5" />}
           <div 
-            className="flex-1 flex items-center cursor-pointer py-1"
+            className="flex-1 flex items-center cursor-pointer pl-1 min-w-0"
             onClick={() => onSelect(folder)}
           >
-            <Folder className="h-5 w-5 text-blue-500 mr-2" />
-            <span className="truncate">{folder.name}</span>
+            <Folder className="h-3.5 w-3.5 text-blue-500 mr-1.5 shrink-0" />
+            <span className="truncate font-medium">{folder.name}</span>
           </div>
-          <div className="flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="flex space-x-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
             <Button 
               variant="ghost" 
               size="icon" 
-              className="h-7 w-7"
+              className="h-6 w-6"
               onClick={(e) => {
                 e.stopPropagation();
                 onRename(folder);
               }}
             >
-              <PenSquare className="h-3.5 w-3.5" />
+              <PenSquare className="h-3 w-3" />
             </Button>
             <Button 
               variant="ghost" 
               size="icon" 
-              className="h-7 w-7"
+              className="h-6 w-6"
               onClick={(e) => {
                 e.stopPropagation();
                 onDelete(folder.id);
               }}
             >
-              <Trash className="h-3.5 w-3.5" />
+              <Trash className="h-3 w-3" />
             </Button>
           </div>
         </div>
 
         {expanded && (
-          <div className="ml-4">
+          <div>
             {childFolders.map(childFolder => (
               <FolderItem 
                 key={childFolder.id}
@@ -312,11 +321,15 @@ const FileItem: React.FC<{
           <span className="ml-1.5 text-[10px] text-gray-500">{formatFileSize(file.fileSize)}</span>
         </div>
         <div className="flex space-x-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-          <Button variant="ghost" size="icon" className="h-6 w-6" asChild>
-            <a href={file.secureUrl} target="_blank" rel="noopener noreferrer">
-              <ExternalLinkIcon className="h-3 w-3" />
-            </a>
-          </Button>
+          <a 
+            href={file.secureUrl} 
+            target="_blank" 
+            rel="noopener noreferrer" 
+            className="inline-flex h-6 w-6 items-center justify-center rounded-md text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-background"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <ExternalLinkIcon className="h-3 w-3" />
+          </a>
           <Button 
             variant="ghost" 
             size="icon" 
@@ -394,11 +407,15 @@ const FileItem: React.FC<{
         </div>
       </div>
       <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
-        <Button variant="ghost" size="icon" className="h-7 w-7" asChild>
-          <a href={file.secureUrl} target="_blank" rel="noopener noreferrer">
-            <ExternalLinkIcon className="h-3.5 w-3.5" />
-          </a>
-        </Button>
+        <a 
+          href={file.secureUrl} 
+          target="_blank" 
+          rel="noopener noreferrer" 
+          className="inline-flex h-7 w-7 items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <ExternalLinkIcon className="h-3.5 w-3.5" />
+        </a>
         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onRename(file)}>
           <PenSquare className="h-3.5 w-3.5" />
         </Button>
@@ -1116,27 +1133,27 @@ export default function AssetsPage() {
   return (
     <Layout>
       <DndProvider backend={HTML5Backend}>
-        <div className="container py-6">
-          <div className="flex justify-between items-center mb-6">
+        <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 py-6">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 gap-4">
             <h1 className="text-2xl font-bold">Digital Asset Management</h1>
-            <div className="flex items-center space-x-4">
-              <div className="flex border rounded-md overflow-hidden">
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="flex border rounded-md overflow-hidden shadow-sm">
                 <Button 
                   variant={viewMode === 'tree' ? 'default' : 'ghost'} 
                   size="sm"
-                  className="rounded-none"
+                  className="rounded-none h-8"
                   onClick={() => setViewMode('tree')}
                 >
-                  <ChevronRight className="mr-2 h-4 w-4" />
+                  <ChevronRight className="mr-1.5 h-3.5 w-3.5" />
                   Tree View
                 </Button>
                 <Button 
                   variant={viewMode === 'grid' ? 'default' : 'ghost'} 
                   size="sm"
-                  className="rounded-none"
+                  className="rounded-none h-8"
                   onClick={() => setViewMode('grid')}
                 >
-                  <div className="grid grid-cols-2 gap-0.5 mr-2 h-4 w-4">
+                  <div className="grid grid-cols-2 gap-0.5 mr-1.5 h-3.5 w-3.5">
                     <div className="bg-current rounded-sm" />
                     <div className="bg-current rounded-sm" />
                     <div className="bg-current rounded-sm" />
@@ -1146,19 +1163,19 @@ export default function AssetsPage() {
                 </Button>
               </div>
               
-              <div className="flex space-x-2">
-                <Button onClick={() => {
+              <div className="flex gap-2">
+                <Button size="sm" onClick={() => {
                   setEditingFolder(null);
                   setFolderDialogOpen(true);
                 }}>
-                  <Folder className="mr-2 h-4 w-4" />
+                  <Folder className="mr-1.5 h-3.5 w-3.5" />
                   New Folder
                 </Button>
-                <Button onClick={() => {
+                <Button size="sm" onClick={() => {
                   setEditingFile(null);
                   setFileDialogOpen(true);
                 }}>
-                  <Upload className="mr-2 h-4 w-4" />
+                  <Upload className="mr-1.5 h-3.5 w-3.5" />
                   Upload File
                 </Button>
               </div>
@@ -1166,10 +1183,12 @@ export default function AssetsPage() {
           </div>
 
           {viewMode === 'grid' && (
-            <FolderBreadcrumb 
-              currentPath={folderPath} 
-              onNavigate={handleBreadcrumbNavigate} 
-            />
+            <div className="mb-3">
+              <FolderBreadcrumb 
+                currentPath={folderPath} 
+                onNavigate={handleBreadcrumbNavigate} 
+              />
+            </div>
           )}
 
           {isLoading ? (
@@ -1179,13 +1198,21 @@ export default function AssetsPage() {
           ) : (
             <>
               {viewMode === 'tree' ? (
-                <div className="mt-4 flex flex-col md:flex-row gap-4 h-[75vh]">
-                  <div className="w-full md:w-72 bg-gray-100/50 dark:bg-gray-900/50 rounded-lg p-3 border border-gray-200 dark:border-gray-800 shadow-sm h-full">
-                    <h2 className="text-base font-semibold mb-3 flex items-center text-blue-600 dark:text-blue-400">
-                      <Folder className="mr-2 h-4 w-4" />
-                      File Explorer
-                    </h2>
-                    <div className="mb-3">
+                <div className="mt-3 flex flex-col md:flex-row gap-4 h-[75vh]">
+                  <div className="w-full md:w-72 border-r border-gray-200 dark:border-gray-800 h-full">
+                    <div className="px-3 py-2 mb-2 flex items-center justify-between">
+                      <h2 className="text-sm font-semibold flex items-center text-blue-600 dark:text-blue-400">
+                        <Folder className="mr-1.5 h-3.5 w-3.5" />
+                        File Explorer
+                      </h2>
+                      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => {
+                        setEditingFolder(null);
+                        setFolderDialogOpen(true);
+                      }}>
+                        <Plus className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                    <div className="mb-2 px-3">
                       <RootDropArea 
                         onMoveItem={(item, targetId) => 
                           moveItemMutation.mutate({ item, targetFolderId: targetId })
@@ -1211,26 +1238,34 @@ export default function AssetsPage() {
                   </div>
                   
                   <div className="flex-1 h-full overflow-hidden flex flex-col">
-                    <div className="bg-transparent dark:bg-transparent rounded-lg p-3 border border-gray-200 dark:border-gray-800 shadow-sm h-full flex flex-col">
-                      <div className="flex justify-between items-center mb-3">
-                        <h2 className="text-base font-semibold text-violet-600 dark:text-violet-400 flex items-center">
-                          <FileIcon className="mr-2 h-4 w-4" />
+                    <div className="h-full flex flex-col">
+                      <div className="flex justify-between items-center mb-3 px-1">
+                        <h2 className="text-sm font-semibold text-violet-600 dark:text-violet-400 flex items-center">
+                          <FileIcon className="mr-1.5 h-3.5 w-3.5" />
                           {currentFolder ? currentFolder.name : 'All Files'}
                         </h2>
                         
-                        {currentFolder && (
-                          <div className="text-sm text-gray-500">
-                            <FolderBreadcrumb 
-                              currentPath={folderPath} 
-                              onNavigate={handleBreadcrumbNavigate} 
-                            />
-                          </div>
-                        )}
+                        <div className="flex items-center gap-2">
+                          {currentFolder && (
+                            <div className="text-xs text-gray-500">
+                              <FolderBreadcrumb 
+                                currentPath={folderPath} 
+                                onNavigate={handleBreadcrumbNavigate} 
+                              />
+                            </div>
+                          )}
+                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => {
+                            setEditingFile(null);
+                            setFileDialogOpen(true);
+                          }}>
+                            <Upload className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
                       </div>
                       
                       <div className="flex-1 overflow-auto">
                         {currentFiles.length > 0 ? (
-                          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2">
+                          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2 px-1">
                             {currentFiles.map((file: File) => (
                               <FileItem 
                                 key={file.id} 
@@ -1244,16 +1279,16 @@ export default function AssetsPage() {
                             ))}
                           </div>
                         ) : (
-                          <div className="text-center p-8 border border-dashed border-gray-300 dark:border-gray-700 rounded-lg bg-gray-50/30 dark:bg-gray-900/30 h-full flex flex-col items-center justify-center">
+                          <div className="text-center p-6 border border-dashed border-gray-200 dark:border-gray-800 rounded-lg mx-2 h-full flex flex-col items-center justify-center">
                             <div className="mb-3">
-                              <FileIcon className="mx-auto h-10 w-10 text-gray-400" />
+                              <FileIcon className="mx-auto h-8 w-8 text-gray-400" />
                             </div>
-                            <h3 className="text-base font-medium">No files in this {currentFolder ? 'folder' : 'location'}</h3>
-                            <p className="text-sm text-gray-500 mt-1 mb-4">
+                            <h3 className="text-sm font-medium">No files in this {currentFolder ? 'folder' : 'location'}</h3>
+                            <p className="text-xs text-gray-500 mt-1 mb-3">
                               Upload files to view them here
                             </p>
                             <Button variant="outline" size="sm" onClick={() => setFileDialogOpen(true)}>
-                              <Upload className="mr-2 h-3.5 w-3.5" />
+                              <Upload className="mr-1.5 h-3 w-3" />
                               Upload File
                             </Button>
                           </div>
