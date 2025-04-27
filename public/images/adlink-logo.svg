@@ -1,13 +1,12 @@
-<svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="200" height="200" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#2563EB" />
-      <stop offset="100%" stop-color="#A855F7" />
+    <linearGradient id="paint0_linear" x1="0" y1="0" x2="200" y2="200" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#3B82F6" />
+      <stop offset="1" stop-color="#8B5CF6" />
     </linearGradient>
   </defs>
-  <rect width="120" height="120" rx="28" fill="url(#grad1)" />
-  <path d="M37 60C37 47.85 46.85 38 59 38H70C82.15 38 92 47.85 92 60V60C92 72.15 82.15 82 70 82H59C46.85 82 37 72.15 37 60V60Z" fill="white" fill-opacity="0.2"/>
-  <path d="M45 60C45 52.268 51.268 46 59 46H70C77.732 46 84 52.268 84 60V60C84 67.732 77.732 74 70 74H59C51.268 74 45 67.732 45 60V60Z" fill="white" fill-opacity="0.2"/>
-  <path d="M52 60.5C52 69.0604 59.4396 76 68 76C68.169 76 68.3376 75.9987 68.5056 75.9962C68.3376 75.9987 68.169 76 68 76H56C47.1634 76 40 69.0604 40 60.5C40 51.9396 47.1634 45 56 45C56.169 45 56.3376 45.0013 56.5056 45.0038C56.3376 45.0013 56.169 45 56 45C47.4396 45 40 51.9396 40 60.5" stroke="white" stroke-width="5" stroke-linecap="round"/>
-  <path d="M80 60.5C80 51.9396 72.5604 45 64 45C63.831 45 63.6624 45.0013 63.4944 45.0038C63.6624 45.0013 63.831 45 64 45H76C84.8366 45 92 51.9396 92 60.5C92 69.0604 84.8366 76 76 76C75.831 76 75.6624 75.9987 75.4944 75.9962C75.6624 75.9987 75.831 76 76 76C84.5604 76 92 69.0604 92 60.5" stroke="white" stroke-width="5" stroke-linecap="round"/>
+  <circle cx="100" cy="100" r="100" fill="url(#paint0_linear)" />
+  <path d="M66 100C66 81.22 81.22 66 100 66H134C152.78 66 168 81.22 168 100C168 118.78 152.78 134 134 134H100C81.22 134 66 118.78 66 100Z" stroke="white" stroke-width="10" />
+  <path d="M54 100L88 66M54 100L88 134M54 100H134" stroke="white" stroke-width="10" stroke-linecap="round" />
 </svg>
