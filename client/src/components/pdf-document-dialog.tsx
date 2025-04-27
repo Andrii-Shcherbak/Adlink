@@ -47,10 +47,13 @@ export function PDFDocumentDialog({ open, onOpenChange, onUrlCreated }: PDFDocum
       pdfDocumentName: string;
       pdfDocumentSize: number;
       isPdfDocument: boolean;
+      originalUrl: string;
     }) => {
-      const response = await apiRequest('POST', '/api/urls', data);
-
-      return response;
+      return apiRequest('/api/urls', {
+        method: 'POST',
+        body: JSON.stringify(data),
+        headers: { 'Content-Type': 'application/json' }
+      });
     },
     onSuccess: () => {
       toast({
