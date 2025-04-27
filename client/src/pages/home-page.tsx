@@ -628,10 +628,11 @@ function ShortcodeEditDialog({ url }: { url: Url }) {
       id: number;
       shortCode: string;
     }) => {
-      const res = await apiRequest("PATCH", `/api/urls/${id}/shortcode`, {
-        shortCode,
+      return apiRequest(`/api/urls/${id}/shortcode`, {
+        method: 'PATCH',
+        body: JSON.stringify({ shortCode }),
+        headers: { 'Content-Type': 'application/json' }
       });
-      return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/urls"] });
@@ -653,12 +654,15 @@ function ShortcodeEditDialog({ url }: { url: Url }) {
   const generateShortcodes = async () => {
     try {
       setIsGenerating(true);
-      const res = await apiRequest("POST", "/api/ai/generate-shortcodes", {
-        url: url.originalUrl,
-        title: url.title || undefined,
-        count: 5,
+      const data = await apiRequest("/api/ai/generate-shortcodes", {
+        method: 'POST',
+        body: JSON.stringify({
+          url: url.originalUrl,
+          title: url.title || undefined,
+          count: 5
+        }),
+        headers: { 'Content-Type': 'application/json' }
       });
-      const data = await res.json();
       setSuggestions(data.shortcodes || []);
     } catch (error) {
       toast({
@@ -791,8 +795,11 @@ export default function HomePage() {
 
   const createUrlMutation = useMutation({
     mutationFn: async (data: InsertUrl) => {
-      const res = await apiRequest("POST", "/api/urls", data);
-      return res.json();
+      return apiRequest("/api/urls", {
+        method: 'POST',
+        body: JSON.stringify(data),
+        headers: { 'Content-Type': 'application/json' }
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/urls"] });
@@ -813,7 +820,9 @@ export default function HomePage() {
 
   const deleteUrlMutation = useMutation({
     mutationFn: async (id: number) => {
-      await apiRequest("DELETE", `/api/urls/${id}`);
+      return apiRequest(`/api/urls/${id}`, {
+        method: 'DELETE'
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/urls"] });
@@ -833,10 +842,11 @@ export default function HomePage() {
 
   const updatePasswordMutation = useMutation({
     mutationFn: async ({ id, password }: { id: number; password?: string }) => {
-      const res = await apiRequest("PATCH", `/api/urls/${id}/password`, {
-        password,
+      return apiRequest(`/api/urls/${id}/password`, {
+        method: 'PATCH',
+        body: JSON.stringify({ password }),
+        headers: { 'Content-Type': 'application/json' }
       });
-      return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/urls"] });
