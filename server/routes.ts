@@ -3,7 +3,7 @@ import express from "express";
 import { createServer, type Server } from "http";
 import { setupAuth } from "./auth";
 import { storage } from "./storage";
-import { insertUrlSchema, destinationsSchema, userApprovalSchema, userInviteSchema, inviteAcceptSchema } from "@shared/schema";
+import { insertUrlSchema, destinationsSchema, userApprovalSchema, userInviteSchema, inviteAcceptSchema, urls } from "@shared/schema";
 import { qrConfigSchema } from "@shared/schema";
 import { UAParser } from "ua-parser-js";
 import { scrypt, timingSafeEqual, randomBytes } from "crypto";
@@ -19,8 +19,7 @@ import dotenv from "dotenv";
 import geoip from 'geoip-lite';
 import { getName } from 'country-list';
 import { db } from "./db";
-import { urls } from "@shared/schema";
-import { eq, and } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 
 // Load environment variables from .env file
 dotenv.config();
@@ -266,12 +265,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (!req.isAuthenticated()) return res.sendStatus(401);
 
     try {
-      // First get the URL details to verify ownership and for logging
       const urlId = parseInt(req.params.id);
-      const urls = await storage.getUserUrls(req.user!.id, 1, 0);
-      const url = urls.find(u => u.id === urlId);
+      
+      // Direct database query to get the specific URL by ID and user ID
+      const [url] = await db
+        .select()
+        .from(urls)
+        .where(and(
+          eq(urls.id, urlId),
+          eq(urls.userId, req.user!.id)
+        ));
 
-      if (!url || url.userId !== req.user!.id) {
+      if (!url) {
+        console.log(`URL not found or not owned by user: ID ${urlId}, user ${req.user!.id}`);
         return res.status(404).send("URL not found");
       }
 
