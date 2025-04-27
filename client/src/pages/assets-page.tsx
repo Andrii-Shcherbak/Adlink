@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { Layout } from '@/components/layout';
@@ -9,11 +9,13 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Folder, File, Upload, Plus, X, PenSquare, Trash } from 'lucide-react';
+import { Folder, File as FileIcon, Upload, Plus, X, PenSquare, Trash, ChevronRight, ChevronDown } from 'lucide-react';
 import { apiRequest } from '@/lib/queryClient';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
+import { DndProvider, useDrag, useDrop } from 'react-dnd';
+import { HTML5Backend } from 'react-dnd-html5-backend';
 
 // Define folder creation form schema
 const folderSchema = z.object({
@@ -60,15 +62,181 @@ interface File {
   updatedAt: string;
 }
 
+// DnD item types
+const ItemTypes = {
+  FOLDER: 'folder',
+  FILE: 'file'
+};
+
+// Format file size helper
+const formatFileSize = (size: number) => {
+  if (size < 1024) return `${size} B`;
+  if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
+  return `${(size / (1024 * 1024)).toFixed(1)} MB`;
+};
+
+// Get file icon by type helper
+const getIconByType = (type: string) => {
+  if (type.startsWith('image/')) return '🖼️';
+  if (type.startsWith('video/')) return '🎬';
+  if (type.startsWith('audio/')) return '🎵';
+  if (type === 'application/pdf') return '📄';
+  return '📁';
+};
+
 // Component to display a folder
 const FolderItem: React.FC<{ 
   folder: Folder; 
   onSelect: (folder: Folder) => void;
   onDelete: (id: number) => void;
   onRename: (folder: Folder) => void;
-}> = ({ folder, onSelect, onDelete, onRename }) => {
+  onMoveItem?: (dragItem: { type: string, id: number }, targetFolderId: number | null) => void;
+  depth?: number;
+  childFolders?: Folder[];
+  childFiles?: File[];
+  expanded?: boolean;
+  onToggleExpand?: (folderId: number) => void;
+  isTreeView?: boolean;
+}> = ({ 
+  folder, 
+  onSelect, 
+  onDelete, 
+  onRename, 
+  onMoveItem, 
+  depth = 0, 
+  childFolders = [], 
+  childFiles = [],
+  expanded = false,
+  onToggleExpand,
+  isTreeView = false
+}) => {
+  // Setup drag functionality
+  const [{ isDragging }, drag] = useDrag(() => ({
+    type: ItemTypes.FOLDER,
+    item: { type: ItemTypes.FOLDER, id: folder.id },
+    collect: (monitor) => ({
+      isDragging: monitor.isDragging(),
+    }),
+  }));
+
+  // Setup drop functionality
+  const [{ isOver, canDrop }, drop] = useDrop(() => ({
+    accept: [ItemTypes.FOLDER, ItemTypes.FILE],
+    drop: (item: { type: string, id: number }) => {
+      if (onMoveItem) onMoveItem(item, folder.id);
+      return { folderId: folder.id };
+    },
+    canDrop: (item) => item.id !== folder.id, // Can't drop a folder onto itself
+    collect: (monitor) => ({
+      isOver: monitor.isOver(),
+      canDrop: monitor.canDrop(),
+    }),
+  }));
+
+  // Combine drag and drop refs
+  const ref = useRef<HTMLDivElement>(null);
+  drag(drop(ref));
+
+  // For tree view
+  if (isTreeView) {
+    const hasChildren = childFolders.length > 0 || childFiles.length > 0;
+    const paddingLeft = depth * 20;
+
+    return (
+      <div>
+        <div 
+          ref={ref}
+          className={`flex items-center p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded ${
+            isOver && canDrop ? 'bg-blue-100 dark:bg-blue-900' : ''
+          } ${isDragging ? 'opacity-50' : 'opacity-100'}`}
+          style={{ paddingLeft: `${paddingLeft}px` }}
+        >
+          {hasChildren && (
+            <button 
+              onClick={() => onToggleExpand && onToggleExpand(folder.id)}
+              className="mr-1 focus:outline-none"
+            >
+              {expanded ? (
+                <ChevronDown className="h-4 w-4 text-gray-500" />
+              ) : (
+                <ChevronRight className="h-4 w-4 text-gray-500" />
+              )}
+            </button>
+          )}
+          {!hasChildren && <div className="w-5" />}
+          <div 
+            className="flex-1 flex items-center cursor-pointer py-1"
+            onClick={() => onSelect(folder)}
+          >
+            <Folder className="h-5 w-5 text-blue-500 mr-2" />
+            <span className="truncate">{folder.name}</span>
+          </div>
+          <div className="flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="h-7 w-7"
+              onClick={(e) => {
+                e.stopPropagation();
+                onRename(folder);
+              }}
+            >
+              <PenSquare className="h-3.5 w-3.5" />
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="h-7 w-7"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete(folder.id);
+              }}
+            >
+              <Trash className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+        </div>
+
+        {expanded && (
+          <div className="ml-4">
+            {childFolders.map(childFolder => (
+              <FolderItem 
+                key={childFolder.id}
+                folder={childFolder}
+                onSelect={onSelect}
+                onDelete={onDelete}
+                onRename={onRename}
+                onMoveItem={onMoveItem}
+                depth={depth + 1}
+                isTreeView
+              />
+            ))}
+            
+            {childFiles.map(file => (
+              <FileItem 
+                key={file.id}
+                file={file}
+                onDelete={onDelete}
+                onRename={onRename}
+                onMove={onMoveItem}
+                depth={depth + 1}
+                isTreeView
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // For grid view (original)
   return (
-    <Card className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors">
+    <Card 
+      ref={ref}
+      className={`cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors ${
+        isOver && canDrop ? 'bg-blue-100 dark:bg-blue-900' : ''
+      } ${isDragging ? 'opacity-50' : 'opacity-100'}`}
+    >
       <CardContent className="p-4 flex items-center justify-between">
         <div className="flex items-center space-x-3" onClick={() => onSelect(folder)}>
           <Folder className="h-8 w-8 text-blue-500" />
@@ -100,23 +268,72 @@ const FileItem: React.FC<{
   file: File; 
   onDelete: (id: number) => void;
   onRename: (file: File) => void;
-}> = ({ file, onDelete, onRename }) => {
-  const getIconByType = (type: string) => {
-    if (type.startsWith('image/')) return '🖼️';
-    if (type.startsWith('video/')) return '🎬';
-    if (type.startsWith('audio/')) return '🎵';
-    if (type === 'application/pdf') return '📄';
-    return '📁';
-  };
+  onMove?: (dragItem: { type: string, id: number }, targetFolderId: number | null) => void;
+  depth?: number;
+  isTreeView?: boolean;
+}> = ({ file, onDelete, onRename, onMove, depth = 0, isTreeView = false }) => {
+  // Setup drag functionality
+  const [{ isDragging }, drag] = useDrag(() => ({
+    type: ItemTypes.FILE,
+    item: { type: ItemTypes.FILE, id: file.id },
+    collect: (monitor) => ({
+      isDragging: monitor.isDragging(),
+    }),
+  }));
 
-  const formatFileSize = (size: number) => {
-    if (size < 1024) return `${size} B`;
-    if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
-    return `${(size / (1024 * 1024)).toFixed(1)} MB`;
-  };
+  // For tree view
+  if (isTreeView) {
+    const paddingLeft = depth * 20;
 
+    return (
+      <div 
+        ref={drag}
+        className={`flex items-center p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded ${
+          isDragging ? 'opacity-50' : 'opacity-100'
+        }`}
+        style={{ paddingLeft: `${paddingLeft + 5}px` }}
+      >
+        <div className="w-5" /> {/* Spacer to align with folders that have expand icons */}
+        <div className="flex-1 flex items-center cursor-pointer py-1">
+          <span className="mr-2 text-lg">{getIconByType(file.contentType)}</span>
+          <span className="truncate">{file.name}</span>
+          <span className="ml-2 text-xs text-gray-500">{formatFileSize(file.fileSize)}</span>
+        </div>
+        <div className="flex space-x-1">
+          <Button variant="ghost" size="icon" className="h-7 w-7">
+            <a href={file.secureUrl} target="_blank" rel="noopener noreferrer">
+              <FileIcon className="h-3.5 w-3.5" />
+            </a>
+          </Button>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="h-7 w-7"
+            onClick={() => onRename(file)}
+          >
+            <PenSquare className="h-3.5 w-3.5" />
+          </Button>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="h-7 w-7"
+            onClick={() => onDelete(file.id)}
+          >
+            <Trash className="h-3.5 w-3.5" />
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // For grid view (original)
   return (
-    <Card className="hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors">
+    <Card 
+      ref={drag}
+      className={`hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors ${
+        isDragging ? 'opacity-50' : 'opacity-100'
+      }`}
+    >
       <CardContent className="p-4 flex items-center justify-between">
         <div className="flex items-center space-x-3">
           <div className="text-2xl">
@@ -503,6 +720,122 @@ const FolderBreadcrumb: React.FC<{
   );
 };
 
+// Tree Node component to render file system in tree view
+const TreeNode: React.FC<{
+  folders: Folder[],
+  files: File[], 
+  onFolderSelect: (folder: Folder) => void,
+  onDeleteFolder: (id: number) => void,
+  onRenameFolder: (folder: Folder) => void,
+  onDeleteFile: (id: number) => void,
+  onRenameFile: (file: File) => void,
+  onMoveItem?: (dragItem: { type: string, id: number }, targetFolderId: number | null) => void,
+  expandedFolders: Set<number>
+  onToggleFolder: (folderId: number) => void
+}> = ({ 
+  folders, 
+  files, 
+  onFolderSelect, 
+  onDeleteFolder, 
+  onRenameFolder,
+  onDeleteFile,
+  onRenameFile,
+  onMoveItem,
+  expandedFolders,
+  onToggleFolder
+}) => {
+  // Build folder hierarchy
+  const folderMap = new Map<number | null, Folder[]>();
+  const fileMap = new Map<number | null, File[]>();
+  
+  // Group folders by parent
+  folders.forEach(folder => {
+    const parentId = folder.parentId;
+    if (!folderMap.has(parentId)) {
+      folderMap.set(parentId, []);
+    }
+    folderMap.get(parentId)!.push(folder);
+  });
+  
+  // Group files by folder
+  files.forEach(file => {
+    const folderId = file.folderId;
+    if (!fileMap.has(folderId)) {
+      fileMap.set(folderId, []);
+    }
+    fileMap.get(folderId)!.push(file);
+  });
+  
+  // Render root level folders and files
+  const renderLevel = (parentId: number | null) => {
+    const childFolders = folderMap.get(parentId) || [];
+    const childFiles = fileMap.get(parentId) || [];
+    
+    return (
+      <div className="space-y-1">
+        {childFolders.map(folder => (
+          <FolderItem
+            key={folder.id}
+            folder={folder}
+            onSelect={onFolderSelect}
+            onDelete={onDeleteFolder}
+            onRename={onRenameFolder}
+            onMoveItem={onMoveItem}
+            childFolders={folderMap.get(folder.id) || []}
+            childFiles={fileMap.get(folder.id) || []}
+            expanded={expandedFolders.has(folder.id)}
+            onToggleExpand={onToggleFolder}
+            isTreeView={true}
+          />
+        ))}
+        
+        {childFiles.map(file => (
+          <FileItem
+            key={file.id}
+            file={file}
+            onDelete={onDeleteFile}
+            onRename={onRenameFile}
+            onMove={onMoveItem}
+            isTreeView={true}
+          />
+        ))}
+      </div>
+    );
+  };
+  
+  return renderLevel(null);
+};
+
+// Root drop area for files and folders
+const RootDropArea: React.FC<{
+  onMoveItem: (dragItem: { type: string, id: number }, targetFolderId: number | null) => void
+}> = ({ onMoveItem }) => {
+  const [{ isOver, canDrop }, drop] = useDrop(() => ({
+    accept: [ItemTypes.FOLDER, ItemTypes.FILE],
+    drop: (item: { type: string, id: number }) => {
+      onMoveItem(item, null);
+      return { folderId: null };
+    },
+    collect: (monitor) => ({
+      isOver: monitor.isOver(),
+      canDrop: monitor.canDrop(),
+    }),
+  }));
+  
+  return (
+    <div 
+      ref={drop} 
+      className={`p-2 rounded border border-dashed ${
+        isOver && canDrop ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' : 'border-gray-200 dark:border-gray-700'
+      }`}
+    >
+      <div className="text-center p-4 text-sm text-gray-500">
+        Drop here to move to root folder
+      </div>
+    </div>
+  );
+};
+
 // Main Assets Management page component
 export default function AssetsPage() {
   const [currentFolder, setCurrentFolder] = useState<Folder | null>(null);
@@ -513,6 +846,8 @@ export default function AssetsPage() {
   ]);
   const [editingFolder, setEditingFolder] = useState<Folder | null>(null);
   const [editingFile, setEditingFile] = useState<File | null>(null);
+  const [viewMode, setViewMode] = useState<'grid' | 'tree'>('tree'); // Default to tree view
+  const [expandedFolders, setExpandedFolders] = useState<Set<number>>(new Set());
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
