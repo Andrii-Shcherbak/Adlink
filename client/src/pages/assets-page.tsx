@@ -229,37 +229,37 @@ const FolderItem: React.FC<{
     );
   }
 
-  // For grid view (original)
+  // For grid view (modern and compact)
   return (
-    <Card 
+    <div 
       ref={ref}
-      className={`cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors ${
-        isOver && canDrop ? 'bg-blue-100 dark:bg-blue-900' : ''
+      className={`group flex items-center rounded-md border border-gray-200 dark:border-gray-800 cursor-pointer p-2.5 hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors ${
+        isOver && canDrop ? 'border-blue-300 bg-blue-50 dark:border-blue-700 dark:bg-blue-900/30' : ''
       } ${isDragging ? 'opacity-50' : 'opacity-100'}`}
     >
-      <CardContent className="p-4 flex items-center justify-between">
-        <div className="flex items-center space-x-3" onClick={() => onSelect(folder)}>
-          <Folder className="h-8 w-8 text-blue-500" />
-          <div>
-            <h3 className="font-medium">{folder.name}</h3>
-          </div>
+      <div className="flex-1 flex items-center space-x-2 overflow-hidden" onClick={() => onSelect(folder)}>
+        <div className="p-1.5 bg-blue-100 dark:bg-blue-900/30 rounded-md shrink-0">
+          <Folder className="h-5 w-5 text-blue-600 dark:text-blue-400" />
         </div>
-        <div className="flex space-x-1">
-          <Button variant="ghost" size="icon" onClick={(e) => {
-            e.stopPropagation();
-            onRename(folder);
-          }}>
-            <PenSquare className="h-4 w-4" />
-          </Button>
-          <Button variant="ghost" size="icon" onClick={(e) => {
-            e.stopPropagation();
-            onDelete(folder.id);
-          }}>
-            <Trash className="h-4 w-4" />
-          </Button>
+        <div className="overflow-hidden">
+          <h3 className="font-medium text-sm truncate">{folder.name}</h3>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+      <div className="flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => {
+          e.stopPropagation();
+          onRename(folder);
+        }}>
+          <PenSquare className="h-3.5 w-3.5" />
+        </Button>
+        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => {
+          e.stopPropagation();
+          onDelete(folder.id);
+        }}>
+          <Trash className="h-3.5 w-3.5" />
+        </Button>
+      </div>
+    </div>
   );
 };
 
@@ -281,82 +281,132 @@ const FileItem: React.FC<{
     }),
   }));
 
-  // For tree view
+  // For tree view (Replit-style)
   if (isTreeView) {
-    const paddingLeft = depth * 20;
+    const paddingLeft = depth * 16; // Reduced padding for more compact view
+    const fileIcon = () => {
+      const contentType = file.contentType;
+      if (contentType.startsWith('image/')) return <ImageIcon className="h-3.5 w-3.5 text-green-500" />;
+      if (contentType.startsWith('video/')) return <VideoIcon className="h-3.5 w-3.5 text-red-500" />;
+      if (contentType.startsWith('audio/')) return <AudioLinesIcon className="h-3.5 w-3.5 text-orange-500" />;
+      if (contentType === 'application/pdf') return <FileTextIcon className="h-3.5 w-3.5 text-purple-500" />;
+      if (contentType.includes('spreadsheet') || contentType.includes('excel')) return <TableIcon className="h-3.5 w-3.5 text-emerald-500" />;
+      if (contentType.includes('document') || contentType.includes('word')) return <FileTypeIcon className="h-3.5 w-3.5 text-blue-500" />;
+      return <FileIcon className="h-3.5 w-3.5 text-gray-500" />;
+    };
 
     return (
       <div 
         ref={drag}
-        className={`flex items-center p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded ${
+        className={`group flex items-center px-1 py-0.5 text-sm hover:bg-gray-100 dark:hover:bg-gray-800 rounded ${
           isDragging ? 'opacity-50' : 'opacity-100'
         }`}
-        style={{ paddingLeft: `${paddingLeft + 5}px` }}
+        style={{ paddingLeft: `${paddingLeft + 4}px` }}
       >
-        <div className="w-5" /> {/* Spacer to align with folders that have expand icons */}
-        <div className="flex-1 flex items-center cursor-pointer py-1">
-          <span className="mr-2 text-lg">{getIconByType(file.contentType)}</span>
+        <div className="w-4" /> {/* Spacer to align with folders that have expand icons */}
+        <div className="flex-1 flex items-center cursor-pointer min-w-0">
+          <div className="mr-1.5">
+            {fileIcon()}
+          </div>
           <span className="truncate">{file.name}</span>
-          <span className="ml-2 text-xs text-gray-500">{formatFileSize(file.fileSize)}</span>
+          <span className="ml-1.5 text-[10px] text-gray-500">{formatFileSize(file.fileSize)}</span>
         </div>
-        <div className="flex space-x-1">
-          <Button variant="ghost" size="icon" className="h-7 w-7">
+        <div className="flex space-x-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+          <Button variant="ghost" size="icon" className="h-6 w-6" asChild>
             <a href={file.secureUrl} target="_blank" rel="noopener noreferrer">
-              <FileIcon className="h-3.5 w-3.5" />
+              <ExternalLinkIcon className="h-3 w-3" />
             </a>
           </Button>
           <Button 
             variant="ghost" 
             size="icon" 
-            className="h-7 w-7"
-            onClick={() => onRename(file)}
+            className="h-6 w-6"
+            onClick={(e) => {
+              e.stopPropagation();
+              onRename(file);
+            }}
           >
-            <PenSquare className="h-3.5 w-3.5" />
+            <PenSquare className="h-3 w-3" />
           </Button>
           <Button 
             variant="ghost" 
             size="icon" 
-            className="h-7 w-7"
-            onClick={() => onDelete(file.id)}
+            className="h-6 w-6"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete(file.id);
+            }}
           >
-            <Trash className="h-3.5 w-3.5" />
+            <Trash className="h-3 w-3" />
           </Button>
         </div>
       </div>
     );
   }
 
-  // For grid view (original)
+  // For grid view (modern and compact)
+  const fileIcon = () => {
+    const contentType = file.contentType;
+    if (contentType.startsWith('image/')) return <ImageIcon className="h-4 w-4 text-green-500" />;
+    if (contentType.startsWith('video/')) return <VideoIcon className="h-4 w-4 text-red-500" />;
+    if (contentType.startsWith('audio/')) return <AudioLinesIcon className="h-4 w-4 text-orange-500" />;
+    if (contentType === 'application/pdf') return <FileTextIcon className="h-4 w-4 text-purple-500" />;
+    if (contentType.includes('spreadsheet') || contentType.includes('excel')) return <TableIcon className="h-4 w-4 text-emerald-500" />;
+    if (contentType.includes('document') || contentType.includes('word')) return <FileTypeIcon className="h-4 w-4 text-blue-500" />;
+    return <FileIcon className="h-4 w-4 text-gray-500" />;
+  };
+
+  const getColorByType = () => {
+    const contentType = file.contentType;
+    if (contentType.startsWith('image/')) return 'bg-green-100 dark:bg-green-900/30';
+    if (contentType.startsWith('video/')) return 'bg-red-100 dark:bg-red-900/30';
+    if (contentType.startsWith('audio/')) return 'bg-orange-100 dark:bg-orange-900/30';
+    if (contentType === 'application/pdf') return 'bg-purple-100 dark:bg-purple-900/30';
+    if (contentType.includes('spreadsheet') || contentType.includes('excel')) return 'bg-emerald-100 dark:bg-emerald-900/30';
+    if (contentType.includes('document') || contentType.includes('word')) return 'bg-blue-100 dark:bg-blue-900/30';
+    return 'bg-gray-100 dark:bg-gray-800';
+  };
+
+  const fileExtension = file.name.split('.').pop()?.toUpperCase() || '';
+  
   return (
-    <Card 
+    <div 
       ref={drag}
-      className={`hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors ${
+      className={`group flex items-center rounded-md border border-gray-200 dark:border-gray-800 p-2.5 hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors ${
         isDragging ? 'opacity-50' : 'opacity-100'
       }`}
     >
-      <CardContent className="p-4 flex items-center justify-between">
-        <div className="flex items-center space-x-3">
-          <div className="text-2xl">
-            {getIconByType(file.contentType)}
-          </div>
-          <div>
-            <h3 className="font-medium">{file.name}</h3>
-            <p className="text-sm text-gray-500">{formatFileSize(file.fileSize)}</p>
+      <div className="flex-1 flex items-center space-x-2 overflow-hidden min-w-0">
+        <div className={`p-1.5 rounded-md shrink-0 ${getColorByType()}`}>
+          {fileIcon()}
+        </div>
+        <div className="overflow-hidden min-w-0">
+          <h3 className="font-medium text-sm truncate">{file.name}</h3>
+          <div className="flex items-center text-xs text-gray-500 space-x-2">
+            <span>{formatFileSize(file.fileSize)}</span>
+            {fileExtension && (
+              <>
+                <span className="w-0.5 h-0.5 rounded-full bg-gray-300 dark:bg-gray-600"></span>
+                <span className="uppercase">{fileExtension}</span>
+              </>
+            )}
           </div>
         </div>
-        <div className="flex space-x-2">
-          <Button variant="outline" size="sm" asChild>
-            <a href={file.secureUrl} target="_blank" rel="noopener noreferrer">View</a>
-          </Button>
-          <Button variant="ghost" size="icon" onClick={() => onRename(file)}>
-            <PenSquare className="h-4 w-4" />
-          </Button>
-          <Button variant="ghost" size="icon" onClick={() => onDelete(file.id)}>
-            <Trash className="h-4 w-4" />
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
+      </div>
+      <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        <Button variant="ghost" size="icon" className="h-7 w-7" asChild>
+          <a href={file.secureUrl} target="_blank" rel="noopener noreferrer">
+            <ExternalLinkIcon className="h-3.5 w-3.5" />
+          </a>
+        </Button>
+        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onRename(file)}>
+          <PenSquare className="h-3.5 w-3.5" />
+        </Button>
+        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onDelete(file.id)}>
+          <Trash className="h-3.5 w-3.5" />
+        </Button>
+      </div>
+    </div>
   );
 };
 
@@ -1129,20 +1179,20 @@ export default function AssetsPage() {
           ) : (
             <>
               {viewMode === 'tree' ? (
-                <div className="mt-4 flex flex-col md:flex-row gap-6">
-                  <div className="w-full md:w-80 bg-gray-50 dark:bg-gray-900 rounded-lg p-4 border">
-                    <h2 className="text-lg font-medium mb-3 flex items-center">
-                      <Folder className="mr-2 h-5 w-5" />
-                      File Browser
+                <div className="mt-4 flex flex-col md:flex-row gap-4 h-[75vh]">
+                  <div className="w-full md:w-72 bg-gray-100/50 dark:bg-gray-900/50 rounded-lg p-3 border border-gray-200 dark:border-gray-800 shadow-sm h-full">
+                    <h2 className="text-base font-semibold mb-3 flex items-center text-blue-600 dark:text-blue-400">
+                      <Folder className="mr-2 h-4 w-4" />
+                      File Explorer
                     </h2>
-                    <div className="mb-4">
+                    <div className="mb-3">
                       <RootDropArea 
                         onMoveItem={(item, targetId) => 
                           moveItemMutation.mutate({ item, targetFolderId: targetId })
                         } 
                       />
                     </div>
-                    <div className="overflow-auto max-h-[600px] pr-2">
+                    <div className="overflow-auto max-h-full pr-1 scrollbar-thin">
                       <TreeNode 
                         folders={folders}
                         files={allFiles}
@@ -1160,20 +1210,113 @@ export default function AssetsPage() {
                     </div>
                   </div>
                   
-                  <div className="flex-1">
-                    <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border">
-                      <h2 className="text-lg font-medium mb-4">Preview Area</h2>
-                      {currentFolder && (
-                        <div className="mb-3 text-sm breadcrumbs">
-                          <FolderBreadcrumb 
-                            currentPath={folderPath} 
-                            onNavigate={handleBreadcrumbNavigate} 
-                          />
-                        </div>
-                      )}
+                  <div className="flex-1 h-full overflow-hidden flex flex-col">
+                    <div className="bg-transparent dark:bg-transparent rounded-lg p-3 border border-gray-200 dark:border-gray-800 shadow-sm h-full flex flex-col">
+                      <div className="flex justify-between items-center mb-3">
+                        <h2 className="text-base font-semibold text-violet-600 dark:text-violet-400 flex items-center">
+                          <FileIcon className="mr-2 h-4 w-4" />
+                          {currentFolder ? currentFolder.name : 'All Files'}
+                        </h2>
+                        
+                        {currentFolder && (
+                          <div className="text-sm text-gray-500">
+                            <FolderBreadcrumb 
+                              currentPath={folderPath} 
+                              onNavigate={handleBreadcrumbNavigate} 
+                            />
+                          </div>
+                        )}
+                      </div>
                       
-                      {currentFiles.length > 0 ? (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="flex-1 overflow-auto">
+                        {currentFiles.length > 0 ? (
+                          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2">
+                            {currentFiles.map((file: File) => (
+                              <FileItem 
+                                key={file.id} 
+                                file={file}
+                                onDelete={handleDeleteFile}
+                                onRename={handleEditFile}
+                                onMove={(item, targetId) => 
+                                  moveItemMutation.mutate({ item, targetFolderId: targetId })
+                                }
+                              />
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="text-center p-8 border border-dashed border-gray-300 dark:border-gray-700 rounded-lg bg-gray-50/30 dark:bg-gray-900/30 h-full flex flex-col items-center justify-center">
+                            <div className="mb-3">
+                              <FileIcon className="mx-auto h-10 w-10 text-gray-400" />
+                            </div>
+                            <h3 className="text-base font-medium">No files in this {currentFolder ? 'folder' : 'location'}</h3>
+                            <p className="text-sm text-gray-500 mt-1 mb-4">
+                              Upload files to view them here
+                            </p>
+                            <Button variant="outline" size="sm" onClick={() => setFileDialogOpen(true)}>
+                              <Upload className="mr-2 h-3.5 w-3.5" />
+                              Upload File
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="h-[75vh] p-1 flex flex-col">
+                  <div className="flex-1 overflow-y-auto">
+                    {currentFolders.length > 0 && (
+                      <div className="mb-4">
+                        <div className="flex items-center mb-2">
+                          <h2 className="text-base font-semibold text-blue-600 dark:text-blue-400 flex items-center">
+                            <Folder className="mr-2 h-4 w-4" />
+                            Folders
+                          </h2>
+                          <div className="ml-auto">
+                            <Button size="sm" variant="ghost" onClick={() => {
+                              setEditingFolder(null);
+                              setFolderDialogOpen(true);
+                            }}>
+                              <Plus className="h-3.5 w-3.5 mr-1" />
+                              New
+                            </Button>
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2">
+                          {currentFolders.map((folder: Folder) => (
+                            <FolderItem 
+                              key={folder.id} 
+                              folder={folder} 
+                              onSelect={handleFolderSelect}
+                              onDelete={handleDeleteFolder}
+                              onRename={handleEditFolder}
+                              onMoveItem={(item, targetId) => 
+                                moveItemMutation.mutate({ item, targetFolderId: targetId })
+                              }
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {currentFiles.length > 0 && (
+                      <div>
+                        <div className="flex items-center mb-2">
+                          <h2 className="text-base font-semibold text-violet-600 dark:text-violet-400 flex items-center">
+                            <FileIcon className="mr-2 h-4 w-4" />
+                            Files
+                          </h2>
+                          <div className="ml-auto">
+                            <Button size="sm" variant="ghost" onClick={() => {
+                              setEditingFile(null);
+                              setFileDialogOpen(true);
+                            }}>
+                              <Upload className="h-3.5 w-3.5 mr-1" />
+                              Upload
+                            </Button>
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2">
                           {currentFiles.map((file: File) => (
                             <FileItem 
                               key={file.id} 
@@ -1186,100 +1329,43 @@ export default function AssetsPage() {
                             />
                           ))}
                         </div>
-                      ) : (
-                        <div className="text-center p-8 border rounded-lg">
-                          <div className="mb-3">
-                            <FileIcon className="mx-auto h-12 w-12 text-gray-400" />
-                          </div>
-                          <h3 className="text-lg font-medium">No files in this {currentFolder ? 'folder' : 'location'}</h3>
-                          <p className="text-gray-500 mt-1">
-                            Upload files to view them here
-                          </p>
-                          <div className="mt-4 flex justify-center">
-                            <Button variant="outline" onClick={() => setFileDialogOpen(true)}>
-                              <Upload className="mr-2 h-4 w-4" />
-                              Upload File
-                            </Button>
-                          </div>
+                      </div>
+                    )}
+
+                    {currentFolders.length === 0 && currentFiles.length === 0 && (
+                      <div className="text-center p-8 border border-dashed border-gray-300 dark:border-gray-700 rounded-lg bg-gray-50/30 dark:bg-gray-900/30 h-full flex flex-col items-center justify-center">
+                        <div className="mb-3">
+                          {currentFolder ? (
+                            <Folder className="mx-auto h-10 w-10 text-gray-400" />
+                          ) : (
+                            <FileIcon className="mx-auto h-10 w-10 text-gray-400" />
+                          )}
                         </div>
-                      )}
-                    </div>
+                        <h3 className="text-base font-medium">{currentFolder ? 'This folder is empty' : 'No assets yet'}</h3>
+                        <p className="text-sm text-gray-500 mt-1 mb-4">
+                          {currentFolder 
+                            ? 'Upload files or create folders to organize your assets'
+                            : 'Start by creating folders or uploading files to manage your digital assets'}
+                        </p>
+                        <div className="flex justify-center space-x-3">
+                          <Button size="sm" variant="outline" onClick={() => {
+                            setEditingFolder(null);
+                            setFolderDialogOpen(true);
+                          }}>
+                            <Folder className="mr-2 h-3.5 w-3.5" />
+                            New Folder
+                          </Button>
+                          <Button size="sm" variant="default" onClick={() => {
+                            setEditingFile(null);
+                            setFileDialogOpen(true);
+                          }}>
+                            <Upload className="mr-2 h-3.5 w-3.5" />
+                            Upload File
+                          </Button>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                </div>
-              ) : (
-                <div className="space-y-6">
-                  {currentFolders.length > 0 && (
-                    <div>
-                      <h2 className="text-lg font-medium mb-3">Folders</h2>
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {currentFolders.map((folder: Folder) => (
-                          <FolderItem 
-                            key={folder.id} 
-                            folder={folder} 
-                            onSelect={handleFolderSelect}
-                            onDelete={handleDeleteFolder}
-                            onRename={handleEditFolder}
-                            onMoveItem={(item, targetId) => 
-                              moveItemMutation.mutate({ item, targetFolderId: targetId })
-                            }
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {currentFiles.length > 0 && (
-                    <div>
-                      <h2 className="text-lg font-medium mb-3">Files</h2>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {currentFiles.map((file: File) => (
-                          <FileItem 
-                            key={file.id} 
-                            file={file}
-                            onDelete={handleDeleteFile}
-                            onRename={handleEditFile}
-                            onMove={(item, targetId) => 
-                              moveItemMutation.mutate({ item, targetFolderId: targetId })
-                            }
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {currentFolders.length === 0 && currentFiles.length === 0 && (
-                    <div className="text-center p-8 border rounded-lg">
-                      <div className="mb-3">
-                        {currentFolder ? (
-                          <Folder className="mx-auto h-12 w-12 text-gray-400" />
-                        ) : (
-                          <FileIcon className="mx-auto h-12 w-12 text-gray-400" />
-                        )}
-                      </div>
-                      <h3 className="text-lg font-medium">{currentFolder ? 'This folder is empty' : 'No assets yet'}</h3>
-                      <p className="text-gray-500 mt-1">
-                        {currentFolder 
-                          ? 'Upload files or create folders to organize your assets'
-                          : 'Start by creating folders or uploading files to manage your digital assets'}
-                      </p>
-                      <div className="mt-4 flex justify-center space-x-3">
-                        <Button variant="outline" onClick={() => {
-                          setEditingFolder(null);
-                          setFolderDialogOpen(true);
-                        }}>
-                          <Folder className="mr-2 h-4 w-4" />
-                          New Folder
-                        </Button>
-                        <Button variant="default" onClick={() => {
-                          setEditingFile(null);
-                          setFileDialogOpen(true);
-                        }}>
-                          <Upload className="mr-2 h-4 w-4" />
-                          Upload File
-                        </Button>
-                      </div>
-                    </div>
-                  )}
                 </div>
               )}
             </>
