@@ -46,7 +46,7 @@ import {
   FileText,
 } from "lucide-react";
 import { QrCustomizer } from "@/components/qr-customizer";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   format,
   addDays,
@@ -161,20 +161,20 @@ function TitleEditDialog({ url }: { url: Url }) {
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button variant="ghost" size="sm" className="text-white/70 hover:text-white hover:bg-white/10">
+        <Button variant="ghost" size="sm">
           <FiEdit2 className="h-4 w-4" />
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px] bg-gray-800/90 backdrop-blur-lg border-white/10 text-white">
+      <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Edit Title</DialogTitle>
-          <DialogDescription className="text-white/70">
+          <DialogDescription>
             Update the title for your shortened URL or generate one using AI.
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
           <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="title" className="col-span-4 text-white/80">
+            <Label htmlFor="title" className="col-span-4">
               Title
             </Label>
             <div className="col-span-4 flex gap-2">
@@ -182,11 +182,11 @@ function TitleEditDialog({ url }: { url: Url }) {
                 id="title"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="flex-1 bg-gray-700/50 border-white/10 text-white placeholder:text-white/30"
+                className="flex-1"
                 placeholder="Enter a descriptive title"
               />
               <Button
-                className="bg-white/5 hover:bg-white/10 border border-white/10 text-white"
+                variant="outline"
                 size="icon"
                 onClick={generateTitle}
                 disabled={isGenerating}
@@ -201,11 +201,10 @@ function TitleEditDialog({ url }: { url: Url }) {
           </div>
         </div>
         <DialogFooter>
-          <Button className="bg-white/5 hover:bg-white/10 border border-white/10 text-white" onClick={() => setIsOpen(false)}>
+          <Button variant="outline" onClick={() => setIsOpen(false)}>
             Cancel
           </Button>
           <Button
-            className="bg-gradient-to-r from-blue-600 to-violet-600 hover:from-blue-700 hover:to-violet-700 text-white"
             onClick={() => updateTitleMutation.mutate({ id: url.id, title })}
             disabled={updateTitleMutation.isPending}
           >
@@ -287,15 +286,15 @@ function ExpiryDialog({ url }: { url: Url }) {
         <Button
           variant="ghost"
           size="sm"
-          className={url.expiresAt ? "text-amber-400" : "text-white/70 hover:text-white hover:bg-white/10"}
+          className={url.expiresAt ? "text-amber-500 dark:text-amber-400" : ""}
         >
           <Clock className="h-4 w-4" />
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px] bg-gray-800/90 backdrop-blur-lg border-white/10 text-white">
+      <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Set Expiry Date</DialogTitle>
-          <DialogDescription className="text-white/70">
+          <DialogDescription>
             Choose when this link should expire. Expired links will no longer
             work.
           </DialogDescription>
@@ -304,45 +303,35 @@ function ExpiryDialog({ url }: { url: Url }) {
         <div className="space-y-4 py-4">
           <div className="flex flex-wrap gap-2">
             <Button
-              className={expiryDays === 1 
-                ? "bg-gradient-to-r from-blue-600 to-violet-600 text-white" 
-                : "bg-white/5 hover:bg-white/10 border border-white/10 text-white"}
+              variant={expiryDays === 1 ? "default" : "outline"}
               size="sm"
               onClick={() => setExpirationPeriod(1)}
             >
               1 Day
             </Button>
             <Button
-              className={expiryDays === 7 
-                ? "bg-gradient-to-r from-blue-600 to-violet-600 text-white" 
-                : "bg-white/5 hover:bg-white/10 border border-white/10 text-white"}
+              variant={expiryDays === 7 ? "default" : "outline"}
               size="sm"
               onClick={() => setExpirationPeriod(7)}
             >
               7 Days
             </Button>
             <Button
-              className={expiryDays === 30 
-                ? "bg-gradient-to-r from-blue-600 to-violet-600 text-white" 
-                : "bg-white/5 hover:bg-white/10 border border-white/10 text-white"}
+              variant={expiryDays === 30 ? "default" : "outline"}
               size="sm"
               onClick={() => setExpirationPeriod(30)}
             >
               30 Days
             </Button>
             <Button
-              className={expiryDays === 90 
-                ? "bg-gradient-to-r from-blue-600 to-violet-600 text-white" 
-                : "bg-white/5 hover:bg-white/10 border border-white/10 text-white"}
+              variant={expiryDays === 90 ? "default" : "outline"}
               size="sm"
               onClick={() => setExpirationPeriod(90)}
             >
               90 Days
             </Button>
             <Button
-              className={expiryDate === null 
-                ? "bg-gradient-to-r from-blue-600 to-violet-600 text-white" 
-                : "bg-white/5 hover:bg-white/10 border border-white/10 text-white"}
+              variant={expiryDate === null ? "default" : "outline"}
               size="sm"
               onClick={removeExpiration}
             >
@@ -351,10 +340,9 @@ function ExpiryDialog({ url }: { url: Url }) {
           </div>
 
           <div className="space-y-1">
-            <Label className="text-white/80">Custom Date</Label>
+            <Label>Custom Date</Label>
             <Input
               type="date"
-              className="bg-gray-700/50 border-white/10 text-white"
               value={expiryDate ? format(expiryDate, "yyyy-MM-dd") : ""}
               min={format(new Date(), "yyyy-MM-dd")}
               onChange={(e) => {
@@ -369,10 +357,10 @@ function ExpiryDialog({ url }: { url: Url }) {
           </div>
 
           {expiryDate && (
-            <div className="rounded-lg bg-white/5 border border-white/10 p-3 text-sm text-white/80">
+            <div className="rounded-md bg-muted p-3 text-sm">
               This link will expire on {format(expiryDate, "MMMM d, yyyy")}
               {isPast(expiryDate) && (
-                <div className="mt-2 flex items-center text-red-400">
+                <div className="mt-2 flex items-center text-destructive">
                   <AlertTriangle className="h-4 w-4 mr-1" />
                   <span>
                     This date is in the past. The link will be immediately
@@ -385,11 +373,10 @@ function ExpiryDialog({ url }: { url: Url }) {
         </div>
 
         <DialogFooter>
-          <Button className="bg-white/5 hover:bg-white/10 border border-white/10 text-white" onClick={() => setIsOpen(false)}>
+          <Button variant="outline" onClick={() => setIsOpen(false)}>
             Cancel
           </Button>
           <Button
-            className="bg-gradient-to-r from-blue-600 to-violet-600 hover:from-blue-700 hover:to-violet-700 text-white"
             onClick={applyExpiration}
             disabled={updateExpiryMutation.isPending}
           >
@@ -515,16 +502,16 @@ function MultiDestinationDialog({ url }: { url: Url }) {
           variant="ghost"
           size="sm"
           className={
-            url.isMultiDestination ? "text-green-400" : "text-white/70 hover:text-white hover:bg-white/10"
+            url.isMultiDestination ? "text-green-500 dark:text-green-400" : ""
           }
         >
           <Tablet className="h-4 w-4" />
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[500px] bg-gray-800/90 backdrop-blur-lg border-white/10 text-white">
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Multi-Platform Destinations</DialogTitle>
-          <DialogDescription className="text-white/70">
+          <DialogDescription>
             Configure your URL to redirect to different destinations based on
             the user's device type.
           </DialogDescription>
@@ -532,7 +519,7 @@ function MultiDestinationDialog({ url }: { url: Url }) {
 
         <div className="space-y-4 py-4">
           <div className="flex items-center justify-between space-x-2">
-            <Label htmlFor="multi-destination" className="flex-1 text-white/80">
+            <Label htmlFor="multi-destination" className="flex-1">
               Enable Multi-Destination
             </Label>
             <Switch
@@ -546,17 +533,14 @@ function MultiDestinationDialog({ url }: { url: Url }) {
             <div className="space-y-4 pt-2">
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
-                  <div className="h-6 w-6 rounded-full bg-blue-500/20 flex items-center justify-center">
-                    <Smartphone className="h-3 w-3 text-blue-400" />
-                  </div>
-                  <Label htmlFor="ios-url" className="font-medium text-white/80">
+                  <Smartphone className="h-4 w-4 text-blue-500" />
+                  <Label htmlFor="ios-url" className="font-medium">
                     iOS Destination
                   </Label>
                 </div>
                 <Input
                   id="ios-url"
                   placeholder="https://example.com/ios"
-                  className="bg-gray-700/50 border-white/10 text-white placeholder:text-white/30"
                   value={destinations.ios || ""}
                   onChange={(e) =>
                     handleDestinationChange("ios", e.target.value)
@@ -566,17 +550,14 @@ function MultiDestinationDialog({ url }: { url: Url }) {
 
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
-                  <div className="h-6 w-6 rounded-full bg-green-500/20 flex items-center justify-center">
-                    <Smartphone className="h-3 w-3 text-green-400" />
-                  </div>
-                  <Label htmlFor="android-url" className="font-medium text-white/80">
+                  <Smartphone className="h-4 w-4 text-green-500" />
+                  <Label htmlFor="android-url" className="font-medium">
                     Android Destination
                   </Label>
                 </div>
                 <Input
                   id="android-url"
                   placeholder="https://example.com/android"
-                  className="bg-gray-700/50 border-white/10 text-white placeholder:text-white/30"
                   value={destinations.android || ""}
                   onChange={(e) =>
                     handleDestinationChange("android", e.target.value)
@@ -586,37 +567,193 @@ function MultiDestinationDialog({ url }: { url: Url }) {
 
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
-                  <div className="h-6 w-6 rounded-full bg-violet-500/20 flex items-center justify-center">
-                    <Monitor className="h-3 w-3 text-violet-400" />
-                  </div>
-                  <Label htmlFor="desktop-url" className="font-medium text-white/80">
+                  <Monitor className="h-4 w-4 text-purple-500" />
+                  <Label htmlFor="desktop-url" className="font-medium">
                     Desktop Destination
                   </Label>
                 </div>
                 <Input
                   id="desktop-url"
                   placeholder="https://example.com/desktop"
-                  className="bg-gray-700/50 border-white/10 text-white placeholder:text-white/30"
                   value={destinations.desktop || ""}
                   onChange={(e) =>
                     handleDestinationChange("desktop", e.target.value)
                   }
                 />
               </div>
+
+              <div className="rounded-md bg-muted p-3 text-sm">
+                <p>
+                  Leave a field empty to use the original URL as fallback for
+                  that platform.
+                </p>
+                <p className="mt-1">
+                  Original URL:{" "}
+                  <span className="font-mono text-xs">{url.originalUrl}</span>
+                </p>
+              </div>
             </div>
           )}
         </div>
 
         <DialogFooter>
-          <Button className="bg-white/5 hover:bg-white/10 border border-white/10 text-white" onClick={() => setIsOpen(false)}>
+          <Button variant="outline" onClick={() => setIsOpen(false)}>
             Cancel
           </Button>
           <Button
-            className="bg-gradient-to-r from-blue-600 to-violet-600 hover:from-blue-700 hover:to-violet-700 text-white"
             onClick={handleSubmit}
             disabled={updateDestinationsMutation.isPending}
           >
             {updateDestinationsMutation.isPending ? (
+              <Loader2 className="h-4 w-4 animate-spin mr-2" />
+            ) : (
+              <FiCheck className="h-4 w-4 mr-2" />
+            )}
+            Save
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// Shortcode Edit Dialog Component
+function ShortcodeEditDialog({ url }: { url: Url }) {
+  const { toast } = useToast();
+  const [isOpen, setIsOpen] = useState(false);
+  const [shortCode, setShortCode] = useState(url.shortCode);
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  const updateShortcodeMutation = useMutation({
+    mutationFn: async ({
+      id,
+      shortCode,
+    }: {
+      id: number;
+      shortCode: string;
+    }) => {
+      return apiRequest(`/api/urls/${id}/shortcode`, {
+        method: 'PATCH',
+        body: JSON.stringify({ shortCode }),
+        headers: { 'Content-Type': 'application/json' }
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/urls"] });
+      setIsOpen(false);
+      toast({
+        title: "Shortcode updated",
+        description: "The URL shortcode has been updated successfully",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Failed to update shortcode",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const generateShortcodes = async () => {
+    try {
+      setIsGenerating(true);
+      const data = await apiRequest("/api/ai/generate-shortcodes", {
+        method: 'POST',
+        body: JSON.stringify({
+          url: url.originalUrl,
+          title: url.title || undefined,
+          count: 5
+        }),
+        headers: { 'Content-Type': 'application/json' }
+      });
+      setSuggestions(data.shortcodes || []);
+    } catch (error) {
+      toast({
+        title: "Failed to generate shortcodes",
+        description:
+          error instanceof Error ? error.message : "An error occurred",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger asChild>
+        <Button variant="ghost" size="sm">
+          <FiEdit3 className="h-4 w-4" />
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>Customize Shortcode</DialogTitle>
+          <DialogDescription>
+            Update the shortcode for your URL or get AI-generated suggestions.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="grid gap-4 py-4">
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="shortcode" className="col-span-4">
+              Custom Shortcode
+            </Label>
+            <div className="col-span-4 flex gap-2">
+              <Input
+                id="shortcode"
+                value={shortCode}
+                onChange={(e) => setShortCode(e.target.value)}
+                className="flex-1"
+                placeholder="Enter a custom shortcode"
+              />
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={generateShortcodes}
+                disabled={isGenerating}
+              >
+                {isGenerating ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <FiRefreshCw className="h-4 w-4" />
+                )}
+              </Button>
+            </div>
+          </div>
+
+          {suggestions.length > 0 && (
+            <div className="space-y-2">
+              <Label>AI Suggestions</Label>
+              <div className="flex flex-wrap gap-2">
+                {suggestions.map((suggestion, index) => (
+                  <Button
+                    key={index}
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShortCode(suggestion)}
+                    className="flex gap-1 items-center"
+                  >
+                    {suggestion}
+                    <FiArrowRight className="h-3 w-3" />
+                  </Button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setIsOpen(false)}>
+            Cancel
+          </Button>
+          <Button
+            onClick={() =>
+              updateShortcodeMutation.mutate({ id: url.id, shortCode })
+            }
+            disabled={updateShortcodeMutation.isPending}
+          >
+            {updateShortcodeMutation.isPending ? (
               <Loader2 className="h-4 w-4 animate-spin mr-2" />
             ) : (
               <FiCheck className="h-4 w-4 mr-2" />
@@ -635,90 +772,47 @@ export default function HomePage() {
   const [page, setPage] = useState(1);
   const ITEMS_PER_PAGE = 5;
   const [showPdfDocumentDialog, setShowPdfDocumentDialog] = useState(false);
-  const [isLoaded, setIsLoaded] = useState(false);
 
-  useEffect(() => {
-    // Add a small delay to ensure smooth animation
-    const timer = setTimeout(() => {
-      setIsLoaded(true);
-    }, 100);
-    return () => clearTimeout(timer);
-  }, []);
-
-  const {
-    data: urlData,
-    isLoading,
-    isError,
-    error,
-  } = useQuery({
-    queryKey: ["/api/urls"],
-    select: (data) => {
-      // Calculate the total number of pages
-      const totalPages = Math.ceil(data.pagination.total / ITEMS_PER_PAGE);
-      
-      // Adjust page if it's out of bounds
-      const validPage = Math.max(1, Math.min(page, totalPages));
-      if (validPage !== page) {
-        setPage(validPage);
-      }
-      
-      return {
-        urls: data.urls,
-        pagination: {
-          ...data.pagination,
-          totalPages,
-        },
-      };
-    },
-  });
-
-  // Add the insertUrlSchema with additional validation
-  const enhancedInsertUrlSchema = insertUrlSchema.extend({
-    originalUrl: insertUrlSchema.shape.originalUrl.refine(
-      (url) => {
-        try {
-          new URL(url);
-          return true;
-        } catch (e) {
-          return false;
-        }
-      },
-      {
-        message: "Please enter a valid URL (including https://)",
-      }
-    ),
-  });
-
-  // Setup the form with react-hook-form
   const form = useForm<InsertUrl>({
-    resolver: zodResolver(enhancedInsertUrlSchema),
+    resolver: zodResolver(insertUrlSchema),
     defaultValues: {
       originalUrl: "",
-      shortCode: "",
+      password: "",
     },
   });
 
-  // Setup the mutation for creating a new URL
+  const { data, isLoading } = useQuery<{
+    urls: Url[];
+    pagination: {
+      total: number;
+      page: number;
+      totalPages: number;
+      hasMore: boolean;
+    };
+  }>({
+    queryKey: ["/api/urls", page, ITEMS_PER_PAGE],
+    queryFn: async () => {
+      const res = await fetch(`/api/urls?page=${page}&limit=${ITEMS_PER_PAGE}`);
+      if (!res.ok) throw new Error("Failed to fetch URLs");
+      return res.json();
+    },
+  });
+
   const createUrlMutation = useMutation({
-    mutationFn: async (values: InsertUrl) => {
+    mutationFn: async (data: InsertUrl) => {
       return apiRequest("/api/urls", {
-        method: "POST",
-        body: JSON.stringify(values),
-        headers: {
-          "Content-Type": "application/json",
-        },
+        method: 'POST',
+        body: JSON.stringify(data),
+        headers: { 'Content-Type': 'application/json' }
       });
     },
     onSuccess: () => {
-      // Show success toast
+      queryClient.invalidateQueries({ queryKey: ["/api/urls"] });
+      form.reset();
       toast({
         title: "URL shortened successfully",
-        description: "Your URL has been shortened and is ready to use!",
+        description: "Your new shortened URL is ready to use",
       });
-      // Reset the form
-      form.reset();
-      // Refetch URLs
-      queryClient.invalidateQueries({ queryKey: ["/api/urls"] });
     },
     onError: (error: Error) => {
       toast({
@@ -729,21 +823,17 @@ export default function HomePage() {
     },
   });
 
-  // Handler for form submission
-  const onSubmit = (values: InsertUrl) => {
-    createUrlMutation.mutate(values);
-  };
-
-  // Delete URL mutation
   const deleteUrlMutation = useMutation({
     mutationFn: async (id: number) => {
-      return apiRequest(`/api/urls/${id}`, { method: "DELETE" });
+      return apiRequest(`/api/urls/${id}`, {
+        method: 'DELETE'
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/urls"] });
       toast({
         title: "URL deleted",
-        description: "The URL has been permanently deleted.",
+        description: "The shortened URL has been deleted",
       });
     },
     onError: (error: Error) => {
@@ -755,388 +845,219 @@ export default function HomePage() {
     },
   });
 
-  // Generate a random shortcode
-  const generateRandomShortcode = () => {
-    const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-    let result = "";
-    for (let i = 0; i < 6; i++) {
-      result += characters.charAt(Math.floor(Math.random() * characters.length));
-    }
-    form.setValue("shortCode", result);
-  };
-
-  // AI shortcode suggestions feature
-  const [showShortcodeSuggestions, setShowShortcodeSuggestions] = useState(false);
-  const [isGeneratingSuggestions, setIsGeneratingSuggestions] = useState(false);
-  const [shortcodeSuggestions, setShortcodeSuggestions] = useState<string[]>([]);
-
-  const generateShortcodeSuggestions = async () => {
-    const url = form.getValues("originalUrl");
-    
-    if (!url) {
-      toast({
-        title: "URL is required",
-        description: "Please enter a URL to generate shortcode suggestions.",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    try {
-      setIsGeneratingSuggestions(true);
-      const data = await apiRequest("/api/ai/generate-shortcodes", { 
-        method: 'POST',
-        body: JSON.stringify({ url }),
+  const updatePasswordMutation = useMutation({
+    mutationFn: async ({ id, password }: { id: number; password?: string }) => {
+      return apiRequest(`/api/urls/${id}/password`, {
+        method: 'PATCH',
+        body: JSON.stringify({ password }),
         headers: { 'Content-Type': 'application/json' }
       });
-      
-      if (data.shortcodes && data.shortcodes.length > 0) {
-        setShortcodeSuggestions(data.shortcodes);
-        setShowShortcodeSuggestions(true);
-      } else {
-        toast({
-          title: "No suggestions available",
-          description: "Unable to generate shortcode suggestions. Try a different URL or enter a custom shortcode.",
-        });
-      }
-    } catch (error) {
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/urls"] });
       toast({
-        title: "Failed to generate suggestions",
-        description: error instanceof Error ? error.message : "An error occurred",
+        title: "Password updated",
+        description: "The URL password protection has been updated",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Failed to update password",
+        description: error.message,
         variant: "destructive",
       });
-    } finally {
-      setIsGeneratingSuggestions(false);
-    }
+    },
+  });
+
+  const copyToClipboard = async (text: string) => {
+    await navigator.clipboard.writeText(text);
+    toast({
+      title: "Copied to clipboard",
+      description: "The URL has been copied to your clipboard",
+    });
   };
 
-  const selectShortcodeSuggestion = (shortcode: string) => {
-    form.setValue("shortCode", shortcode);
-    setShowShortcodeSuggestions(false);
-  };
+  const urls = data?.urls || [];
+  const { total = 0, totalPages = 1 } = data?.pagination || {};
 
-  const handleCreatePdfDocument = () => {
-    setShowPdfDocumentDialog(true);
-  };
-
-  // Calculate pagination information
-  const startItem = (page - 1) * ITEMS_PER_PAGE + 1;
-  const endItem = Math.min(
-    page * ITEMS_PER_PAGE,
-    urlData?.pagination?.total || 0
-  );
-  const totalItems = urlData?.pagination?.total || 0;
-  const totalPages = urlData?.pagination?.totalPages || 1;
-
-  // Go to next page
-  const nextPage = () => {
-    if (page < totalPages) {
-      setPage(page + 1);
-    }
-  };
-
-  // Go to previous page
-  const prevPage = () => {
-    if (page > 1) {
-      setPage(page - 1);
-    }
-  };
-
-  // Copy URL to clipboard
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text).then(
-      () => {
-        toast({
-          title: "URL copied",
-          description: "The URL has been copied to your clipboard.",
-        });
-      },
-      (err) => {
-        toast({
-          title: "Failed to copy",
-          description: "Could not copy the URL to your clipboard.",
-          variant: "destructive",
-        });
-      }
-    );
-  };
-
-  if (isError) {
+  if (isLoading) {
     return (
-      <div className="relative z-10 transition-opacity duration-1000">
-        <div className="bg-red-900/20 border border-red-800/60 rounded-xl p-6 mb-8 text-red-400 backdrop-blur-md shadow-lg">
-          <h2 className="text-xl font-semibold mb-2">Error Loading URLs</h2>
-          <p>{error instanceof Error ? error.message : "An error occurred"}</p>
-        </div>
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
 
   return (
-    <div className={`relative z-10 transition-opacity duration-1000 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}>
-      <div className="mb-10 grid grid-cols-1 md:grid-cols-3 gap-8">
-        <Card className="md:col-span-2 bg-gradient-to-br from-gray-900/60 to-gray-900/40 border border-white/10 shadow-xl backdrop-blur-md rounded-xl overflow-hidden">
-          {/* Subtle glow effects */}
-          <div className="absolute -top-20 -left-20 w-60 h-60 bg-blue-500/10 rounded-full blur-3xl"></div>
-          <div className="absolute -bottom-20 -right-20 w-60 h-60 bg-violet-500/10 rounded-full blur-3xl"></div>
-          
-          <CardHeader className="relative z-10">
-            <CardTitle className="text-2xl bg-gradient-to-r from-blue-500 to-violet-500 bg-clip-text text-transparent">Create New URL</CardTitle>
-            <CardDescription className="text-white/70">
-              Shorten a long URL or create a custom URL for easy sharing.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="relative z-10">
-            <Form {...form}>
-              <form
-                onSubmit={form.handleSubmit(onSubmit)}
-                className="space-y-6"
-              >
-                <FormField
-                  control={form.control}
-                  name="originalUrl"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-white/80">Original URL</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="https://example.com/very/long/url/that/needs/shortening"
-                          className="bg-gray-800/50 border-white/10 text-white placeholder:text-white/30 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage className="text-red-400" />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="shortCode"
-                  render={({ field }) => (
-                    <FormItem>
-                      <div className="flex items-center justify-between">
-                        <FormLabel className="text-white/80">Custom Short Code (Optional)</FormLabel>
-                        <div className="flex gap-2">
-                          <Button
-                            type="button"
-                            onClick={generateRandomShortcode}
-                            className="h-9 bg-white/5 hover:bg-white/10 border border-white/10 text-white rounded-lg"
-                            size="sm"
-                          >
-                            Random
-                          </Button>
-                          <Popover
-                            open={showShortcodeSuggestions}
-                            onOpenChange={setShowShortcodeSuggestions}
-                          >
-                            <PopoverTrigger asChild>
-                              <Button
-                                type="button"
-                                onClick={generateShortcodeSuggestions}
-                                className="h-9 bg-white/5 hover:bg-white/10 border border-white/10 text-white rounded-lg flex items-center"
-                                size="sm"
-                                disabled={isGeneratingSuggestions}
-                              >
-                                {isGeneratingSuggestions ? (
-                                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                                ) : (
-                                  <FiRefreshCw className="h-4 w-4 mr-2" />
-                                )}
-                                AI Suggestions
-                              </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-80 bg-gray-800/90 backdrop-blur-lg border-white/10 text-white">
-                              <div className="space-y-4">
-                                <h3 className="font-medium">Suggested Shortcodes</h3>
-                                <div className="flex flex-wrap gap-2">
-                                  {shortcodeSuggestions.map((code) => (
-                                    <Badge
-                                      key={code}
-                                      className="cursor-pointer hover:bg-blue-500/30 bg-white/5 text-white border-white/10"
-                                      onClick={() => selectShortcodeSuggestion(code)}
-                                    >
-                                      {code}
-                                    </Badge>
-                                  ))}
-                                </div>
-                              </div>
-                            </PopoverContent>
-                          </Popover>
-                        </div>
-                      </div>
-                      <FormControl>
-                        <div className="flex rounded-lg overflow-hidden shadow-sm">
-                          <span className="inline-flex items-center px-3 rounded-l-lg border border-r-0 border-white/10 bg-gray-800/70 text-white/50 text-sm">
-                            {domain}/
-                          </span>
-                          <Input
-                            className="rounded-l-none bg-gray-800/50 border-white/10 text-white placeholder:text-white/30 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                            placeholder="custom-code"
-                            {...field}
-                          />
-                        </div>
-                      </FormControl>
-                      <FormMessage className="text-red-400" />
-                    </FormItem>
-                  )}
-                />
-                <div className="flex justify-end gap-2 pt-2">
-                  <Button
-                    type="button"
-                    className="h-10 bg-white/5 hover:bg-white/10 border border-white/10 text-white rounded-lg"
-                    onClick={handleCreatePdfDocument}
+    <div className="p-8">
+      <div className="max-w-6xl mx-auto">
+        <div className="grid gap-8 grid-cols-1 lg:grid-cols-[400px,1fr]">
+          <div className="space-y-8">
+            <Card className="overflow-hidden border-0 shadow-lg">
+              <div className="bg-gradient-to-r from-primary/90 to-indigo-500/90 p-6 text-white">
+                <h2 className="text-2xl font-bold">Shorten a URL</h2>
+                <p className="text-white/80 mt-1">
+                  Create shortened links with powerful features
+                </p>
+              </div>
+              <CardContent className="p-6 pt-6">
+                <Form {...form}>
+                  <form
+                    onSubmit={form.handleSubmit((data) => {
+                      const formData = {
+                        ...data,
+                        password: data.password || undefined,
+                      };
+                      createUrlMutation.mutate(formData);
+                    })}
+                    className="space-y-4"
                   >
-                    <FileText className="h-4 w-4 mr-2" />
+                    <FormField
+                      control={form.control}
+                      name="originalUrl"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>URL to shorten</FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder="https://example.com"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="password"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Password Protection (Optional)</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="password"
+                              placeholder="Leave empty for no password"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <Button
+                      type="submit"
+                      className="w-full"
+                      disabled={createUrlMutation.isPending}
+                    >
+                      {createUrlMutation.isPending ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <>
+                          <LinkIcon className="h-4 w-4 mr-2" />
+                          Shorten URL
+                        </>
+                      )}
+                    </Button>
+                  </form>
+                </Form>
+                <div className="mt-4 pt-4 border-t">
+                  <Button
+                    variant="outline"
+                    className="w-full flex items-center gap-2"
+                    onClick={() => setShowPdfDocumentDialog(true)}
+                  >
+                    <FiFile className="h-4 w-4" />
                     Create PDF Document URL
                   </Button>
-                  <Button
-                    type="submit"
-                    disabled={createUrlMutation.isPending}
-                    className="min-w-[120px] h-10 bg-gradient-to-r from-blue-600 to-violet-600 hover:from-blue-700 hover:to-violet-700 text-white rounded-lg transition-all duration-300 ease-in-out transform hover:scale-[1.02]"
-                  >
-                    {createUrlMutation.isPending ? (
-                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                    ) : (
-                      <FiArrowRight className="h-4 w-4 mr-2" />
-                    )}
-                    Create URL
-                  </Button>
                 </div>
-              </form>
-            </Form>
-          </CardContent>
-        </Card>
+              </CardContent>
+            </Card>
 
-        <Card className="bg-gradient-to-br from-gray-900/60 to-gray-900/40 border border-white/10 shadow-xl backdrop-blur-md rounded-xl overflow-hidden">
-          {/* Subtle glow effects */}
-          <div className="absolute -top-20 -left-20 w-40 h-40 bg-violet-500/10 rounded-full blur-3xl"></div>
-          
-          <CardHeader className="relative z-10">
-            <CardTitle className="text-2xl bg-gradient-to-r from-blue-500 to-violet-500 bg-clip-text text-transparent">URL Management</CardTitle>
-            <CardDescription className="text-white/70">
-              Manage your shortened URLs and track their performance.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4 relative z-10">
-            <div className="bg-white/5 p-6 rounded-xl border border-white/10">
-              <h3 className="font-medium mb-4 text-white">Features</h3>
-              <ul className="space-y-3">
-                <li className="flex items-center gap-3 text-sm text-white/80">
-                  <div className="h-8 w-8 rounded-full bg-blue-500/20 flex items-center justify-center">
-                    <FiBarChart2 className="h-4 w-4 text-blue-400" />
-                  </div>
-                  Track URL analytics and clicks
-                </li>
-                <li className="flex items-center gap-3 text-sm text-white/80">
-                  <div className="h-8 w-8 rounded-full bg-violet-500/20 flex items-center justify-center">
-                    <FiEdit3 className="h-4 w-4 text-violet-400" />
-                  </div>
-                  Customize QR codes with logos
-                </li>
-                <li className="flex items-center gap-3 text-sm text-white/80">
-                  <div className="h-8 w-8 rounded-full bg-green-500/20 flex items-center justify-center">
-                    <FiClock className="h-4 w-4 text-green-400" />
-                  </div>
-                  Set URL expiration dates
-                </li>
-                <li className="flex items-center gap-3 text-sm text-white/80">
-                  <div className="h-8 w-8 rounded-full bg-yellow-500/20 flex items-center justify-center">
-                    <FiFile className="h-4 w-4 text-yellow-400" />
-                  </div>
-                  Create PDF document URLs
-                </li>
-                <li className="flex items-center gap-3 text-sm text-white/80">
-                  <div className="h-8 w-8 rounded-full bg-pink-500/20 flex items-center justify-center">
-                    <FiSmartphone className="h-4 w-4 text-pink-400" />
-                  </div>
-                  Set platform-specific destinations
-                </li>
-              </ul>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+            <PDFDocumentDialog
+              open={showPdfDocumentDialog}
+              onOpenChange={setShowPdfDocumentDialog}
+              onUrlCreated={() => {
+                queryClient.invalidateQueries({ queryKey: ["/api/urls"] });
+              }}
+            />
 
-      <div className="mb-10">
-        <h2 className="text-2xl font-bold mb-6 text-white bg-gradient-to-r from-blue-500 to-violet-500 bg-clip-text text-transparent">Your URLs</h2>
-        {isLoading ? (
-          <div className="flex justify-center p-8">
-            <div className="inline-flex items-center px-4 py-2 bg-white/5 border border-white/10 rounded-lg backdrop-blur-sm">
-              <Loader2 className="h-5 w-5 animate-spin text-blue-400 mr-2" />
-              <span className="text-white/80">Loading your URLs...</span>
-            </div>
-          </div>
-        ) : urlData?.urls && urlData.urls.length > 0 ? (
-          <>
-            <div className="space-y-6">
-              {urlData.urls.map((url) => (
-                <Card key={url.id} className="overflow-hidden bg-gradient-to-br from-gray-900/60 to-gray-900/40 border border-white/10 shadow-xl backdrop-blur-md rounded-xl">
-                  <CardContent className="p-0">
-                    <div className="p-6 flex flex-col md:flex-row gap-6">
-                      {/* Left column - URL Info */}
-                      <div className="md:flex-1 min-w-0">
-                        <div className="flex items-start justify-between mb-4">
-                          <div>
-                            <h3 className="font-semibold text-xl flex items-center gap-2 text-white">
-                              {url.title || truncateUrl(url.originalUrl)}
-                              <TitleEditDialog url={url} />
-                            </h3>
-                            <div className="flex items-center gap-2 text-sm text-white/60 mb-2 flex-wrap">
-                              <SecurityBadge url={url} />
-                              <span>
-                                Created {format(new Date(url.createdAt), "MMM d, yyyy")}
-                              </span>
-                              {url.clicks > 0 && <span>•</span>}
-                              {url.clicks > 0 && (
-                                <span className="font-medium text-blue-400">
-                                  {url.clicks} {url.clicks === 1 ? "click" : "clicks"}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                          <div className="flex">
-                            <ExpiryDialog url={url} />
-                            <MultiDestinationDialog url={url} />
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <Button variant="ghost" size="sm" className="text-red-400 hover:text-red-300 hover:bg-red-500/10">
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent className="bg-gray-800/90 backdrop-blur-lg border-white/10 text-white">
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>Delete URL</AlertDialogTitle>
-                                  <AlertDialogDescription className="text-white/70">
-                                    Are you sure you want to delete this URL? This action
-                                    cannot be undone and anyone with this link will no
-                                    longer be able to access it.
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel className="bg-white/5 hover:bg-white/10 border border-white/10 text-white">Cancel</AlertDialogCancel>
-                                  <AlertDialogAction
-                                    onClick={() => deleteUrlMutation.mutate(url.id)}
-                                    className="bg-red-600/80 hover:bg-red-700 text-white"
-                                  >
-                                    Delete
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
-                          </div>
+            <Card className="overflow-hidden border-0 shadow-md">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg font-medium">
+                  Quick Stats
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-gradient-to-br from-primary/10 to-indigo-500/10 rounded-lg p-5 transition-all hover:shadow-md">
+                    <div className="flex items-center gap-3">
+                      <div className="bg-primary/20 text-primary rounded-full p-2">
+                        <LinkIcon className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <div className="text-sm font-medium text-muted-foreground">
+                          Total URLs
                         </div>
+                        <div className="text-2xl font-bold mt-1">{total}</div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="bg-gradient-to-br from-indigo-500/10 to-primary/10 rounded-lg p-5 transition-all hover:shadow-md">
+                    <div className="flex items-center gap-3">
+                      <div className="bg-indigo-500/20 text-indigo-500 rounded-full p-2">
+                        <FiBarChart2 className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <div className="text-sm font-medium text-muted-foreground">
+                          Total Clicks
+                        </div>
+                        <div className="text-2xl font-bold mt-1">
+                          {urls.reduce((sum, url) => sum + url.clicks, 0)}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
 
-                        <div className="space-y-3">
-                          <div className="flex gap-2 items-center">
-                            <span className="text-sm font-medium text-white/80">Short URL:</span>
-                            <div className="flex flex-1 items-center gap-1 min-w-0">
-                              <code className="px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-sm font-mono overflow-x-auto whitespace-nowrap flex-1 text-blue-300">
-                                {domain}/{url.shortCode}
-                              </code>
+          <Card className="overflow-hidden border-0 shadow-lg">
+            <div className="bg-gradient-to-r from-indigo-500/90 to-primary/90 p-6 text-white">
+              <h2 className="text-2xl font-bold">Your Shortened URLs</h2>
+              <p className="text-white/80 mt-1">
+                Manage and track all your links in one place
+              </p>
+            </div>
+            <CardContent className="p-6">
+              <div className="space-y-6">
+                {urls.map((url) => {
+                  const qrConfig = url.qrConfig as QrConfig;
+                  const securityLevel = getUrlSecurityLevel(url);
+                  const securityColors = getSecurityColorClasses(securityLevel);
+
+                  return (
+                    <div
+                      key={url.id}
+                      className={cn(
+                        "p-5 rounded-lg border shadow-sm transition-all hover:shadow-md",
+                        securityColors.border,
+                      )}
+                    >
+                      <div className="flex flex-col gap-4">
+                        <div className="space-y-2 w-full">
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex flex-wrap items-center gap-2 flex-grow">
+                              <span className="font-medium break-all">
+                                {`${domain}/${url.shortCode}`}
+                              </span>
+                              <SecurityBadge level={securityLevel} />
+                            </div>
+                            <div className="flex items-center gap-1 shrink-0">
                               <Button
                                 variant="ghost"
-                                size="sm"
-                                className="text-white/70 hover:text-white hover:bg-white/10"
+                                size="icon"
                                 onClick={() =>
                                   copyToClipboard(`${domain}/${url.shortCode}`)
                                 }
@@ -1148,282 +1069,384 @@ export default function HomePage() {
                                 target="_blank"
                                 rel="noopener noreferrer"
                               >
-                                <Button variant="ghost" size="sm" className="text-white/70 hover:text-white hover:bg-white/10">
+                                <Button variant="ghost" size="icon">
                                   <ExternalLink className="h-4 w-4" />
                                 </Button>
                               </a>
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button variant="ghost" size="icon">
+                                    <Trash2 className="h-4 w-4 text-destructive" />
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>
+                                      Delete URL
+                                    </AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      Are you sure you want to delete this
+                                      shortened URL? This action cannot be
+                                      undone.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>
+                                      Cancel
+                                    </AlertDialogCancel>
+                                    <AlertDialogAction
+                                      onClick={() =>
+                                        deleteUrlMutation.mutate(url.id)
+                                      }
+                                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                    >
+                                      Delete
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
                             </div>
                           </div>
-                          <div className="flex gap-2 items-center">
-                            <span className="text-sm font-medium text-white/80">Original URL:</span>
-                            <div className="flex flex-1 items-center gap-1 min-w-0">
-                              <code className="px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-sm font-mono overflow-x-auto whitespace-nowrap flex-1 text-white/80">
-                                {truncateUrl(url.originalUrl)}
-                              </code>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="text-white/70 hover:text-white hover:bg-white/10"
-                                onClick={() => copyToClipboard(url.originalUrl)}
-                              >
-                                <Copy className="h-4 w-4" />
-                              </Button>
-                              <a
-                                href={url.originalUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                              >
-                                <Button variant="ghost" size="sm" className="text-white/70 hover:text-white hover:bg-white/10">
-                                  <ExternalLink className="h-4 w-4" />
-                                </Button>
-                              </a>
-                            </div>
-                          </div>
-                          
-                          {/* Show platform-specific URLs if multi-destination is enabled */}
-                          {url.isMultiDestination && url.destinations && (
-                            <div className="mt-5 space-y-3 text-sm border-t border-white/10 pt-4">
-                              <h4 className="font-medium mb-2 text-white/90">Platform-specific destinations:</h4>
-                              {
-                                (() => {
-                                  // Parse destinations
-                                  const destinations = typeof url.destinations === 'string'
-                                    ? JSON.parse(url.destinations) as Destinations
-                                    : url.destinations as Destinations;
-                              
-                                  return (
-                                    <div className="space-y-2 bg-white/5 p-3 rounded-lg border border-white/10">
-                                      {destinations.ios && (
-                                        <div className="flex items-center gap-2 text-white/80">
-                                          <div className="h-6 w-6 rounded-full bg-blue-500/20 flex items-center justify-center">
-                                            <Smartphone className="h-3 w-3 text-blue-400" />
-                                          </div>
-                                          <span className="font-medium">iOS:</span>
-                                          <span className="truncate flex-1">{destinations.ios}</span>
-                                        </div>
-                                      )}
-                                      {destinations.android && (
-                                        <div className="flex items-center gap-2 text-white/80">
-                                          <div className="h-6 w-6 rounded-full bg-green-500/20 flex items-center justify-center">
-                                            <Smartphone className="h-3 w-3 text-green-400" />
-                                          </div>
-                                          <span className="font-medium">Android:</span>
-                                          <span className="truncate flex-1">{destinations.android}</span>
-                                        </div>
-                                      )}
-                                      {destinations.desktop && (
-                                        <div className="flex items-center gap-2 text-white/80">
-                                          <div className="h-6 w-6 rounded-full bg-violet-500/20 flex items-center justify-center">
-                                            <Monitor className="h-3 w-3 text-violet-400" />
-                                          </div>
-                                          <span className="font-medium">Desktop:</span>
-                                          <span className="truncate flex-1">{destinations.desktop}</span>
-                                        </div>
-                                      )}
-                                    </div>
-                                  );
-                                })()
-                              }
-                            </div>
-                          )}
-                          
-                          {/* Expiry warning */}
-                          {url.expiresAt && (
-                            <div className={`mt-3 flex items-center gap-2 text-sm rounded-lg p-3 border ${
-                              isPast(new Date(url.expiresAt))
-                                ? "bg-red-500/10 border-red-500/30 text-red-400"
-                                : isAfter(
-                                    new Date(url.expiresAt),
-                                    addDays(new Date(), 7)
-                                  )
-                                ? "bg-white/5 border-white/10 text-white/70"
-                                : "bg-amber-500/10 border-amber-500/30 text-amber-400"
-                            }`}>
-                              {isPast(new Date(url.expiresAt)) ? (
-                                <>
-                                  <div className="h-6 w-6 rounded-full bg-red-500/20 flex items-center justify-center">
-                                    <AlertTriangle className="h-3 w-3 text-red-400" />
-                                  </div>
-                                  <span>
-                                    This URL expired{" "}
-                                    {formatDistanceToNow(new Date(url.expiresAt), {
-                                      addSuffix: true,
-                                    })}
-                                  </span>
-                                </>
-                              ) : (
-                                <>
-                                  <div className="h-6 w-6 rounded-full bg-blue-500/20 flex items-center justify-center">
-                                    <Calendar className="h-3 w-3 text-blue-400" />
-                                  </div>
-                                  <span>
-                                    Expires{" "}
-                                    {format(new Date(url.expiresAt), "MMM d, yyyy")} (
-                                    {formatDistanceToNow(new Date(url.expiresAt), {
-                                      addSuffix: true,
-                                    })}
-                                    )
-                                  </span>
-                                </>
+                          <div className="flex flex-col sm:flex-row sm:items-center gap-2 text-sm text-muted-foreground flex-wrap">
+                            <span>
+                              Created:{" "}
+                              {format(
+                                new Date(url.createdAt),
+                                "MMM d, yyyy HH:mm",
                               )}
-                            </div>
-                          )}
-                          
-                          {/* PDF indicator */}
-                          {url.isPdfDocument && url.pdfDocumentUrl && (
-                            <div className="mt-3 flex items-center gap-2 text-sm bg-blue-500/10 border border-blue-500/30 text-blue-400 rounded-lg p-3">
-                              <div className="h-6 w-6 rounded-full bg-blue-500/20 flex items-center justify-center">
-                                <FileText className="h-3 w-3 text-blue-400" />
-                              </div>
-                              <span>PDF Document URL</span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
+                            </span>
+                            <span className="hidden sm:inline">•</span>
+                            <span>Clicks: {url.clicks}</span>
+                            {url.expiresAt && (
+                              <>
+                                <span className="hidden sm:inline">•</span>
+                                <span className="flex items-center gap-1">
+                                  <FiClock className="h-3 w-3" />
+                                  {isPast(new Date(url.expiresAt)) ? (
+                                    <Badge
+                                      variant="destructive"
+                                      className="text-xs py-0 h-5"
+                                    >
+                                      Expired
+                                    </Badge>
+                                  ) : (
+                                    <span>
+                                      Expires:{" "}
+                                      {formatDistanceToNow(
+                                        new Date(url.expiresAt),
+                                        { addSuffix: true },
+                                      )}
+                                    </span>
+                                  )}
+                                </span>
+                              </>
+                            )}
+                          </div>
 
-                      {/* Right column - QR Code */}
-                      <div className="flex flex-col items-center justify-center min-w-[180px]">
-                        <div className="bg-white rounded-lg p-3 mb-3 shadow-lg transform transition-transform hover:scale-105">
-                          {url.qrConfig ? (
-                            <QRCodeSVG
-                              value={`${domain}/${url.shortCode}`}
-                              size={120}
-                              level="H"
-                              includeMargin={false}
-                              {...(typeof url.qrConfig === "string"
-                                ? JSON.parse(url.qrConfig)
-                                : url.qrConfig)}
-                            />
-                          ) : (
-                            <QRCodeSVG
-                              value={`${domain}/${url.shortCode}`}
-                              size={120}
-                              level="H"
-                              includeMargin={false}
-                            />
+                          {/* Title display with edit option */}
+                          <div className="flex items-center justify-between">
+                            <p className="text-sm font-medium">
+                              {url.title ? (
+                                <span>{url.title}</span>
+                              ) : (
+                                <span className="text-muted-foreground italic">
+                                  No title
+                                </span>
+                              )}
+                            </p>
+                            <TitleEditDialog url={url} />
+                          </div>
+
+                          {!url.isPdfDocument && (
+                            <p className="text-sm text-muted-foreground break-all">
+                              Original: {url.originalUrl}
+                            </p>
+                          )}
+                          {url.isPdfDocument && (
+                            <p className="text-sm text-muted-foreground flex items-center gap-1">
+                              <FileText className="h-3.5 w-3.5" />
+                              <span>PDF Document</span>
+                            </p>
+                          )}
+
+                          {/* Custom Shortcode Edit */}
+                          <div className="flex items-center justify-between">
+                            <p className="text-sm text-muted-foreground">
+                              <span className="font-medium">Short Code:</span>{" "}
+                              {url.shortCode}
+                            </p>
+                            <ShortcodeEditDialog url={url} />
+                          </div>
+
+                          {/* Multi-destination indicator */}
+                          {url.isMultiDestination && (
+                            <div className="mt-2 flex items-center gap-2">
+                              <Badge
+                                variant="outline"
+                                className="bg-green-50 text-green-700 border-green-200 dark:bg-green-950 dark:text-green-300 dark:border-green-800"
+                              >
+                                <Tablet className="h-3 w-3 mr-1" />
+                                Multi-Device URL
+                              </Badge>
+                            </div>
                           )}
                         </div>
-                        <div className="flex gap-2">
-                          <QrCustomizer url={url} domain={domain} />
-                          <Button
-                            className="bg-white/5 hover:bg-white/10 border border-white/10 text-white rounded-lg"
-                            size="sm"
-                            onClick={() => {
-                              // Create a function to download the QR code
-                              const svgElement = document.getElementById(
-                                `qr-${url.id}`
-                              );
-                              if (svgElement) {
-                                const svgData = new XMLSerializer().serializeToString(
-                                  svgElement
-                                );
+                        <div className="flex items-center gap-2 justify-end">
+                          <div className="flex items-center gap-2">
+                            <QRCodeSVG
+                              id={`qr-${url.id}`}
+                              value={`${domain}/${url.shortCode}`}
+                              size={100}
+                              level="H"
+                              fgColor={qrConfig.fgColor}
+                              bgColor={qrConfig.bgColor}
+                              includeMargin={qrConfig.includeMargin}
+                              imageSettings={
+                                qrConfig.logoUrl
+                                  ? {
+                                      src: qrConfig.logoUrl,
+                                      height: 24,
+                                      width: 24,
+                                      excavate: true,
+                                    }
+                                  : undefined
+                              }
+                            />
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => {
                                 const canvas = document.createElement("canvas");
-                                const ctx = canvas.getContext("2d");
-                                const img = new Image();
-                                img.onload = () => {
-                                  canvas.width = img.width;
-                                  canvas.height = img.height;
-                                  ctx!.drawImage(img, 0, 0);
-                                  const pngFile = canvas.toDataURL("image/png");
-                                  const downloadLink = document.createElement("a");
-                                  downloadLink.download = `qr-${url.shortCode}.png`;
-                                  downloadLink.href = pngFile;
-                                  downloadLink.click();
-                                };
-                                img.src = `data:image/svg+xml;base64,${btoa(svgData)}`;
-                              } else {
+                                const svgElement = document.getElementById(
+                                  `qr-${url.id}`,
+                                );
+                                if (svgElement) {
+                                  const svgData =
+                                    new XMLSerializer().serializeToString(
+                                      svgElement,
+                                    );
+                                  const img = new Image();
+                                  img.onload = () => {
+                                    canvas.width = img.width;
+                                    canvas.height = img.height;
+                                    const ctx = canvas.getContext("2d");
+                                    if (ctx) {
+                                      ctx.fillStyle = qrConfig.bgColor;
+                                      ctx.fillRect(
+                                        0,
+                                        0,
+                                        canvas.width,
+                                        canvas.height,
+                                      );
+                                      ctx.drawImage(img, 0, 0);
+                                      const pngFile =
+                                        canvas.toDataURL("image/png");
+                                      const downloadLink =
+                                        document.createElement("a");
+                                      downloadLink.download = `qr-${url.shortCode}.png`;
+                                      downloadLink.href = pngFile;
+                                      downloadLink.click();
+                                    }
+                                  };
+                                  img.src = `data:image/svg+xml;base64,${btoa(svgData)}`;
+                                }
+                              }}
+                            >
+                              <Download className="h-4 w-4" />
+                            </Button>
+                          </div>
+                          <QrCustomizer
+                            url={`${domain}/${url.shortCode}`}
+                            config={qrConfig}
+                            onSave={async (newConfig) => {
+                              try {
+                                await apiRequest(`/api/urls/${url.id}/qr-config`, {
+                                  method: 'PATCH',
+                                  body: JSON.stringify({ qrConfig: newConfig }),
+                                  headers: { 'Content-Type': 'application/json' }
+                                });
+
+                                queryClient.setQueryData<{ urls: Url[] }>(
+                                  ["/api/urls", page, ITEMS_PER_PAGE],
+                                  (oldData) => {
+                                    if (!oldData) return oldData;
+                                    return {
+                                      ...oldData,
+                                      urls: oldData.urls.map((oldUrl) =>
+                                        oldUrl.id === url.id
+                                          ? { ...oldUrl, qrConfig: newConfig }
+                                          : oldUrl,
+                                      ),
+                                    };
+                                  },
+                                );
+
                                 toast({
-                                  title: "QR code not found",
+                                  title: "QR code updated",
                                   description:
-                                    "Could not find the QR code to download.",
+                                    "Your QR code customization has been saved",
+                                });
+                              } catch (error) {
+                                toast({
+                                  title: "Failed to update QR code",
+                                  description:
+                                    error instanceof Error
+                                      ? error.message
+                                      : "An error occurred",
                                   variant: "destructive",
                                 });
                               }
                             }}
-                          >
-                            <Download className="h-4 w-4" />
-                          </Button>
-                        </div>
-                        {/* Hidden QR code used for downloading */}
-                        <div className="hidden">
-                          <QRCodeSVG
-                            id={`qr-${url.id}`}
-                            value={`${domain}/${url.shortCode}`}
-                            size={1024}
-                            level="H"
-                            includeMargin
-                            {...(url.qrConfig
-                              ? typeof url.qrConfig === "string"
-                                ? JSON.parse(url.qrConfig)
-                                : url.qrConfig
-                              : {})}
                           />
+                          {/* Multi Destination Button */}
+                          <MultiDestinationDialog url={url} />
+
+                          {/* Expiry Date Button */}
+                          <ExpiryDialog url={url} />
+
+                          {/* Password Protection Button */}
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button variant="ghost" size="icon">
+                                {url.isPasswordProtected ? (
+                                  <FiLock className="h-4 w-4" />
+                                ) : (
+                                  <FiUnlock className="h-4 w-4" />
+                                )}
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-80">
+                              <div className="space-y-4">
+                                <div className="font-medium">
+                                  Password Protection
+                                </div>
+                                {url.isPasswordProtected ? (
+                                  <>
+                                    <Input
+                                      type="password"
+                                      placeholder="Enter new password"
+                                      className="mb-2"
+                                      onChange={(e) => {
+                                        (
+                                          e.target as HTMLInputElement
+                                        ).dataset.newPassword = e.target.value;
+                                      }}
+                                    />
+                                    <div className="flex justify-between gap-2">
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="flex-1"
+                                        onClick={() => {
+                                          updatePasswordMutation.mutate({
+                                            id: url.id,
+                                            password: undefined,
+                                          });
+                                        }}
+                                      >
+                                        Remove Password
+                                      </Button>
+                                      <Button
+                                        variant="default"
+                                        size="sm"
+                                        className="flex-1"
+                                        onClick={(e) => {
+                                          const input =
+                                            e.currentTarget.parentElement?.parentElement?.querySelector(
+                                              "input",
+                                            );
+                                          const newPassword =
+                                            input?.dataset.newPassword;
+                                          if (newPassword) {
+                                            updatePasswordMutation.mutate({
+                                              id: url.id,
+                                              password: newPassword,
+                                            });
+                                          }
+                                        }}
+                                      >
+                                        Update Password
+                                      </Button>
+                                    </div>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Input
+                                      type="password"
+                                      placeholder="Enter password"
+                                      className="mb-2"
+                                      onChange={(e) => {
+                                        (
+                                          e.target as HTMLInputElement
+                                        ).dataset.newPassword = e.target.value;
+                                      }}
+                                    />
+                                    <Button
+                                      className="w-full"
+                                      onClick={(e) => {
+                                        const input =
+                                          e.currentTarget.parentElement?.querySelector(
+                                            "input",
+                                          );
+                                        const newPassword =
+                                          input?.dataset.newPassword;
+                                        if (newPassword) {
+                                          updatePasswordMutation.mutate({
+                                            id: url.id,
+                                            password: newPassword,
+                                          });
+                                        }
+                                      }}
+                                    >
+                                      Add Password Protection
+                                    </Button>
+                                  </>
+                                )}
+                              </div>
+                            </PopoverContent>
+                          </Popover>
                         </div>
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+                  );
+                })}
 
-            {/* Pagination controls */}
-            {totalPages > 1 && (
-              <div className="flex items-center justify-between mt-8">
-                <div className="text-sm text-white/50">
-                  Showing {startItem}-{endItem} of {totalItems} URLs
-                </div>
-                <div className="flex gap-3 items-center">
-                  <Button
-                    className="h-9 bg-white/5 hover:bg-white/10 border border-white/10 text-white rounded-lg"
-                    size="sm"
-                    onClick={prevPage}
-                    disabled={page === 1}
-                  >
-                    <ChevronLeft className="h-4 w-4 mr-1" />
-                    Previous
-                  </Button>
-                  <span className="text-sm text-white/70">
-                    Page {page} of {totalPages}
-                  </span>
-                  <Button
-                    className="h-9 bg-white/5 hover:bg-white/10 border border-white/10 text-white rounded-lg"
-                    size="sm"
-                    onClick={nextPage}
-                    disabled={page === totalPages}
-                  >
-                    Next
-                    <ChevronRight className="h-4 w-4 ml-1" />
-                  </Button>
-                </div>
+                {urls.length === 0 && (
+                  <div className="text-center py-8 text-muted-foreground">
+                    No shortened URLs yet. Create your first one above!
+                  </div>
+                )}
+
+                {totalPages > 1 && (
+                  <div className="flex items-center justify-center gap-2 mt-4">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => setPage((p) => Math.max(1, p - 1))}
+                      disabled={page === 1}
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                    <span className="text-sm text-muted-foreground">
+                      Page {page} of {totalPages}
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() =>
+                        setPage((p) => Math.min(totalPages, p + 1))
+                      }
+                      disabled={page === totalPages}
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                )}
               </div>
-            )}
-          </>
-        ) : (
-          <Card className="bg-gradient-to-br from-gray-900/60 to-gray-900/40 border border-white/10 shadow-xl backdrop-blur-md rounded-xl overflow-hidden">
-            {/* Subtle glow effects */}
-            <div className="absolute -top-20 -right-20 w-60 h-60 bg-blue-500/5 rounded-full blur-3xl"></div>
-            
-            <CardContent className="flex flex-col items-center justify-center p-10 relative z-10">
-              <div className="h-16 w-16 rounded-full bg-white/5 border border-white/10 flex items-center justify-center mb-5">
-                <LinkIcon className="h-8 w-8 text-white/40" />
-              </div>
-              <h3 className="text-xl font-medium mb-3 text-white">No URLs yet</h3>
-              <p className="text-white/60 text-center max-w-md">
-                You haven't created any shortened URLs yet. Use the form above to
-                create your first URL!
-              </p>
             </CardContent>
           </Card>
-        )}
+        </div>
       </div>
-
-      <PDFDocumentDialog
-        open={showPdfDocumentDialog}
-        onOpenChange={setShowPdfDocumentDialog}
-        onUrlCreated={() => {
-          queryClient.invalidateQueries({ queryKey: ["/api/urls"] });
-        }}
-      />
     </div>
   );
 }

@@ -7,14 +7,11 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
 import { QRCodeSVG } from "qrcode.react";
-import type { QrConfig, Url } from "@shared/schema";
+import type { QrConfig } from "@shared/schema";
 import { Settings2, Download, Paintbrush, Layout, Image, Check, Loader2, Upload, Trash2, Link2, RotateCcw } from "lucide-react";
 import { downloadQRCode } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import "./qr-styles.css";
-import { useMutation } from "@tanstack/react-query";
-import { apiRequest, queryClient } from "@/lib/queryClient";
-import { useToast } from "@/hooks/use-toast";
 
 const colorPresets = [
   { name: "Classic", fg: "#000000", bg: "#FFFFFF" },
@@ -25,8 +22,9 @@ const colorPresets = [
 ];
 
 interface QrCustomizerProps {
-  url: Url;
-  domain: string;
+  url: string;
+  config: QrConfig;
+  onSave: (config: QrConfig) => void;
 }
 
 const defaultConfig: QrConfig = {
@@ -42,26 +40,29 @@ const defaultConfig: QrConfig = {
   frameColor: "#000000"
 };
 
-export function QrCustomizer({ url, domain }: QrCustomizerProps) {
-  const { toast } = useToast();
+export function QrCustomizer({ url, config, onSave }: QrCustomizerProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  
-  // Parse the QR config from the URL or use default values
-  const parsedConfig = url.qrConfig ? 
-    (typeof url.qrConfig === 'string' ? JSON.parse(url.qrConfig) : url.qrConfig) : 
-    {};
-    
   const [localConfig, setLocalConfig] = useState<QrConfig>({
-    ...defaultConfig,
-    ...parsedConfig
+    ...config,
+    fgColor: config.fgColor || "#000000",
+    bgColor: config.bgColor || "#FFFFFF",
+    includeMargin: config.includeMargin || false,
+    logoUrl: config.logoUrl || "",
+    // Add required fields that were missing
+    pattern: config.pattern || "squares",
+    cornerStyle: config.cornerStyle || "square",
+    frameStyle: config.frameStyle || "none",
+    cornerDotColor: config.cornerDotColor || config.fgColor || "#000000",
+    cornerSquareColor: config.cornerSquareColor || config.fgColor || "#000000",
+    frameColor: config.frameColor || config.fgColor || "#000000"
   });
   
   const qrRef = useRef<HTMLDivElement>(null);
   
   const handleDownload = () => {
     if (qrRef.current) {
-      downloadQRCode(qrRef.current, `qr-${url.shortCode}`);
+      downloadQRCode(qrRef.current, `qr-${url.split('/').pop()}`);
     }
   };
   
@@ -76,38 +77,14 @@ export function QrCustomizer({ url, domain }: QrCustomizerProps) {
     }));
   };
   
-  // Create a mutation to update the QR code configuration
-  const updateQrConfigMutation = useMutation({
-    mutationFn: async (qrConfig: QrConfig) => {
-      return apiRequest(`/api/urls/${url.id}/qr-config`, {
-        method: 'PATCH',
-        body: JSON.stringify({ qrConfig }),
-        headers: { 'Content-Type': 'application/json' }
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/urls'] });
-      setIsOpen(false);
-      toast({
-        title: "QR Code updated",
-        description: "Your QR code has been customized successfully",
-      });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Failed to update QR code",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-    onSettled: () => {
-      setIsSaving(false);
-    }
-  });
-  
   const handleSave = () => {
     setIsSaving(true);
-    updateQrConfigMutation.mutate(localConfig);
+    try {
+      onSave(localConfig);
+      setIsOpen(false);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -442,7 +419,7 @@ export function QrCustomizer({ url, domain }: QrCustomizerProps) {
                 >
                   <div className="qr-code-wrapper">
                     <QRCodeSVG
-                      value={`${domain}/${url.shortCode}`}
+                      value={url}
                       size={250}
                       level="H"
                       fgColor={localConfig.fgColor}
