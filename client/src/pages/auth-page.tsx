@@ -33,13 +33,12 @@ import {
   FiBriefcase,
   FiArrowRight,
 } from "react-icons/fi";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function AuthPage() {
   const { user, loginMutation, registerMutation } = useAuth();
   const [isLoaded, setIsLoaded] = useState(false);
-  const [visibleFeatures, setVisibleFeatures] = useState<number[]>([]);
   const [activeFeatures, setActiveFeatures] = useState<Record<number, boolean>>({});
   
   // Define feature data
@@ -133,7 +132,6 @@ export default function AuthPage() {
       setIsLoaded(true);
       
       // Show initial features
-      setVisibleFeatures([0, 1, 2, 3]); // Start with first 4 features
       setActiveFeatures({0: true, 1: true, 2: true, 3: true});
     }, 100);
     
@@ -146,7 +144,9 @@ export default function AuthPage() {
     
     const randomlyChangeFeatures = () => {
       const featureCount = features.length;
-      const currentActive = Object.keys(activeFeatures).map(Number).filter(id => activeFeatures[id]);
+      const currentActive = Object.keys(activeFeatures)
+        .map(Number)
+        .filter(id => activeFeatures[id]);
       
       // Add or remove a random feature
       const action = Math.random() > 0.5 ? 'add' : 'remove';
@@ -417,6 +417,7 @@ export default function AuthPage() {
                                   className="h-11 pl-10 bg-gray-800/50 border-white/10 text-white placeholder:text-white/30 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                                   {...field}
                                   placeholder="Enter your username"
+                                  value={field.value || ""}
                                 />
                               </div>
                             </FormControl>
@@ -440,6 +441,7 @@ export default function AuthPage() {
                                   className="h-11 pl-10 bg-gray-800/50 border-white/10 text-white placeholder:text-white/30 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                                   {...field}
                                   placeholder="Enter your password"
+                                  value={field.value || ""}
                                 />
                               </div>
                             </FormControl>
@@ -504,7 +506,7 @@ export default function AuthPage() {
                       Create a new account
                     </h3>
                     <p className="text-sm text-white/60">
-                      Fill in the details below to get started
+                      Fill out the form below to register
                     </p>
                   </div>
 
@@ -528,7 +530,8 @@ export default function AuthPage() {
                                 <Input
                                   className="h-11 bg-gray-800/50 border-white/10 text-white placeholder:text-white/30 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                                   {...field}
-                                  placeholder="John"
+                                  placeholder="First Name"
+                                  value={field.value || ""}
                                 />
                               </FormControl>
                               <FormMessage className="text-red-400" />
@@ -547,7 +550,8 @@ export default function AuthPage() {
                                 <Input
                                   className="h-11 bg-gray-800/50 border-white/10 text-white placeholder:text-white/30 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                                   {...field}
-                                  placeholder="Doe"
+                                  placeholder="Last Name"
+                                  value={field.value || ""}
                                 />
                               </FormControl>
                               <FormMessage className="text-red-400" />
@@ -555,51 +559,6 @@ export default function AuthPage() {
                           )}
                         />
                       </div>
-                      <FormField
-                        control={registerForm.control}
-                        name="email"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-sm font-medium text-white/80">
-                              Email
-                            </FormLabel>
-                            <FormControl>
-                              <div className="relative">
-                                <FiMail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/50" />
-                                <Input
-                                  type="email"
-                                  className="h-11 pl-10 bg-gray-800/50 border-white/10 text-white placeholder:text-white/30 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                                  {...field}
-                                  placeholder="you@example.com"
-                                />
-                              </div>
-                            </FormControl>
-                            <FormMessage className="text-red-400" />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={registerForm.control}
-                        name="company"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-sm font-medium text-white/80">
-                              Company (Optional)
-                            </FormLabel>
-                            <FormControl>
-                              <div className="relative">
-                                <FiBriefcase className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/50" />
-                                <Input
-                                  className="h-11 pl-10 bg-gray-800/50 border-white/10 text-white placeholder:text-white/30 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                                  {...field}
-                                  placeholder="Your company"
-                                />
-                              </div>
-                            </FormControl>
-                            <FormMessage className="text-red-400" />
-                          </FormItem>
-                        )}
-                      />
                       <FormField
                         control={registerForm.control}
                         name="username"
@@ -615,6 +574,54 @@ export default function AuthPage() {
                                   className="h-11 pl-10 bg-gray-800/50 border-white/10 text-white placeholder:text-white/30 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                                   {...field}
                                   placeholder="Choose a username"
+                                  value={field.value || ""}
+                                />
+                              </div>
+                            </FormControl>
+                            <FormMessage className="text-red-400" />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={registerForm.control}
+                        name="email"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-sm font-medium text-white/80">
+                              Email
+                            </FormLabel>
+                            <FormControl>
+                              <div className="relative">
+                                <FiMail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/50" />
+                                <Input
+                                  type="email"
+                                  className="h-11 pl-10 bg-gray-800/50 border-white/10 text-white placeholder:text-white/30 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                                  {...field}
+                                  placeholder="Enter your email"
+                                  value={field.value || ""}
+                                />
+                              </div>
+                            </FormControl>
+                            <FormMessage className="text-red-400" />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={registerForm.control}
+                        name="company"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-sm font-medium text-white/80">
+                              Company
+                            </FormLabel>
+                            <FormControl>
+                              <div className="relative">
+                                <FiBriefcase className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/50" />
+                                <Input
+                                  className="h-11 pl-10 bg-gray-800/50 border-white/10 text-white placeholder:text-white/30 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                                  {...field}
+                                  placeholder="Your company (optional)"
+                                  value={field.value || ""}
                                 />
                               </div>
                             </FormControl>
@@ -638,6 +645,7 @@ export default function AuthPage() {
                                   className="h-11 pl-10 bg-gray-800/50 border-white/10 text-white placeholder:text-white/30 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                                   {...field}
                                   placeholder="Choose a strong password"
+                                  value={field.value || ""}
                                 />
                               </div>
                             </FormControl>
@@ -664,29 +672,13 @@ export default function AuthPage() {
                 </TabsContent>
               </Tabs>
             </CardContent>
-
-            <CardFooter className="pt-0 opacity-70 text-xs text-center text-white/50">
-              <p className="w-full">
-                By continuing, you agree to our Terms of Service and Privacy
-                Policy
-              </p>
-            </CardFooter>
           </Card>
         </div>
-      </div>
-
-      {/* Decorative floating elements */}
-      <div className="hidden md:block absolute bottom-4 left-8 animate-bounce-slow opacity-20">
-        <div className="h-16 w-16 rounded-full bg-blue-500/20 blur-lg"></div>
-      </div>
-      <div className="hidden md:block absolute top-8 right-12 animate-bounce-slow delay-300 opacity-20">
-        <div className="h-12 w-12 rounded-full bg-violet-500/20 blur-lg"></div>
       </div>
     </div>
   );
 }
 
-// Feature component for the left side
 function Feature({
   icon,
   title,
