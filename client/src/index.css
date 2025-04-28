@@ -20,4 +20,52 @@
     border: 1px solid rgba(255, 255, 255, 0.1);
     box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.36);
   }
+
+  .deepmind-card {
+    background-color: rgba(17, 24, 39, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    transition: all 0.3s ease;
+    transform-origin: center;
+  }
+
+  .deepmind-card:hover {
+    border-color: rgba(255, 255, 255, 0.2);
+    background-color: rgba(17, 24, 39, 0.6);
+  }
+
+  .deepmind-glow {
+    background: radial-gradient(circle at center, rgba(59, 130, 246, 0.6) 0%, transparent 70%);
+    z-index: -1;
+    opacity: 0.15;
+    filter: blur(40px);
+  }
+
+  .deepmind-grid {
+    background-image: 
+      linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+    background-size: 28px 28px;
+  }
+
+  @keyframes float {
+    0% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+    100% { transform: translateY(0px); }
+  }
+  
+  .float-animation {
+    animation: float 6s ease-in-out infinite;
+  }
+  
+  .float-animation-delay-1 {
+    animation-delay: 2s;
+  }
+  
+  .float-animation-delay-2 {
+    animation-delay: 1s;
+  }
+  
+  .float-animation-delay-3 {
+    animation-delay: 3s;
+  }
 }

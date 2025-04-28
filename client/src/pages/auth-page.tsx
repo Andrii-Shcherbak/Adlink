@@ -245,101 +245,141 @@ export default function AuthPage() {
           </div>
 
           <div className="block transition-all duration-700 delay-300">
-            <div className="h-[420px] mt-8 relative overflow-hidden">
-              {/* Dynamic Feature Cards Grid */}
-              <div className="grid grid-cols-2 gap-4 md:gap-6 relative">
-                <AnimatePresence>
-                  {features.map((feature, index) => (
-                    activeFeatures[index] && (
-                      <motion.div
-                        key={feature.id}
-                        initial={{ opacity: 0, scale: 0.8, y: 20 }}
-                        animate={{ 
-                          opacity: 1, 
-                          scale: 1, 
-                          y: 0,
-                          transition: { 
-                            duration: 0.5, 
-                            delay: Math.random() * 0.2 
-                          }
-                        }}
-                        exit={{ 
-                          opacity: 0, 
-                          scale: 0.8, 
-                          y: -20,
-                          transition: { duration: 0.3 } 
-                        }}
-                        whileHover={{ 
-                          scale: 1.05, 
-                          transition: { duration: 0.2 } 
-                        }}
-                        className={`${feature.color} p-4 rounded-xl glass-card overflow-hidden relative`}
-                      >
-                        {/* Feature Card Content */}
-                        <div className="flex flex-col h-full">
-                          <div className="flex items-start space-x-3">
-                            <div className="p-2 rounded-full bg-white/10">
-                              {feature.icon}
-                            </div>
-                            <div className="flex-1">
-                              <h3 className="font-bold text-white text-base md:text-lg">
-                                {feature.title}
-                              </h3>
-                              <p className="text-white/80 text-sm md:text-base mt-1 line-clamp-2">
-                                {feature.description}
-                              </p>
-                            </div>
-                          </div>
-                          
-                          {/* Animated decoration elements */}
-                          <motion.div 
-                            className="absolute -bottom-6 -right-6 w-16 h-16 rounded-full bg-white/5"
-                            animate={{ 
-                              scale: [1, 1.2, 1],
-                              rotate: [0, 15, 0] 
-                            }}
-                            transition={{ 
-                              duration: 5 + Math.random() * 3, 
-                              repeat: Infinity,
-                              repeatType: "reverse" 
-                            }}
-                          />
-                        </div>
-                      </motion.div>
-                    )
-                  ))}
-                </AnimatePresence>
+            <div className="mt-12 relative h-[460px] overflow-hidden deepmind-grid rounded-xl">
+              {/* Glowing effects */}
+              <div className="absolute top-1/3 left-1/3 w-[300px] h-[300px] deepmind-glow"></div>
+              <div className="absolute bottom-1/3 right-1/3 w-[250px] h-[250px] deepmind-glow" style={{ opacity: '0.1' }}></div>
+              
+              {/* Floating 3D elements */}
+              <div className="absolute inset-0 flex items-center justify-center">
+                {/* Feature visual representations */}
+                <motion.div 
+                  className="absolute left-[15%] top-[25%] float-animation-delay-1 float-animation"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 1.5 }}
+                >
+                  <div className="w-8 h-8 md:w-12 md:h-12 rounded-full border border-blue-400/30 flex items-center justify-center text-blue-400">
+                    <FiLink className="w-4 h-4 md:w-6 md:h-6" />
+                  </div>
+                </motion.div>
+                
+                <motion.div 
+                  className="absolute left-[60%] top-[15%] float-animation-delay-2 float-animation"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 1.5, delay: 0.3 }}
+                >
+                  <div className="w-8 h-8 md:w-12 md:h-12 rounded-full border border-purple-400/30 flex items-center justify-center text-purple-400">
+                    <FiCode className="w-4 h-4 md:w-6 md:h-6" />
+                  </div>
+                </motion.div>
+                
+                <motion.div 
+                  className="absolute left-[30%] top-[70%] float-animation-delay-3 float-animation"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 1.5, delay: 0.6 }}
+                >
+                  <div className="w-8 h-8 md:w-12 md:h-12 rounded-full border border-teal-400/30 flex items-center justify-center text-teal-400">
+                    <FiBarChart2 className="w-4 h-4 md:w-6 md:h-6" />
+                  </div>
+                </motion.div>
+                
+                <motion.div 
+                  className="absolute left-[75%] top-[65%] float-animation-delay-1 float-animation"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 1.5, delay: 0.9 }}
+                >
+                  <div className="w-8 h-8 md:w-12 md:h-12 rounded-full border border-orange-400/30 flex items-center justify-center text-orange-400">
+                    <FiGlobe className="w-4 h-4 md:w-6 md:h-6" />
+                  </div>
+                </motion.div>
               </div>
-              
-              {/* Floating Highlights */}
-              <motion.div 
-                className="absolute -top-6 -right-6 w-24 h-24 blur-xl rounded-full bg-blue-500/20"
-                animate={{ 
-                  x: [0, 10, 0],
-                  y: [0, -10, 0],
-                  opacity: [0.5, 0.8, 0.5]
-                }}
-                transition={{ 
-                  duration: 8, 
-                  repeat: Infinity,
-                  repeatType: "reverse" 
-                }}
-              />
-              
-              <motion.div 
-                className="absolute bottom-10 -left-10 w-32 h-32 blur-xl rounded-full bg-purple-500/20"
-                animate={{ 
-                  x: [0, -15, 0],
-                  y: [0, 15, 0],
-                  opacity: [0.5, 0.7, 0.5]
-                }}
-                transition={{ 
-                  duration: 10, 
-                  repeat: Infinity,
-                  repeatType: "reverse",
-                  delay: 2
-                }}
-              />
+
+              {/* Centered feature content */}
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="max-w-md px-6 py-8 rounded-xl z-10 text-center">
+                  <AnimatePresence mode="wait">
+                    {features.map((feature, index) => (
+                      activeFeatures[index] && (
+                        <motion.div
+                          key={feature.id}
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -20 }}
+                          transition={{ duration: 0.7 }}
+                          className="absolute inset-0 flex flex-col items-center justify-center"
+                        >
+                          <div className="p-4 rounded-full bg-white/5 mb-4 border border-white/10">
+                            {feature.icon}
+                          </div>
+                          <h3 className="text-xl md:text-2xl font-light text-white mb-3">{feature.title}</h3>
+                          <p className="text-white/70 text-sm md:text-base max-w-sm">
+                            {feature.description}
+                          </p>
+                        </motion.div>
+                      )
+                    ))}
+                  </AnimatePresence>
+                </div>
+              </div>
+
+              {/* Connection lines (using SVG) */}
+              <svg className="absolute inset-0 w-full h-full z-0" xmlns="http://www.w3.org/2000/svg">
+                <motion.line 
+                  x1="20%" y1="30%" x2="40%" y2="50%"
+                  strokeWidth="1" stroke="rgba(255,255,255,0.1)"
+                  initial={{ pathLength: 0, opacity: 0 }}
+                  animate={{ pathLength: 1, opacity: 0.5 }}
+                  transition={{ duration: 2, delay: 1 }}
+                />
+                <motion.line 
+                  x1="60%" y1="20%" x2="48%" y2="48%"
+                  strokeWidth="1" stroke="rgba(255,255,255,0.1)"
+                  initial={{ pathLength: 0, opacity: 0 }}
+                  animate={{ pathLength: 1, opacity: 0.5 }}
+                  transition={{ duration: 2, delay: 1.3 }}
+                />
+                <motion.line 
+                  x1="30%" y1="70%" x2="45%" y2="55%"
+                  strokeWidth="1" stroke="rgba(255,255,255,0.1)"
+                  initial={{ pathLength: 0, opacity: 0 }}
+                  animate={{ pathLength: 1, opacity: 0.5 }}
+                  transition={{ duration: 2, delay: 1.6 }}
+                />
+                <motion.line 
+                  x1="75%" y1="65%" x2="55%" y2="52%"
+                  strokeWidth="1" stroke="rgba(255,255,255,0.1)"
+                  initial={{ pathLength: 0, opacity: 0 }}
+                  animate={{ pathLength: 1, opacity: 0.5 }}
+                  transition={{ duration: 2, delay: 1.9 }}
+                />
+              </svg>
+
+              {/* Feature category selection */}
+              <div className="absolute bottom-6 left-0 right-0 flex justify-center space-x-2">
+                {features.map((_, index) => (
+                  <button
+                    key={index}
+                    onClick={() => {
+                      const newActiveFeatures = {...activeFeatures};
+                      Object.keys(newActiveFeatures).forEach(key => {
+                        newActiveFeatures[Number(key)] = false;
+                      });
+                      newActiveFeatures[index] = true;
+                      setActiveFeatures(newActiveFeatures);
+                    }}
+                    className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                      activeFeatures[index]
+                        ? 'bg-white w-4'
+                        : 'bg-white/40 hover:bg-white/60'
+                    }`}
+                    aria-label={`View feature ${index + 1}`}
+                  />
+                ))}
+              </div>
             </div>
           </div>
         </div>
