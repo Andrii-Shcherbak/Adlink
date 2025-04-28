@@ -39,7 +39,15 @@ import { motion, AnimatePresence } from "framer-motion";
 export default function AuthPage() {
   const { user, loginMutation, registerMutation } = useAuth();
   const [isLoaded, setIsLoaded] = useState(false);
-  const [activeFeatures, setActiveFeatures] = useState<Record<number, boolean>>({});
+  // Initialize with the first feature active
+  const [activeFeatures, setActiveFeatures] = useState<Record<number, boolean>>({
+    0: true,
+    1: false,
+    2: false,
+    3: false,
+    4: false,
+    5: false
+  });
   
   // Define feature data
   const features = [
@@ -131,53 +139,54 @@ export default function AuthPage() {
     const timer = setTimeout(() => {
       setIsLoaded(true);
       
-      // Show initial features
-      setActiveFeatures({0: true, 1: true, 2: true, 3: true});
+      // Keep the initialization from useState, don't override it here
     }, 100);
     
     return () => clearTimeout(timer);
   }, []);
 
-  // Setup randomized feature animations
+  // Setup feature rotation
   useEffect(() => {
     if (!isLoaded) return;
     
-    const randomlyChangeFeatures = () => {
-      const featureCount = features.length;
-      const currentActive = Object.keys(activeFeatures)
-        .map(Number)
-        .filter(id => activeFeatures[id]);
+    // Show only one feature at a time
+    const rotateFeatures = () => {
+      // Get current active feature
+      const currentIndex = Object.keys(activeFeatures)
+        .findIndex(key => activeFeatures[Number(key)]);
       
-      // Add or remove a random feature
-      const action = Math.random() > 0.5 ? 'add' : 'remove';
+      // Calculate next feature index
+      const nextIndex = (currentIndex >= 0 && currentIndex < features.length - 1) 
+        ? currentIndex + 1 
+        : 0;
       
-      if (action === 'add' && currentActive.length < featureCount) {
-        // Find an inactive feature
-        const inactiveFeatures = Array.from({length: featureCount}, (_, i) => i)
-          .filter(id => !activeFeatures[id]);
-        
-        if (inactiveFeatures.length > 0) {
-          const randomIndex = Math.floor(Math.random() * inactiveFeatures.length);
-          const featureToAdd = inactiveFeatures[randomIndex];
-          
-          setActiveFeatures(prev => ({...prev, [featureToAdd]: true}));
-        }
-      } else if (action === 'remove' && currentActive.length > 2) {
-        // Remove a random active feature (maintain at least 2 features)
-        const randomIndex = Math.floor(Math.random() * currentActive.length);
-        const featureToRemove = currentActive[randomIndex];
-        
-        setActiveFeatures(prev => ({...prev, [featureToRemove]: false}));
-      }
+      // Reset all features to inactive, then activate only the next one
+      const newActiveFeatures: Record<number, boolean> = {};
+      features.forEach((_, index) => {
+        newActiveFeatures[index] = index === nextIndex;
+      });
+      
+      setActiveFeatures(newActiveFeatures);
     };
     
-    // Periodically change features
+    // Start with only the first feature active
+    if (Object.keys(activeFeatures).length === 0 || 
+        Object.values(activeFeatures).filter(Boolean).length !== 1) {
+      // Initialize with just the first feature active
+      const initialFeatures: Record<number, boolean> = {};
+      features.forEach((_, index) => {
+        initialFeatures[index] = index === 0;
+      });
+      setActiveFeatures(initialFeatures);
+    }
+    
+    // Periodically rotate features
     const interval = setInterval(() => {
-      randomlyChangeFeatures();
-    }, 2000);
+      rotateFeatures();
+    }, 5000); // Change feature every 5 seconds
     
     return () => clearInterval(interval);
-  }, [isLoaded, activeFeatures]);
+  }, [isLoaded, activeFeatures, features.length]);
 
   const loginForm = useForm<Pick<InsertUser, "username" | "password">>({
     resolver: zodResolver(
@@ -418,28 +427,30 @@ export default function AuthPage() {
               <div className="absolute inset-0 flex items-center justify-center">
                 <div className="w-80 h-80 md:w-96 md:h-96 relative text-center">
                   {/* Only show one feature at a time */}
-                  {features.map((feature, index) => (
-                    activeFeatures[index] && (
-                      <motion.div
-                        key={feature.id}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -20 }}
-                        transition={{ duration: 0.7 }}
-                        className="absolute inset-0 flex flex-col items-center justify-center p-6"
-                      >
-                        <div className="p-4 rounded-full bg-white/5 mb-4 border border-white/10">
-                          {feature.icon}
-                        </div>
-                        <h3 className="text-xl md:text-2xl font-light text-white mb-3">
-                          {feature.title}
-                        </h3>
-                        <p className="text-white/70 text-sm md:text-base max-w-[280px]">
-                          {feature.description}
-                        </p>
-                      </motion.div>
-                    )
-                  ))}
+                  <AnimatePresence mode="wait">
+                    {features.map((feature, index) => 
+                      activeFeatures[index] && (
+                        <motion.div
+                          key={feature.id}
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -20 }}
+                          transition={{ duration: 0.7 }}
+                          className="absolute inset-0 flex flex-col items-center justify-center p-6"
+                        >
+                          <div className="p-4 rounded-full bg-white/5 mb-4 border border-white/10">
+                            {feature.icon}
+                          </div>
+                          <h3 className="text-xl md:text-2xl font-light text-white mb-3">
+                            {feature.title}
+                          </h3>
+                          <p className="text-white/70 text-sm md:text-base max-w-[280px]">
+                            {feature.description}
+                          </p>
+                        </motion.div>
+                      )
+                    )}
+                  </AnimatePresence>
                 </div>
               </div>
 
