@@ -245,14 +245,13 @@ export default function AuthPage() {
             <div>
               <h1 className="text-5xl md:text-7xl font-bold tracking-tight text-white">
                 <span className="bg-gradient-to-r from-blue-500 via-purple-500 to-violet-500 text-transparent bg-clip-text">
-                  ADLink
+                  Nexus
                 </span>
               </h1>
               <div className="w-16 h-1 bg-gradient-to-r from-blue-500 to-violet-500 mx-auto mt-4 rounded-full"></div>
             </div>
             <p className="text-xl md:text-2xl font-light text-white/80 max-w-2xl mx-auto">
-              Enterprise URL shortener with custom QR codes, PDF sharing, and
-              digital asset management
+              Intelligent link management platform with advanced analytics, digital assets, and custom branding
             </p>
           </div>
 
@@ -616,28 +615,7 @@ export default function AuthPage() {
                 />
               </svg>
 
-              {/* Feature category selection */}
-              <div className="absolute bottom-6 left-0 right-0 flex justify-center space-x-2">
-                {features.map((_, index) => (
-                  <button
-                    key={index}
-                    onClick={() => {
-                      const newActiveFeatures = {...activeFeatures};
-                      Object.keys(newActiveFeatures).forEach(key => {
-                        newActiveFeatures[Number(key)] = false;
-                      });
-                      newActiveFeatures[index] = true;
-                      setActiveFeatures(newActiveFeatures);
-                    }}
-                    className={`w-2 h-2 rounded-full transition-all duration-300 ${
-                      activeFeatures[index]
-                        ? 'bg-white w-4'
-                        : 'bg-white/40 hover:bg-white/60'
-                    }`}
-                    aria-label={`View feature ${index + 1}`}
-                  />
-                ))}
-              </div>
+              {/* Feature category selection - hidden as requested */}
             </div>
           </div>
         </div>
