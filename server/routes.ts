@@ -523,6 +523,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       await storage.incrementUrlClicks(url.id, url.userId, deviceType, countryInfo, referrer, deviceInfo);
       
+      // Check if this is a PDF document URL
+      if (url.isPdfDocument) {
+        console.log(`Password-protected PDF document URL verified: Redirecting to custom viewer for shortcode ${url.shortCode}`);
+        // For password-protected PDF documents, we need to redirect to our application URL
+        // with the shortcode, which will then serve the PDF properly through our viewer
+        return res.json({ redirectUrl: `/${url.shortCode}` });
+      }
+      
       // Handle multi-destination URLs for password-protected links
       if (url.isMultiDestination && url.destinations) {
         // Parse destinations JSON if it's a string
@@ -583,6 +591,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     try {
       await storage.incrementUrlClicks(url.id, url.userId, deviceType, countryInfo, referrer, deviceInfo);
+      
+      // Check if this is a PDF document URL
+      if (url.isPdfDocument) {
+        console.log(`Password-protected PDF document URL verified (legacy route): Redirecting to custom viewer for shortcode ${url.shortCode}`);
+        // For password-protected PDF documents, we need to redirect to our application URL
+        // with the shortcode, which will then serve the PDF properly through our viewer
+        return res.json({ redirectUrl: `/${url.shortCode}` });
+      }
       
       // Handle multi-destination URLs for password-protected links
       if (url.isMultiDestination && url.destinations) {
