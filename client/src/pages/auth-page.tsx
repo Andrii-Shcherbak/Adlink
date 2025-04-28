@@ -296,33 +296,150 @@ export default function AuthPage() {
                     <FiGlobe className="w-4 h-4 md:w-6 md:h-6" />
                   </div>
                 </motion.div>
+                
+                {/* Additional floating icons */}
+                <motion.div 
+                  className="absolute left-[20%] top-[45%] float-animation-delay-2 float-animation"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 1.5, delay: 1.2 }}
+                >
+                  <div className="w-6 h-6 md:w-10 md:h-10 rounded-full border border-pink-400/20 flex items-center justify-center text-pink-400">
+                    <svg
+                      className="w-3 h-3 md:w-5 md:h-5"
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                      <polyline points="14 2 14 8 20 8"></polyline>
+                    </svg>
+                  </div>
+                </motion.div>
+                
+                <motion.div 
+                  className="absolute left-[42%] top-[28%] float-animation-delay-3 float-animation"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 1.5, delay: 1.5 }}
+                >
+                  <div className="w-5 h-5 md:w-8 md:h-8 rounded-full border border-cyan-400/20 flex items-center justify-center text-cyan-400">
+                    <svg
+                      className="w-2.5 h-2.5 md:w-4 md:h-4"
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                      <line x1="8" y1="21" x2="16" y2="21"></line>
+                      <line x1="12" y1="17" x2="12" y2="21"></line>
+                    </svg>
+                  </div>
+                </motion.div>
+                
+                <motion.div 
+                  className="absolute left-[80%] top-[40%] float-animation-delay-1 float-animation"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 1.5, delay: 1.8 }}
+                >
+                  <div className="w-4 h-4 md:w-7 md:h-7 rounded-full border border-emerald-400/20 flex items-center justify-center text-emerald-400">
+                    <svg
+                      className="w-2 h-2 md:w-3.5 md:h-3.5"
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M20.24 12.24a6 6 0 0 0-8.49-8.49L5 10.5V19h8.5z"></path>
+                      <line x1="16" y1="8" x2="2" y2="22"></line>
+                      <line x1="17.5" y1="15" x2="9" y2="15"></line>
+                    </svg>
+                  </div>
+                </motion.div>
+                
+                <motion.div 
+                  className="absolute left-[50%] top-[80%] float-animation-delay-2 float-animation"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 1.5, delay: 2.1 }}
+                >
+                  <div className="w-6 h-6 md:w-9 md:h-9 rounded-full border border-yellow-400/20 flex items-center justify-center text-yellow-400">
+                    <svg
+                      className="w-3 h-3 md:w-4.5 md:h-4.5"
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                    </svg>
+                  </div>
+                </motion.div>
+                
+                {/* Small decorative dots */}
+                <motion.div 
+                  className="absolute left-[25%] top-[55%] w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-blue-400/40 float-animation-delay-3"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 1.5, delay: 2.4 }}
+                />
+                
+                <motion.div 
+                  className="absolute left-[65%] top-[30%] w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-purple-400/40 float-animation-delay-1"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 1.5, delay: 2.7 }}
+                />
+                
+                <motion.div 
+                  className="absolute left-[45%] top-[65%] w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-teal-400/40 float-animation-delay-2"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 1.5, delay: 3.0 }}
+                />
               </div>
 
               {/* Centered feature content */}
               <div className="absolute inset-0 flex items-center justify-center">
-                <div className="max-w-md px-6 py-8 rounded-xl z-10 text-center">
-                  <AnimatePresence mode="wait">
-                    {features.map((feature, index) => (
-                      activeFeatures[index] && (
-                        <motion.div
-                          key={feature.id}
-                          initial={{ opacity: 0, y: 20 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: -20 }}
-                          transition={{ duration: 0.7 }}
-                          className="absolute inset-0 flex flex-col items-center justify-center"
-                        >
-                          <div className="p-4 rounded-full bg-white/5 mb-4 border border-white/10">
-                            {feature.icon}
-                          </div>
-                          <h3 className="text-xl md:text-2xl font-light text-white mb-3">{feature.title}</h3>
-                          <p className="text-white/70 text-sm md:text-base max-w-sm">
-                            {feature.description}
-                          </p>
-                        </motion.div>
-                      )
-                    ))}
-                  </AnimatePresence>
+                <div className="w-80 h-80 md:w-96 md:h-96 relative text-center">
+                  {/* Only show one feature at a time */}
+                  {features.map((feature, index) => (
+                    activeFeatures[index] && (
+                      <motion.div
+                        key={feature.id}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -20 }}
+                        transition={{ duration: 0.7 }}
+                        className="absolute inset-0 flex flex-col items-center justify-center p-6"
+                      >
+                        <div className="p-4 rounded-full bg-white/5 mb-4 border border-white/10">
+                          {feature.icon}
+                        </div>
+                        <h3 className="text-xl md:text-2xl font-light text-white mb-3">
+                          {feature.title}
+                        </h3>
+                        <p className="text-white/70 text-sm md:text-base max-w-[280px]">
+                          {feature.description}
+                        </p>
+                      </motion.div>
+                    )
+                  ))}
                 </div>
               </div>
 
