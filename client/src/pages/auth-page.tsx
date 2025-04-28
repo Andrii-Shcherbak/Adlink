@@ -244,8 +244,8 @@ export default function AuthPage() {
           <div className="space-y-4 text-center transition-all duration-700 delay-100">
             <div>
               <h1 className="text-4xl md:text-6xl tracking-tight text-white flex items-center justify-center gap-3">
-                <div className="flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-r from-blue-600 to-violet-600 text-white">
-                  <FiLink className="h-5 w-5" />
+                <div className="flex items-center justify-center w-10 h-10 md:w-14 md:h-14 rounded-full border border-blue-400/30 bg-transparent text-blue-400">
+                  <FiLink className="h-5 w-5 md:h-7 md:w-7" />
                 </div>
                 <span className="text-white">
                   ADLink
