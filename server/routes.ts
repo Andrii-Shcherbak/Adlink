@@ -528,7 +528,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`Password-protected PDF document URL verified: Redirecting to custom viewer for shortcode ${url.shortCode}`);
         // For password-protected PDF documents, we need to redirect to our application URL
         // with the shortcode, which will then serve the PDF properly through our viewer
-        return res.json({ redirectUrl: `/${url.shortCode}` });
+        return res.json({ 
+          redirectUrl: `/${url.shortCode}`,
+          isPdfDocument: true
+        });
       }
       
       // Handle multi-destination URLs for password-protected links
@@ -597,7 +600,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`Password-protected PDF document URL verified (legacy route): Redirecting to custom viewer for shortcode ${url.shortCode}`);
         // For password-protected PDF documents, we need to redirect to our application URL
         // with the shortcode, which will then serve the PDF properly through our viewer
-        return res.json({ redirectUrl: `/${url.shortCode}` });
+        return res.json({ 
+          redirectUrl: `/${url.shortCode}`,
+          isPdfDocument: true
+        });
       }
       
       // Handle multi-destination URLs for password-protected links

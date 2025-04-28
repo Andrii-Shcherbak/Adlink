@@ -29,7 +29,14 @@ export default function ProtectedUrl() {
       }
 
       const data = await res.json();
-      window.location.href = data.redirectUrl;
+      // Check if this is a PDF document URL
+      if (data.isPdfDocument) {
+        // Navigate to the URL within our application, which will show the PDF in our viewer
+        window.location.href = data.redirectUrl;
+      } else {
+        // For regular URLs, proceed with the direct redirect
+        window.location.href = data.redirectUrl;
+      }
     } catch (error) {
       toast({
         title: "Error",
