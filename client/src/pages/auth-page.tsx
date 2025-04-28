@@ -241,13 +241,16 @@ export default function AuthPage() {
       >
         {/* Left side - Branding and Features */}
         <div className="w-full md:w-1/2 text-white space-y-6 md:space-y-12">
-          <div className="space-y-4 text-center md:text-left transition-all duration-700 delay-100">
-            <h1 className="text-4xl md:text-6xl font-bold tracking-tight text-white">
-              <span className="bg-gradient-to-r from-blue-500 to-violet-500 text-transparent bg-clip-text">
-                ADLink
-              </span>
-            </h1>
-            <p className="text-xl md:text-2xl font-light text-white/80 max-w-md mt-4">
+          <div className="space-y-6 text-center transition-all duration-700 delay-100">
+            <div>
+              <h1 className="text-5xl md:text-7xl font-bold tracking-tight text-white">
+                <span className="bg-gradient-to-r from-blue-500 via-purple-500 to-violet-500 text-transparent bg-clip-text">
+                  ADLink
+                </span>
+              </h1>
+              <div className="w-16 h-1 bg-gradient-to-r from-blue-500 to-violet-500 mx-auto mt-4 rounded-full"></div>
+            </div>
+            <p className="text-xl md:text-2xl font-light text-white/80 max-w-2xl mx-auto">
               Enterprise URL shortener with custom QR codes, PDF sharing, and
               digital asset management
             </p>
@@ -261,9 +264,9 @@ export default function AuthPage() {
               
               {/* Floating 3D elements */}
               <div className="absolute inset-0 flex items-center justify-center">
-                {/* Feature visual representations */}
+                {/* Feature visual representations - more spread out across the entire area */}
                 <motion.div 
-                  className="absolute left-[15%] top-[25%] float-animation-delay-1 float-animation"
+                  className="absolute left-[8%] top-[18%] float-animation-delay-1 float-animation"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ duration: 1.5 }}
@@ -274,7 +277,7 @@ export default function AuthPage() {
                 </motion.div>
                 
                 <motion.div 
-                  className="absolute left-[60%] top-[15%] float-animation-delay-2 float-animation"
+                  className="absolute left-[68%] top-[12%] float-animation-delay-2 float-animation"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ duration: 1.5, delay: 0.3 }}
@@ -285,7 +288,7 @@ export default function AuthPage() {
                 </motion.div>
                 
                 <motion.div 
-                  className="absolute left-[30%] top-[70%] float-animation-delay-3 float-animation"
+                  className="absolute left-[12%] top-[78%] float-animation-delay-3 float-animation"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ duration: 1.5, delay: 0.6 }}
@@ -296,7 +299,7 @@ export default function AuthPage() {
                 </motion.div>
                 
                 <motion.div 
-                  className="absolute left-[75%] top-[65%] float-animation-delay-1 float-animation"
+                  className="absolute left-[85%] top-[75%] float-animation-delay-1 float-animation"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ duration: 1.5, delay: 0.9 }}
@@ -306,9 +309,9 @@ export default function AuthPage() {
                   </div>
                 </motion.div>
                 
-                {/* Additional floating icons */}
+                {/* Additional floating icons - better distributed across the entire space */}
                 <motion.div 
-                  className="absolute left-[20%] top-[45%] float-animation-delay-2 float-animation"
+                  className="absolute left-[22%] top-[45%] float-animation-delay-2 float-animation"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ duration: 1.5, delay: 1.2 }}
@@ -331,7 +334,7 @@ export default function AuthPage() {
                 </motion.div>
                 
                 <motion.div 
-                  className="absolute left-[42%] top-[28%] float-animation-delay-3 float-animation"
+                  className="absolute left-[38%] top-[20%] float-animation-delay-3 float-animation"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ duration: 1.5, delay: 1.5 }}
@@ -355,7 +358,7 @@ export default function AuthPage() {
                 </motion.div>
                 
                 <motion.div 
-                  className="absolute left-[80%] top-[40%] float-animation-delay-1 float-animation"
+                  className="absolute left-[88%] top-[40%] float-animation-delay-1 float-animation"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ duration: 1.5, delay: 1.8 }}
@@ -379,7 +382,7 @@ export default function AuthPage() {
                 </motion.div>
                 
                 <motion.div 
-                  className="absolute left-[50%] top-[80%] float-animation-delay-2 float-animation"
+                  className="absolute left-[58%] top-[85%] float-animation-delay-2 float-animation"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ duration: 1.5, delay: 2.1 }}
@@ -399,27 +402,88 @@ export default function AuthPage() {
                     </svg>
                   </div>
                 </motion.div>
+
+                {/* Additional icons for better coverage */}
+                <motion.div 
+                  className="absolute left-[75%] top-[28%] float-animation-delay-3 float-animation"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 1.5, delay: 2.2 }}
+                >
+                  <div className="w-5 h-5 md:w-8 md:h-8 rounded-full border border-red-400/20 flex items-center justify-center text-red-400">
+                    <svg
+                      className="w-2.5 h-2.5 md:w-4 md:h-4"
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <circle cx="12" cy="12" r="10"></circle>
+                      <line x1="12" y1="8" x2="12" y2="12"></line>
+                      <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                    </svg>
+                  </div>
+                </motion.div>
+                
+                <motion.div 
+                  className="absolute left-[30%] top-[60%] float-animation-delay-1 float-animation"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 1.5, delay: 2.4 }}
+                >
+                  <div className="w-7 h-7 md:w-10 md:h-10 rounded-full border border-indigo-400/20 flex items-center justify-center text-indigo-400">
+                    <svg
+                      className="w-3.5 h-3.5 md:w-5 md:h-5"
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
+                    </svg>
+                  </div>
+                </motion.div>
                 
                 {/* Small decorative dots */}
                 <motion.div 
-                  className="absolute left-[25%] top-[55%] w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-blue-400/40 float-animation-delay-3"
+                  className="absolute left-[15%] top-[35%] w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-blue-400/40 float-animation-delay-3"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ duration: 1.5, delay: 2.4 }}
                 />
                 
                 <motion.div 
-                  className="absolute left-[65%] top-[30%] w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-purple-400/40 float-animation-delay-1"
+                  className="absolute left-[55%] top-[22%] w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-purple-400/40 float-animation-delay-1"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ duration: 1.5, delay: 2.7 }}
                 />
                 
                 <motion.div 
-                  className="absolute left-[45%] top-[65%] w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-teal-400/40 float-animation-delay-2"
+                  className="absolute left-[45%] top-[70%] w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-teal-400/40 float-animation-delay-2"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ duration: 1.5, delay: 3.0 }}
+                />
+                
+                <motion.div 
+                  className="absolute left-[82%] top-[58%] w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-pink-400/40 float-animation-delay-3"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 1.5, delay: 3.3 }}
+                />
+                
+                <motion.div 
+                  className="absolute left-[28%] top-[88%] w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-yellow-400/40 float-animation-delay-1"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 1.5, delay: 3.6 }}
                 />
               </div>
 
@@ -454,35 +518,101 @@ export default function AuthPage() {
                 </div>
               </div>
 
-              {/* Connection lines (using SVG) */}
+              {/* Connection lines (using SVG) - updated to connect new icon positions */}
               <svg className="absolute inset-0 w-full h-full z-0" xmlns="http://www.w3.org/2000/svg">
+                {/* Web of connections */}
                 <motion.line 
-                  x1="20%" y1="30%" x2="40%" y2="50%"
+                  x1="8%" y1="18%" x2="38%" y2="20%"
                   strokeWidth="1" stroke="rgba(255,255,255,0.1)"
                   initial={{ pathLength: 0, opacity: 0 }}
                   animate={{ pathLength: 1, opacity: 0.5 }}
                   transition={{ duration: 2, delay: 1 }}
                 />
                 <motion.line 
-                  x1="60%" y1="20%" x2="48%" y2="48%"
+                  x1="38%" y1="20%" x2="68%" y2="12%"
                   strokeWidth="1" stroke="rgba(255,255,255,0.1)"
                   initial={{ pathLength: 0, opacity: 0 }}
                   animate={{ pathLength: 1, opacity: 0.5 }}
                   transition={{ duration: 2, delay: 1.3 }}
                 />
                 <motion.line 
-                  x1="30%" y1="70%" x2="45%" y2="55%"
+                  x1="68%" y1="12%" x2="75%" y2="28%"
                   strokeWidth="1" stroke="rgba(255,255,255,0.1)"
                   initial={{ pathLength: 0, opacity: 0 }}
                   animate={{ pathLength: 1, opacity: 0.5 }}
                   transition={{ duration: 2, delay: 1.6 }}
                 />
                 <motion.line 
-                  x1="75%" y1="65%" x2="55%" y2="52%"
+                  x1="75%" y1="28%" x2="88%" y2="40%"
                   strokeWidth="1" stroke="rgba(255,255,255,0.1)"
                   initial={{ pathLength: 0, opacity: 0 }}
                   animate={{ pathLength: 1, opacity: 0.5 }}
                   transition={{ duration: 2, delay: 1.9 }}
+                />
+                <motion.line 
+                  x1="88%" y1="40%" x2="85%" y2="75%"
+                  strokeWidth="1" stroke="rgba(255,255,255,0.1)"
+                  initial={{ pathLength: 0, opacity: 0 }}
+                  animate={{ pathLength: 1, opacity: 0.5 }}
+                  transition={{ duration: 2, delay: 2.1 }}
+                />
+                <motion.line 
+                  x1="85%" y1="75%" x2="58%" y2="85%"
+                  strokeWidth="1" stroke="rgba(255,255,255,0.1)"
+                  initial={{ pathLength: 0, opacity: 0 }}
+                  animate={{ pathLength: 1, opacity: 0.5 }}
+                  transition={{ duration: 2, delay: 2.3 }}
+                />
+                <motion.line 
+                  x1="58%" y1="85%" x2="30%" y2="60%"
+                  strokeWidth="1" stroke="rgba(255,255,255,0.1)"
+                  initial={{ pathLength: 0, opacity: 0 }}
+                  animate={{ pathLength: 1, opacity: 0.5 }}
+                  transition={{ duration: 2, delay: 2.5 }}
+                />
+                <motion.line 
+                  x1="30%" y1="60%" x2="12%" y2="78%"
+                  strokeWidth="1" stroke="rgba(255,255,255,0.1)"
+                  initial={{ pathLength: 0, opacity: 0 }}
+                  animate={{ pathLength: 1, opacity: 0.5 }}
+                  transition={{ duration: 2, delay: 2.7 }}
+                />
+                <motion.line 
+                  x1="12%" y1="78%" x2="8%" y2="18%"
+                  strokeWidth="1" stroke="rgba(255,255,255,0.1)"
+                  initial={{ pathLength: 0, opacity: 0 }}
+                  animate={{ pathLength: 1, opacity: 0.5 }}
+                  transition={{ duration: 2, delay: 2.9 }}
+                />
+                
+                {/* Cross connections */}
+                <motion.line 
+                  x1="22%" y1="45%" x2="38%" y2="20%"
+                  strokeWidth="1" stroke="rgba(255,255,255,0.08)"
+                  initial={{ pathLength: 0, opacity: 0 }}
+                  animate={{ pathLength: 1, opacity: 0.4 }}
+                  transition={{ duration: 2, delay: 3.1 }}
+                />
+                <motion.line 
+                  x1="75%" y1="28%" x2="55%" y2="22%"
+                  strokeWidth="1" stroke="rgba(255,255,255,0.08)"
+                  initial={{ pathLength: 0, opacity: 0 }}
+                  animate={{ pathLength: 1, opacity: 0.4 }}
+                  transition={{ duration: 2, delay: 3.3 }}
+                />
+                <motion.line 
+                  x1="30%" y1="60%" x2="45%" y2="70%"
+                  strokeWidth="1" stroke="rgba(255,255,255,0.08)"
+                  initial={{ pathLength: 0, opacity: 0 }}
+                  animate={{ pathLength: 1, opacity: 0.4 }}
+                  transition={{ duration: 2, delay: 3.5 }}
+                />
+                <motion.line 
+                  x1="82%" y1="58%" x2="58%" y2="85%"
+                  strokeWidth="1" stroke="rgba(255,255,255,0.08)"
+                  initial={{ pathLength: 0, opacity: 0 }}
+                  animate={{ pathLength: 1, opacity: 0.4 }}
+                  transition={{ duration: 2, delay: 3.7 }}
                 />
               </svg>
 
