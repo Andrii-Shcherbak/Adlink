@@ -243,10 +243,8 @@ export default function AuthPage() {
         <div className="w-full md:w-1/2 text-white space-y-4 md:space-y-6">
           <div className="space-y-4 text-center transition-all duration-700 delay-100">
             <div>
-              <h1 className="text-5xl md:text-7xl font-bold tracking-tight text-white">
-                <span className="bg-gradient-to-r from-pink-500 via-blue-400 to-cyan-300 text-transparent bg-clip-text" style={{
-                  backgroundImage: 'linear-gradient(135deg, #FF9A9E 0%, #FAD0C4 25%, #B5FFFC 50%, #A0FE65 75%, #FCCB90 100%)'
-                }}>
+              <h1 className="text-5xl md:text-7xl tracking-tight text-white">
+                <span className="text-white">
                   ADLink
                 </span>
               </h1>
@@ -337,7 +335,7 @@ export default function AuthPage() {
                 </motion.div>
                 
                 <motion.div 
-                  className="absolute left-[42%] top-[32%] float-animation-delay-3 float-animation"
+                  className="absolute left-[35%] top-[35%] float-animation-delay-3 float-animation"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ duration: 1.5, delay: 1.5 }}
@@ -525,14 +523,14 @@ export default function AuthPage() {
               <svg className="absolute inset-0 w-full h-full z-0" xmlns="http://www.w3.org/2000/svg">
                 {/* Web of connections */}
                 <motion.line 
-                  x1="8%" y1="18%" x2="42%" y2="32%"
+                  x1="8%" y1="18%" x2="35%" y2="35%"
                   strokeWidth="1" stroke="rgba(255,255,255,0.1)"
                   initial={{ pathLength: 0, opacity: 0 }}
                   animate={{ pathLength: 1, opacity: 0.5 }}
                   transition={{ duration: 2, delay: 1 }}
                 />
                 <motion.line 
-                  x1="42%" y1="32%" x2="68%" y2="12%"
+                  x1="35%" y1="35%" x2="68%" y2="12%"
                   strokeWidth="1" stroke="rgba(255,255,255,0.1)"
                   initial={{ pathLength: 0, opacity: 0 }}
                   animate={{ pathLength: 1, opacity: 0.5 }}
