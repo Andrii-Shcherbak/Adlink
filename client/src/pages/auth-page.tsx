@@ -240,15 +240,19 @@ export default function AuthPage() {
         className={`container max-w-screen-xl mx-auto px-4 py-8 md:py-12 relative z-10 flex flex-col md:flex-row gap-12 items-center transition-opacity duration-1000 ${isLoaded ? "opacity-100" : "opacity-0"}`}
       >
         {/* Left side - Branding and Features */}
-        <div className="w-full md:w-1/2 text-white space-y-6 md:space-y-12">
-          <div className="space-y-6 text-center transition-all duration-700 delay-100">
+        <div className="w-full md:w-1/2 text-white space-y-4 md:space-y-6">
+          <div className="space-y-4 text-center transition-all duration-700 delay-100">
             <div>
               <h1 className="text-5xl md:text-7xl font-bold tracking-tight text-white">
-                <span className="bg-gradient-to-r from-blue-500 via-purple-500 to-violet-500 text-transparent bg-clip-text">
-                  Nexus
+                <span className="bg-gradient-to-r from-pink-500 via-blue-400 to-cyan-300 text-transparent bg-clip-text" style={{
+                  backgroundImage: 'linear-gradient(135deg, #FF9A9E 0%, #FAD0C4 25%, #B5FFFC 50%, #A0FE65 75%, #FCCB90 100%)'
+                }}>
+                  ADLink
                 </span>
               </h1>
-              <div className="w-16 h-1 bg-gradient-to-r from-blue-500 to-violet-500 mx-auto mt-4 rounded-full"></div>
+              <div className="w-24 h-1 mx-auto mt-4 rounded-full" style={{
+                backgroundImage: 'linear-gradient(90deg, #FF9A9E 0%, #FAD0C4 25%, #B5FFFC 50%, #A0FE65 75%, #FCCB90 100%)'
+              }}></div>
             </div>
             <p className="text-xl md:text-2xl font-light text-white/80 max-w-2xl mx-auto">
               Intelligent link management platform with advanced analytics, digital assets, and custom branding
@@ -256,7 +260,7 @@ export default function AuthPage() {
           </div>
 
           <div className="block transition-all duration-700 delay-300">
-            <div className="mt-12 relative h-[460px] overflow-hidden deepmind-grid rounded-xl">
+            <div className="mt-6 relative h-[460px] overflow-hidden deepmind-grid rounded-xl">
               {/* Glowing effects */}
               <div className="absolute top-1/3 left-1/3 w-[300px] h-[300px] deepmind-glow"></div>
               <div className="absolute bottom-1/3 right-1/3 w-[250px] h-[250px] deepmind-glow" style={{ opacity: '0.1' }}></div>
@@ -333,7 +337,7 @@ export default function AuthPage() {
                 </motion.div>
                 
                 <motion.div 
-                  className="absolute left-[38%] top-[20%] float-animation-delay-3 float-animation"
+                  className="absolute left-[42%] top-[32%] float-animation-delay-3 float-animation"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ duration: 1.5, delay: 1.5 }}
@@ -521,14 +525,14 @@ export default function AuthPage() {
               <svg className="absolute inset-0 w-full h-full z-0" xmlns="http://www.w3.org/2000/svg">
                 {/* Web of connections */}
                 <motion.line 
-                  x1="8%" y1="18%" x2="38%" y2="20%"
+                  x1="8%" y1="18%" x2="42%" y2="32%"
                   strokeWidth="1" stroke="rgba(255,255,255,0.1)"
                   initial={{ pathLength: 0, opacity: 0 }}
                   animate={{ pathLength: 1, opacity: 0.5 }}
                   transition={{ duration: 2, delay: 1 }}
                 />
                 <motion.line 
-                  x1="38%" y1="20%" x2="68%" y2="12%"
+                  x1="42%" y1="32%" x2="68%" y2="12%"
                   strokeWidth="1" stroke="rgba(255,255,255,0.1)"
                   initial={{ pathLength: 0, opacity: 0 }}
                   animate={{ pathLength: 1, opacity: 0.5 }}
