@@ -430,7 +430,7 @@ export default function AuthPage() {
                 </motion.div>
                 
                 <motion.div 
-                  className="absolute left-[30%] top-[60%] float-animation-delay-1 float-animation"
+                  className="absolute left-[20%] top-[60%] float-animation-delay-1 float-animation"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ duration: 1.5, delay: 2.4 }}
@@ -565,14 +565,14 @@ export default function AuthPage() {
                   transition={{ duration: 2, delay: 2.3 }}
                 />
                 <motion.line 
-                  x1="58%" y1="85%" x2="30%" y2="60%"
+                  x1="58%" y1="85%" x2="20%" y2="60%"
                   strokeWidth="1" stroke="rgba(255,255,255,0.1)"
                   initial={{ pathLength: 0, opacity: 0 }}
                   animate={{ pathLength: 1, opacity: 0.5 }}
                   transition={{ duration: 2, delay: 2.5 }}
                 />
                 <motion.line 
-                  x1="30%" y1="60%" x2="12%" y2="78%"
+                  x1="20%" y1="60%" x2="12%" y2="78%"
                   strokeWidth="1" stroke="rgba(255,255,255,0.1)"
                   initial={{ pathLength: 0, opacity: 0 }}
                   animate={{ pathLength: 1, opacity: 0.5 }}
@@ -602,7 +602,7 @@ export default function AuthPage() {
                   transition={{ duration: 2, delay: 3.3 }}
                 />
                 <motion.line 
-                  x1="30%" y1="60%" x2="45%" y2="70%"
+                  x1="20%" y1="60%" x2="45%" y2="70%"
                   strokeWidth="1" stroke="rgba(255,255,255,0.08)"
                   initial={{ pathLength: 0, opacity: 0 }}
                   animate={{ pathLength: 1, opacity: 0.4 }}
