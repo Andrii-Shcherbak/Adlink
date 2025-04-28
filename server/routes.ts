@@ -525,11 +525,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Check if this is a PDF document URL
       if (url.isPdfDocument) {
-        console.log(`Password-protected PDF document URL verified: Redirecting to custom viewer for shortcode ${url.shortCode}`);
-        // For password-protected PDF documents, we need to redirect to our application URL
-        // with the shortcode, which will then serve the PDF properly through our viewer
+        console.log(`Password-protected PDF document URL verified: Serving PDF directly via viewer`);
+        console.log(`PDF Document details:`, { 
+          isPdfDocument: url.isPdfDocument,
+          pdfDocumentUrl: url.pdfDocumentUrl,
+          shortCode: url.shortCode
+        });
+        
+        // Instead of redirecting through the same mechanism, we'll generate a one-time token
+        // that can be used to directly serve the PDF
+        const timestamp = Date.now();
+        const oneTimeAccessToken = `pdf_verified_${timestamp}_${url.id}`;
+        
+        // Create a special route for password-verified PDFs
         return res.json({ 
-          redirectUrl: `/${url.shortCode}`,
+          redirectUrl: `/verified-pdf/${url.shortCode}?token=${oneTimeAccessToken}`,
           isPdfDocument: true
         });
       }
@@ -597,11 +607,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Check if this is a PDF document URL
       if (url.isPdfDocument) {
-        console.log(`Password-protected PDF document URL verified (legacy route): Redirecting to custom viewer for shortcode ${url.shortCode}`);
-        // For password-protected PDF documents, we need to redirect to our application URL
-        // with the shortcode, which will then serve the PDF properly through our viewer
+        console.log(`Password-protected PDF document URL verified (legacy route): Serving PDF directly via viewer`);
+        
+        // Use the same one-time token approach for the legacy route
+        const timestamp = Date.now();
+        const oneTimeAccessToken = `pdf_verified_${timestamp}_${url.id}`;
+        
+        // Create a special route for password-verified PDFs
         return res.json({ 
-          redirectUrl: `/${url.shortCode}`,
+          redirectUrl: `/verified-pdf/${url.shortCode}?token=${oneTimeAccessToken}`,
           isPdfDocument: true
         });
       }

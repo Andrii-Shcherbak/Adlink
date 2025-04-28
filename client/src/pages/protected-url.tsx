@@ -29,11 +29,15 @@ export default function ProtectedUrl() {
       }
 
       const data = await res.json();
+      console.log("Password verification response:", data);
+      
       // Check if this is a PDF document URL
       if (data.isPdfDocument) {
+        console.log("Handling password-protected PDF document with URL:", data.redirectUrl);
         // Navigate to the URL within our application, which will show the PDF in our viewer
         window.location.href = data.redirectUrl;
       } else {
+        console.log("Handling regular URL redirect to:", data.redirectUrl);
         // For regular URLs, proceed with the direct redirect
         window.location.href = data.redirectUrl;
       }
