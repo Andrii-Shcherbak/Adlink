@@ -115,7 +115,7 @@ export function PDFUploadDialog({ open, onOpenChange, onUploadComplete }: PDFUpl
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[425px] max-w-[95vw] w-full">
         <DialogHeader>
           <DialogTitle>Upload PDF Document</DialogTitle>
         </DialogHeader>
@@ -143,7 +143,9 @@ export function PDFUploadDialog({ open, onOpenChange, onUploadComplete }: PDFUpl
             <div className="bg-secondary p-3 rounded-md flex items-center gap-3">
               <FileIcon className="h-8 w-8 text-primary" />
               <div className="flex-1 overflow-hidden">
-                <p className="font-medium truncate">{file.name}</p>
+                <div className="font-medium max-h-[60px] overflow-auto whitespace-normal break-all">
+                  {file.name}
+                </div>
                 <p className="text-sm text-muted-foreground">{formatFileSize(file.size)}</p>
               </div>
             </div>

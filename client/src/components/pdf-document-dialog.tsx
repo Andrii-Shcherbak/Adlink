@@ -157,7 +157,7 @@ export function PDFDocumentDialog({ open, onOpenChange, onUrlCreated }: PDFDocum
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-[600px]">
+        <DialogContent className="sm:max-w-[600px] max-w-[95vw] w-full">
           <DialogHeader>
             <DialogTitle>Create PDF Document URL</DialogTitle>
           </DialogHeader>
@@ -224,7 +224,9 @@ export function PDFDocumentDialog({ open, onOpenChange, onUrlCreated }: PDFDocum
                             >
                               <FileIcon className="h-8 w-8 text-primary flex-shrink-0" />
                               <div className="flex-1 min-w-0">
-                                <p className="font-medium truncate">{file.originalName || file.name}</p>
+                                <div className="font-medium max-h-[40px] overflow-auto whitespace-normal break-all">
+                                  {file.originalName || file.name}
+                                </div>
                                 <p className="text-sm text-muted-foreground">{formatFileSize(file.fileSize)}</p>
                               </div>
                             </button>
@@ -238,7 +240,9 @@ export function PDFDocumentDialog({ open, onOpenChange, onUrlCreated }: PDFDocum
                 <div className="relative bg-secondary p-4 rounded-md flex items-center gap-3">
                   <FileIcon className="h-12 w-12 text-primary" />
                   <div className="flex-1 overflow-hidden">
-                    <p className="font-medium truncate">{pdfFileData.fileName}</p>
+                    <div className="font-medium max-h-[60px] overflow-auto whitespace-normal break-all">
+                      {pdfFileData.fileName}
+                    </div>
                     <p className="text-sm text-muted-foreground">{formatFileSize(pdfFileData.fileSize)}</p>
                   </div>
                   <Button
