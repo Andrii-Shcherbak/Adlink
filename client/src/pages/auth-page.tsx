@@ -243,14 +243,14 @@ export default function AuthPage() {
         <div className="w-full md:w-1/2 text-white space-y-4 md:space-y-6">
           <div className="space-y-4 text-center transition-all duration-700 delay-100">
             <div>
-              <h1 className="text-5xl md:text-7xl tracking-tight text-white">
+              <h1 className="text-4xl md:text-6xl tracking-tight text-white flex items-center justify-center gap-3">
+                <div className="flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-r from-blue-600 to-violet-600 text-white">
+                  <FiLink className="h-5 w-5" />
+                </div>
                 <span className="text-white">
                   ADLink
                 </span>
               </h1>
-              <div className="w-24 h-1 mx-auto mt-4 rounded-full" style={{
-                backgroundImage: 'linear-gradient(90deg, #FF9A9E 0%, #FAD0C4 25%, #B5FFFC 50%, #A0FE65 75%, #FCCB90 100%)'
-              }}></div>
             </div>
             <p className="text-xl md:text-2xl font-light text-white/80 max-w-2xl mx-auto">
               Intelligent link management platform with advanced analytics, digital assets, and custom branding
@@ -359,7 +359,7 @@ export default function AuthPage() {
                 </motion.div>
                 
                 <motion.div 
-                  className="absolute left-[88%] top-[40%] float-animation-delay-1 float-animation"
+                  className="absolute left-[82%] top-[40%] float-animation-delay-1 float-animation"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ duration: 1.5, delay: 1.8 }}
@@ -544,14 +544,14 @@ export default function AuthPage() {
                   transition={{ duration: 2, delay: 1.6 }}
                 />
                 <motion.line 
-                  x1="75%" y1="28%" x2="88%" y2="40%"
+                  x1="75%" y1="28%" x2="82%" y2="40%"
                   strokeWidth="1" stroke="rgba(255,255,255,0.1)"
                   initial={{ pathLength: 0, opacity: 0 }}
                   animate={{ pathLength: 1, opacity: 0.5 }}
                   transition={{ duration: 2, delay: 1.9 }}
                 />
                 <motion.line 
-                  x1="88%" y1="40%" x2="85%" y2="75%"
+                  x1="82%" y1="40%" x2="85%" y2="75%"
                   strokeWidth="1" stroke="rgba(255,255,255,0.1)"
                   initial={{ pathLength: 0, opacity: 0 }}
                   animate={{ pathLength: 1, opacity: 0.5 }}
