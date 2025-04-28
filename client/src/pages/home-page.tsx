@@ -587,12 +587,12 @@ function MultiDestinationDialog({ url }: { url: Url }) {
                   Leave a field empty to use the original URL as fallback for
                   that platform.
                 </p>
-                <p className="mt-1">
-                  Original URL:{" "}
-                  <span className="font-mono text-xs inline-block max-w-full break-words overflow-auto" title={url.originalUrl}>
+                <div className="mt-1">
+                  <p className="mb-1">Original URL:</p>
+                  <div className="font-mono text-xs bg-gray-100 dark:bg-gray-800 p-2 rounded max-h-[80px] overflow-y-auto">
                     {url.originalUrl}
-                  </span>
-                </p>
+                  </div>
+                </div>
               </div>
             </div>
           )}
