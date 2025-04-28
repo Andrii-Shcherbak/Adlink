@@ -589,7 +589,7 @@ function MultiDestinationDialog({ url }: { url: Url }) {
                 </p>
                 <p className="mt-1">
                   Original URL:{" "}
-                  <span className="font-mono text-xs inline-block max-w-full overflow-hidden text-ellipsis whitespace-nowrap" title={url.originalUrl}>
+                  <span className="font-mono text-xs inline-block max-w-full break-words overflow-auto" title={url.originalUrl}>
                     {url.originalUrl}
                   </span>
                 </p>
