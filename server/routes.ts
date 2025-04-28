@@ -327,6 +327,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
+  // Special route for password-verified PDF documents
+  app.get("/verified-pdf/:shortCode", async (req, res) => {
+    const url = await storage.getUrlByShortCode(req.params.shortCode);
+    if (!url) return res.sendStatus(404);
+    
+    // Check if URL has expired
+    if (url.expiresAt && new Date(url.expiresAt) < new Date()) {
+      return res.status(410).send("This link has expired.");
+    }
+    
+    // Simple token validation
+    const token = req.query.token as string;
+    if (!token || !token.startsWith('pdf_verified_')) {
+      return res.redirect(`/${req.params.shortCode}`);
+    }
+    
+    // Make sure this is actually a PDF document
+    if (!url.isPdfDocument) {
+      return res.redirect(`/${req.params.shortCode}`);
+    }
+    
+    console.log(`Serving verified PDF document for shortcode ${url.shortCode}`);
+    
+    // Directly serve the PDF document through our custom viewer
+    return servePdfDocument(res, url);
+  });
+
   // New direct shortCode route without /api/r prefix
   app.get("/:shortCode", async (req, res, next) => {
     // Skip API endpoints and protected route
