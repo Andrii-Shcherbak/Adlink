@@ -397,108 +397,7 @@ export default function AdminPage() {
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-bold text-white">User Management</h1>
           <div className="flex gap-2">
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button variant="outline">
-                  <UserPlus className="h-4 w-4 mr-2" />
-                  Add User
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Create New User</DialogTitle>
-                </DialogHeader>
-                <Form {...form}>
-                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                    <FormField
-                      control={form.control}
-                      name="username"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Username</FormLabel>
-                          <FormControl>
-                            <Input {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="password"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Password</FormLabel>
-                          <FormControl>
-                            <Input type="password" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="email"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Email</FormLabel>
-                          <FormControl>
-                            <Input type="email" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="firstName"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>First Name</FormLabel>
-                          <FormControl>
-                            <Input {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="lastName"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Last Name</FormLabel>
-                          <FormControl>
-                            <Input {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="company"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Company</FormLabel>
-                          <FormControl>
-                            <Input {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <Button type="submit" disabled={createUserMutation.isPending}>
-                      {createUserMutation.isPending && (
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      )}
-                      Create User
-                    </Button>
-                  </form>
-                </Form>
-              </DialogContent>
-            </Dialog>
-            
+            {/* Add User button has been removed as requested */}
             <Dialog>
               <DialogTrigger asChild>
                 <Button>
@@ -735,39 +634,44 @@ export default function AdminPage() {
                   )}
                 </div>
               </CardContent>
-              {user.role !== "admin" && (
-                <CardFooter className="flex justify-end pt-2">
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button variant="destructive" size="sm">
-                        <Trash2 className="h-4 w-4 mr-2" />
-                        Delete User
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Delete User</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Are you sure you want to delete {user.firstName} {user.lastName}? This action cannot be undone and will delete all of their links and data.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction 
-                          onClick={() => deleteUserMutation.mutate(user.id)}
-                          disabled={deleteUserMutation.isPending}
-                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                        >
-                          {deleteUserMutation.isPending && (
-                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                          )}
-                          Delete
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </CardFooter>
-              )}
+              <CardFooter className="flex justify-end pt-2">
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="destructive" size="sm">
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Delete User
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Delete User</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        {user.role === "admin" ? (
+                          <>
+                            <p className="mb-2 font-semibold text-destructive">Warning: You are about to delete an admin user.</p>
+                            <p>Are you sure you want to delete {user.firstName} {user.lastName}? This action cannot be undone and will delete all of their links and data.</p>
+                          </>
+                        ) : (
+                          <>Are you sure you want to delete {user.firstName} {user.lastName}? This action cannot be undone and will delete all of their links and data.</>
+                        )}
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction 
+                        onClick={() => deleteUserMutation.mutate(user.id)}
+                        disabled={deleteUserMutation.isPending}
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      >
+                        {deleteUserMutation.isPending && (
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        )}
+                        Delete
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </CardFooter>
             </Card>
           ))}
         </div>

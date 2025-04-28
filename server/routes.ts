@@ -1153,6 +1153,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Cannot delete your own account" });
       }
       
+      // Get the user details before deletion for logging
+      const users = await storage.getAllUsers();
+      const userToDelete = users.find(u => u.id === userId);
+      
+      if (!userToDelete) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      
       await storage.deleteUser(userId);
 
       // Log user deletion
@@ -1160,7 +1168,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userId: req.user!.id,
         type: "user_deleted",
         metadata: {
-          deletedUserId: userId
+          deletedUserId: userId,
+          deletedUserRole: userToDelete.role,
+          deletedUserEmail: userToDelete.email
         }
       });
 
