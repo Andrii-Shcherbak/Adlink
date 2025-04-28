@@ -39,44 +39,48 @@ import { motion, AnimatePresence } from "framer-motion";
 export default function AuthPage() {
   const { user, loginMutation, registerMutation } = useAuth();
   const [isLoaded, setIsLoaded] = useState(false);
-  const [activeFeature, setActiveFeature] = useState(0);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
-  const featuresRef = useRef<HTMLDivElement>(null);
+  const [visibleFeatures, setVisibleFeatures] = useState<number[]>([]);
+  const [activeFeatures, setActiveFeatures] = useState<Record<number, boolean>>({});
   
   // Define feature data
   const features = [
     {
-      icon: <FiLink className="h-8 w-8 text-blue-400" />,
+      id: 1,
+      icon: <FiLink className="h-6 w-6 text-blue-400" />,
       title: "AI-Powered Links",
       description: "Generate titles and custom shortcodes with our AI integration",
-      color: "from-blue-600 to-indigo-600",
-      highlight: "AI Intelligence"
+      color: "bg-gradient-to-br from-blue-600 to-indigo-600",
+      delay: 0
     },
     {
-      icon: <FiCode className="h-8 w-8 text-violet-400" />,
+      id: 2,
+      icon: <FiCode className="h-6 w-6 text-violet-400" />,
       title: "Advanced QR Codes",
       description: "Create customizable QR codes with your logo, patterns, and frames",
-      color: "from-violet-600 to-purple-600",
-      highlight: "Custom Design"
+      color: "bg-gradient-to-br from-violet-600 to-purple-600",
+      delay: 0.2
     },
     {
-      icon: <FiBarChart2 className="h-8 w-8 text-teal-400" />,
+      id: 3,
+      icon: <FiBarChart2 className="h-6 w-6 text-teal-400" />,
       title: "Geo-Analytics",
       description: "Track link usage with detailed geographic and device data",
-      color: "from-teal-600 to-emerald-600",
-      highlight: "Actionable Insights"
+      color: "bg-gradient-to-br from-teal-600 to-emerald-600",
+      delay: 0.4
     },
     {
-      icon: <FiGlobe className="h-8 w-8 text-orange-400" />,
+      id: 4,
+      icon: <FiGlobe className="h-6 w-6 text-orange-400" />,
       title: "Multi-Destination",
       description: "Smart redirection based on the user's device type",
-      color: "from-orange-600 to-amber-600",
-      highlight: "Intelligent Routing"
+      color: "bg-gradient-to-br from-orange-600 to-amber-600",
+      delay: 0.6
     },
     {
+      id: 5,
       icon: (
         <svg
-          className="h-8 w-8 text-rose-400"
+          className="h-6 w-6 text-rose-400"
           xmlns="http://www.w3.org/2000/svg"
           viewBox="0 0 24 24"
           fill="none"
@@ -94,13 +98,14 @@ export default function AuthPage() {
       ),
       title: "PDF Document Sharing",
       description: "Share PDF documents through secure, expiring links",
-      color: "from-rose-600 to-pink-600",
-      highlight: "Secure Sharing"
+      color: "bg-gradient-to-br from-rose-600 to-pink-600",
+      delay: 0.8
     },
     {
+      id: 6,
       icon: (
         <svg
-          className="h-8 w-8 text-cyan-400"
+          className="h-6 w-6 text-cyan-400"
           xmlns="http://www.w3.org/2000/svg"
           viewBox="0 0 24 24"
           fill="none"
@@ -109,52 +114,70 @@ export default function AuthPage() {
           strokeLinecap="round"
           strokeLinejoin="round"
         >
-          <rect
-            x="2"
-            y="3"
-            width="20"
-            height="14"
-            rx="2"
-            ry="2"
-          ></rect>
+          <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
           <line x1="8" y1="21" x2="16" y2="21"></line>
           <line x1="12" y1="17" x2="12" y2="21"></line>
         </svg>
       ),
       title: "Digital Asset Management",
       description: "Organize and manage your files with folders and drag-and-drop",
-      color: "from-cyan-600 to-blue-600",
-      highlight: "Streamlined Organization"
+      color: "bg-gradient-to-br from-cyan-600 to-blue-600",
+      delay: 1.0
     }
   ];
 
+  // Initialize feature animations
   useEffect(() => {
     // Add a small delay to ensure smooth animation
     const timer = setTimeout(() => {
       setIsLoaded(true);
+      
+      // Show initial features
+      setVisibleFeatures([0, 1, 2, 3]); // Start with first 4 features
+      setActiveFeatures({0: true, 1: true, 2: true, 3: true});
     }, 100);
+    
     return () => clearTimeout(timer);
   }, []);
-  
-  // Set up the feature rotation
+
+  // Setup randomized feature animations
   useEffect(() => {
-    const startInterval = () => {
-      intervalRef.current = setInterval(() => {
-        setActiveFeature(prev => (prev + 1) % features.length);
-      }, 4000); // Change feature every 4 seconds
+    if (!isLoaded) return;
+    
+    const randomlyChangeFeatures = () => {
+      const featureCount = features.length;
+      const currentActive = Object.keys(activeFeatures).map(Number).filter(id => activeFeatures[id]);
+      
+      // Add or remove a random feature
+      const action = Math.random() > 0.5 ? 'add' : 'remove';
+      
+      if (action === 'add' && currentActive.length < featureCount) {
+        // Find an inactive feature
+        const inactiveFeatures = Array.from({length: featureCount}, (_, i) => i)
+          .filter(id => !activeFeatures[id]);
+        
+        if (inactiveFeatures.length > 0) {
+          const randomIndex = Math.floor(Math.random() * inactiveFeatures.length);
+          const featureToAdd = inactiveFeatures[randomIndex];
+          
+          setActiveFeatures(prev => ({...prev, [featureToAdd]: true}));
+        }
+      } else if (action === 'remove' && currentActive.length > 2) {
+        // Remove a random active feature (maintain at least 2 features)
+        const randomIndex = Math.floor(Math.random() * currentActive.length);
+        const featureToRemove = currentActive[randomIndex];
+        
+        setActiveFeatures(prev => ({...prev, [featureToRemove]: false}));
+      }
     };
     
-    // Start the interval after a delay
-    const timer = setTimeout(() => {
-      startInterval();
-    }, 1000);
+    // Periodically change features
+    const interval = setInterval(() => {
+      randomlyChangeFeatures();
+    }, 2000);
     
-    // Clear intervals on unmount
-    return () => {
-      clearTimeout(timer);
-      if (intervalRef.current) clearInterval(intervalRef.current);
-    };
-  }, []);
+    return () => clearInterval(interval);
+  }, [isLoaded, activeFeatures]);
 
   const loginForm = useForm<Pick<InsertUser, "username" | "password">>({
     resolver: zodResolver(
@@ -222,125 +245,101 @@ export default function AuthPage() {
           </div>
 
           <div className="block transition-all duration-700 delay-300">
-            <div className="h-96 flex items-center justify-center mt-8 relative" ref={featuresRef}>
-              {/* Center/Main Feature Showcase */}
-              <div className="flex flex-col items-center relative max-w-md">
-                {/* Animated Feature Cards */}
-                <AnimatePresence mode="wait">
-                  <motion.div
-                    key={activeFeature}
-                    initial={{ opacity: 0, y: 20, scale: 0.9 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: -20, scale: 0.9 }}
-                    transition={{ duration: 0.5, ease: "easeOut" }}
-                    className={`p-6 rounded-2xl glass-card shadow-2xl relative overflow-hidden bg-gradient-to-br ${features[activeFeature].color} w-full max-w-md transform hover:scale-105 transition-transform duration-300`}
-                  >
-                    {/* Background glow effect */}
-                    <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
-                    <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
-                    
-                    {/* Highlight chip */}
-                    <div className="absolute -top-3 -right-3 bg-white/90 text-gray-900 rounded-full px-3 py-1 text-xs font-bold shadow-lg transform rotate-3">
-                      {features[activeFeature].highlight}
-                    </div>
-                    
-                    <div className="flex flex-col items-center text-white">
-                      <div className="p-3 rounded-full bg-white/10 mb-4">
-                        {features[activeFeature].icon}
-                      </div>
-                      <h3 className="text-2xl font-bold mb-3 text-center">{features[activeFeature].title}</h3>
-                      <p className="text-center text-white/80 text-lg">{features[activeFeature].description}</p>
-                    </div>
-                    
-                    {/* Decorative elements */}
-                    <motion.div 
-                      className="absolute -bottom-4 -right-4 w-20 h-20 rounded-full bg-white/5"
-                      animate={{ 
-                        scale: [1, 1.2, 1],
-                        rotate: [0, 15, 0] 
-                      }}
-                      transition={{ 
-                        duration: 6, 
-                        repeat: Infinity,
-                        repeatType: "reverse" 
-                      }}
-                    />
-                    <motion.div 
-                      className="absolute -top-4 -left-4 w-12 h-12 rounded-full bg-white/5"
-                      animate={{ 
-                        scale: [1, 1.3, 1],
-                        rotate: [0, -10, 0] 
-                      }}
-                      transition={{ 
-                        duration: 5, 
-                        repeat: Infinity,
-                        repeatType: "reverse",
-                        delay: 0.5
-                      }}
-                    />
-                  </motion.div>
-                </AnimatePresence>
-                
-                {/* Feature Selection Indicators */}
-                <div className="flex space-x-2 mt-8">
-                  {features.map((_, index) => (
-                    <button
-                      key={index}
-                      onClick={() => {
-                        setActiveFeature(index);
-                        // Clear and restart interval when user manually selects
-                        if (intervalRef.current) {
-                          clearInterval(intervalRef.current);
-                          intervalRef.current = setInterval(() => {
-                            setActiveFeature(prev => (prev + 1) % features.length);
-                          }, 4000);
-                        }
-                      }}
-                      className={`w-3 h-3 rounded-full transition-all duration-300 ${
-                        activeFeature === index
-                          ? 'bg-white scale-125'
-                          : 'bg-white/30 hover:bg-white/50'
-                      }`}
-                      aria-label={`View feature ${index + 1}`}
-                    />
+            <div className="h-[420px] mt-8 relative overflow-hidden">
+              {/* Dynamic Feature Cards Grid */}
+              <div className="grid grid-cols-2 gap-4 md:gap-6 relative">
+                <AnimatePresence>
+                  {features.map((feature, index) => (
+                    activeFeatures[index] && (
+                      <motion.div
+                        key={feature.id}
+                        initial={{ opacity: 0, scale: 0.8, y: 20 }}
+                        animate={{ 
+                          opacity: 1, 
+                          scale: 1, 
+                          y: 0,
+                          transition: { 
+                            duration: 0.5, 
+                            delay: Math.random() * 0.2 
+                          }
+                        }}
+                        exit={{ 
+                          opacity: 0, 
+                          scale: 0.8, 
+                          y: -20,
+                          transition: { duration: 0.3 } 
+                        }}
+                        whileHover={{ 
+                          scale: 1.05, 
+                          transition: { duration: 0.2 } 
+                        }}
+                        className={`${feature.color} p-4 rounded-xl glass-card overflow-hidden relative`}
+                      >
+                        {/* Feature Card Content */}
+                        <div className="flex flex-col h-full">
+                          <div className="flex items-start space-x-3">
+                            <div className="p-2 rounded-full bg-white/10">
+                              {feature.icon}
+                            </div>
+                            <div className="flex-1">
+                              <h3 className="font-bold text-white text-base md:text-lg">
+                                {feature.title}
+                              </h3>
+                              <p className="text-white/80 text-sm md:text-base mt-1 line-clamp-2">
+                                {feature.description}
+                              </p>
+                            </div>
+                          </div>
+                          
+                          {/* Animated decoration elements */}
+                          <motion.div 
+                            className="absolute -bottom-6 -right-6 w-16 h-16 rounded-full bg-white/5"
+                            animate={{ 
+                              scale: [1, 1.2, 1],
+                              rotate: [0, 15, 0] 
+                            }}
+                            transition={{ 
+                              duration: 5 + Math.random() * 3, 
+                              repeat: Infinity,
+                              repeatType: "reverse" 
+                            }}
+                          />
+                        </div>
+                      </motion.div>
+                    )
                   ))}
-                </div>
+                </AnimatePresence>
               </div>
               
-              {/* Small preview cards on the sides (visible on larger screens) */}
-              <div className="hidden xl:block">
-                {/* Previous Feature Preview (Left side) */}
-                <motion.div
-                  className="absolute left-0 top-1/2 -translate-y-1/2 transform -translate-x-24 opacity-40 hover:opacity-60 transition-opacity"
-                  animate={{ x: [-28, -24, -28] }}
-                  transition={{ duration: 3, repeat: Infinity, repeatType: "reverse" }}
-                >
-                  <div className={`p-4 rounded-xl bg-gradient-to-br ${features[(activeFeature - 1 + features.length) % features.length].color} w-48 glass-card shadow-lg`}>
-                    <div className="flex flex-col items-center text-white">
-                      <div className="p-2 rounded-full bg-white/10 mb-2">
-                        {features[(activeFeature - 1 + features.length) % features.length].icon}
-                      </div>
-                      <h3 className="text-sm font-bold text-center">{features[(activeFeature - 1 + features.length) % features.length].title}</h3>
-                    </div>
-                  </div>
-                </motion.div>
-                
-                {/* Next Feature Preview (Right side) */}
-                <motion.div
-                  className="absolute right-0 top-1/2 -translate-y-1/2 transform translate-x-24 opacity-40 hover:opacity-60 transition-opacity"
-                  animate={{ x: [28, 24, 28] }}
-                  transition={{ duration: 3, repeat: Infinity, repeatType: "reverse" }}
-                >
-                  <div className={`p-4 rounded-xl bg-gradient-to-br ${features[(activeFeature + 1) % features.length].color} w-48 glass-card shadow-lg`}>
-                    <div className="flex flex-col items-center text-white">
-                      <div className="p-2 rounded-full bg-white/10 mb-2">
-                        {features[(activeFeature + 1) % features.length].icon}
-                      </div>
-                      <h3 className="text-sm font-bold text-center">{features[(activeFeature + 1) % features.length].title}</h3>
-                    </div>
-                  </div>
-                </motion.div>
-              </div>
+              {/* Floating Highlights */}
+              <motion.div 
+                className="absolute -top-6 -right-6 w-24 h-24 blur-xl rounded-full bg-blue-500/20"
+                animate={{ 
+                  x: [0, 10, 0],
+                  y: [0, -10, 0],
+                  opacity: [0.5, 0.8, 0.5]
+                }}
+                transition={{ 
+                  duration: 8, 
+                  repeat: Infinity,
+                  repeatType: "reverse" 
+                }}
+              />
+              
+              <motion.div 
+                className="absolute bottom-10 -left-10 w-32 h-32 blur-xl rounded-full bg-purple-500/20"
+                animate={{ 
+                  x: [0, -15, 0],
+                  y: [0, 15, 0],
+                  opacity: [0.5, 0.7, 0.5]
+                }}
+                transition={{ 
+                  duration: 10, 
+                  repeat: Infinity,
+                  repeatType: "reverse",
+                  delay: 2
+                }}
+              />
             </div>
           </div>
         </div>
