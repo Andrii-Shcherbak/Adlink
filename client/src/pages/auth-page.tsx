@@ -33,11 +33,100 @@ import {
   FiBriefcase,
   FiArrowRight,
 } from "react-icons/fi";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function AuthPage() {
   const { user, loginMutation, registerMutation } = useAuth();
   const [isLoaded, setIsLoaded] = useState(false);
+  const [activeFeature, setActiveFeature] = useState(0);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const featuresRef = useRef<HTMLDivElement>(null);
+  
+  // Define feature data
+  const features = [
+    {
+      icon: <FiLink className="h-8 w-8 text-blue-400" />,
+      title: "AI-Powered Links",
+      description: "Generate titles and custom shortcodes with our AI integration",
+      color: "from-blue-600 to-indigo-600",
+      highlight: "AI Intelligence"
+    },
+    {
+      icon: <FiCode className="h-8 w-8 text-violet-400" />,
+      title: "Advanced QR Codes",
+      description: "Create customizable QR codes with your logo, patterns, and frames",
+      color: "from-violet-600 to-purple-600",
+      highlight: "Custom Design"
+    },
+    {
+      icon: <FiBarChart2 className="h-8 w-8 text-teal-400" />,
+      title: "Geo-Analytics",
+      description: "Track link usage with detailed geographic and device data",
+      color: "from-teal-600 to-emerald-600",
+      highlight: "Actionable Insights"
+    },
+    {
+      icon: <FiGlobe className="h-8 w-8 text-orange-400" />,
+      title: "Multi-Destination",
+      description: "Smart redirection based on the user's device type",
+      color: "from-orange-600 to-amber-600",
+      highlight: "Intelligent Routing"
+    },
+    {
+      icon: (
+        <svg
+          className="h-8 w-8 text-rose-400"
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+          <polyline points="14 2 14 8 20 8"></polyline>
+          <line x1="16" y1="13" x2="8" y2="13"></line>
+          <line x1="16" y1="17" x2="8" y2="17"></line>
+          <polyline points="10 9 9 9 8 9"></polyline>
+        </svg>
+      ),
+      title: "PDF Document Sharing",
+      description: "Share PDF documents through secure, expiring links",
+      color: "from-rose-600 to-pink-600",
+      highlight: "Secure Sharing"
+    },
+    {
+      icon: (
+        <svg
+          className="h-8 w-8 text-cyan-400"
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <rect
+            x="2"
+            y="3"
+            width="20"
+            height="14"
+            rx="2"
+            ry="2"
+          ></rect>
+          <line x1="8" y1="21" x2="16" y2="21"></line>
+          <line x1="12" y1="17" x2="12" y2="21"></line>
+        </svg>
+      ),
+      title: "Digital Asset Management",
+      description: "Organize and manage your files with folders and drag-and-drop",
+      color: "from-cyan-600 to-blue-600",
+      highlight: "Streamlined Organization"
+    }
+  ];
 
   useEffect(() => {
     // Add a small delay to ensure smooth animation
@@ -45,6 +134,26 @@ export default function AuthPage() {
       setIsLoaded(true);
     }, 100);
     return () => clearTimeout(timer);
+  }, []);
+  
+  // Set up the feature rotation
+  useEffect(() => {
+    const startInterval = () => {
+      intervalRef.current = setInterval(() => {
+        setActiveFeature(prev => (prev + 1) % features.length);
+      }, 4000); // Change feature every 4 seconds
+    };
+    
+    // Start the interval after a delay
+    const timer = setTimeout(() => {
+      startInterval();
+    }, 1000);
+    
+    // Clear intervals on unmount
+    return () => {
+      clearTimeout(timer);
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
   }, []);
 
   const loginForm = useForm<Pick<InsertUser, "username" | "password">>({
@@ -112,126 +221,126 @@ export default function AuthPage() {
             </p>
           </div>
 
-          <div className="hidden md:block transition-all duration-700 delay-300">
-            <div className="grid grid-cols-2 gap-8 mt-8">
-              <Feature
-                icon={<FiLink className="h-6 w-6 text-blue-400" />}
-                title="AI-Powered Links"
-                description="Generate titles and custom shortcodes with our AI integration"
-              />
-              <Feature
-                icon={<FiCode className="h-6 w-6 text-blue-400" />}
-                title="Advanced QR Codes"
-                description="Create customizable QR codes with your logo, patterns, and frames"
-              />
-              <Feature
-                icon={<FiBarChart2 className="h-6 w-6 text-blue-400" />}
-                title="Geo-Analytics"
-                description="Track link usage with detailed geographic and device data"
-              />
-              <Feature
-                icon={<FiGlobe className="h-6 w-6 text-blue-400" />}
-                title="Multi-Destination"
-                description="Smart redirection based on the user's device type"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-8 mt-8">
-              <Feature
-                icon={
-                  <svg
-                    className="h-6 w-6 text-blue-400"
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
+          <div className="block transition-all duration-700 delay-300">
+            <div className="h-96 flex items-center justify-center mt-8 relative" ref={featuresRef}>
+              {/* Center/Main Feature Showcase */}
+              <div className="flex flex-col items-center relative max-w-md">
+                {/* Animated Feature Cards */}
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={activeFeature}
+                    initial={{ opacity: 0, y: 20, scale: 0.9 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -20, scale: 0.9 }}
+                    transition={{ duration: 0.5, ease: "easeOut" }}
+                    className={`p-6 rounded-2xl glass-card shadow-2xl relative overflow-hidden bg-gradient-to-br ${features[activeFeature].color} w-full max-w-md transform hover:scale-105 transition-transform duration-300`}
                   >
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                    <polyline points="14 2 14 8 20 8"></polyline>
-                    <line x1="16" y1="13" x2="8" y2="13"></line>
-                    <line x1="16" y1="17" x2="8" y2="17"></line>
-                    <polyline points="10 9 9 9 8 9"></polyline>
-                  </svg>
-                }
-                title="PDF Document Sharing"
-                description="Share PDF documents through secure, expiring links"
-              />
-              <Feature
-                icon={
-                  <svg
-                    className="h-6 w-6 text-blue-400"
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <rect
-                      x="2"
-                      y="3"
-                      width="20"
-                      height="14"
-                      rx="2"
-                      ry="2"
-                    ></rect>
-                    <line x1="8" y1="21" x2="16" y2="21"></line>
-                    <line x1="12" y1="17" x2="12" y2="21"></line>
-                  </svg>
-                }
-                title="Digital Asset Management"
-                description="Organize and manage your files with folders and drag-and-drop"
-              />
-              <Feature
-                icon={
-                  <svg
-                    className="h-6 w-6 text-blue-400"
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                    <circle cx="8.5" cy="7" r="4"></circle>
-                    <polyline points="17 11 19 13 23 9"></polyline>
-                  </svg>
-                }
-                title="Dual User Types"
-                description="Support for internal (Microsoft) and external account authentication"
-              />
-              <Feature
-                icon={
-                  <svg
-                    className="h-6 w-6 text-blue-400"
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <rect
-                      x="3"
-                      y="11"
-                      width="18"
-                      height="11"
-                      rx="2"
-                      ry="2"
-                    ></rect>
-                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                  </svg>
-                }
-                title="Secure Storage"
-                description="Azure-powered secure file storage with SAS token protection"
-              />
+                    {/* Background glow effect */}
+                    <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
+                    <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
+                    
+                    {/* Highlight chip */}
+                    <div className="absolute -top-3 -right-3 bg-white/90 text-gray-900 rounded-full px-3 py-1 text-xs font-bold shadow-lg transform rotate-3">
+                      {features[activeFeature].highlight}
+                    </div>
+                    
+                    <div className="flex flex-col items-center text-white">
+                      <div className="p-3 rounded-full bg-white/10 mb-4">
+                        {features[activeFeature].icon}
+                      </div>
+                      <h3 className="text-2xl font-bold mb-3 text-center">{features[activeFeature].title}</h3>
+                      <p className="text-center text-white/80 text-lg">{features[activeFeature].description}</p>
+                    </div>
+                    
+                    {/* Decorative elements */}
+                    <motion.div 
+                      className="absolute -bottom-4 -right-4 w-20 h-20 rounded-full bg-white/5"
+                      animate={{ 
+                        scale: [1, 1.2, 1],
+                        rotate: [0, 15, 0] 
+                      }}
+                      transition={{ 
+                        duration: 6, 
+                        repeat: Infinity,
+                        repeatType: "reverse" 
+                      }}
+                    />
+                    <motion.div 
+                      className="absolute -top-4 -left-4 w-12 h-12 rounded-full bg-white/5"
+                      animate={{ 
+                        scale: [1, 1.3, 1],
+                        rotate: [0, -10, 0] 
+                      }}
+                      transition={{ 
+                        duration: 5, 
+                        repeat: Infinity,
+                        repeatType: "reverse",
+                        delay: 0.5
+                      }}
+                    />
+                  </motion.div>
+                </AnimatePresence>
+                
+                {/* Feature Selection Indicators */}
+                <div className="flex space-x-2 mt-8">
+                  {features.map((_, index) => (
+                    <button
+                      key={index}
+                      onClick={() => {
+                        setActiveFeature(index);
+                        // Clear and restart interval when user manually selects
+                        if (intervalRef.current) {
+                          clearInterval(intervalRef.current);
+                          intervalRef.current = setInterval(() => {
+                            setActiveFeature(prev => (prev + 1) % features.length);
+                          }, 4000);
+                        }
+                      }}
+                      className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                        activeFeature === index
+                          ? 'bg-white scale-125'
+                          : 'bg-white/30 hover:bg-white/50'
+                      }`}
+                      aria-label={`View feature ${index + 1}`}
+                    />
+                  ))}
+                </div>
+              </div>
+              
+              {/* Small preview cards on the sides (visible on larger screens) */}
+              <div className="hidden xl:block">
+                {/* Previous Feature Preview (Left side) */}
+                <motion.div
+                  className="absolute left-0 top-1/2 -translate-y-1/2 transform -translate-x-24 opacity-40 hover:opacity-60 transition-opacity"
+                  animate={{ x: [-28, -24, -28] }}
+                  transition={{ duration: 3, repeat: Infinity, repeatType: "reverse" }}
+                >
+                  <div className={`p-4 rounded-xl bg-gradient-to-br ${features[(activeFeature - 1 + features.length) % features.length].color} w-48 glass-card shadow-lg`}>
+                    <div className="flex flex-col items-center text-white">
+                      <div className="p-2 rounded-full bg-white/10 mb-2">
+                        {features[(activeFeature - 1 + features.length) % features.length].icon}
+                      </div>
+                      <h3 className="text-sm font-bold text-center">{features[(activeFeature - 1 + features.length) % features.length].title}</h3>
+                    </div>
+                  </div>
+                </motion.div>
+                
+                {/* Next Feature Preview (Right side) */}
+                <motion.div
+                  className="absolute right-0 top-1/2 -translate-y-1/2 transform translate-x-24 opacity-40 hover:opacity-60 transition-opacity"
+                  animate={{ x: [28, 24, 28] }}
+                  transition={{ duration: 3, repeat: Infinity, repeatType: "reverse" }}
+                >
+                  <div className={`p-4 rounded-xl bg-gradient-to-br ${features[(activeFeature + 1) % features.length].color} w-48 glass-card shadow-lg`}>
+                    <div className="flex flex-col items-center text-white">
+                      <div className="p-2 rounded-full bg-white/10 mb-2">
+                        {features[(activeFeature + 1) % features.length].icon}
+                      </div>
+                      <h3 className="text-sm font-bold text-center">{features[(activeFeature + 1) % features.length].title}</h3>
+                    </div>
+                  </div>
+                </motion.div>
+              </div>
             </div>
           </div>
         </div>
