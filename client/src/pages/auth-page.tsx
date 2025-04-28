@@ -2,7 +2,6 @@ import { useAuth } from "@/hooks/use-auth";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertUserSchema, InsertUser } from "@shared/schema";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Form,
   FormControl,
@@ -20,7 +19,6 @@ import {
   CardHeader,
   CardTitle,
   CardDescription,
-  CardFooter,
 } from "@/components/ui/card";
 import {
   FiLink,
@@ -29,15 +27,13 @@ import {
   FiCode,
   FiUser,
   FiLock,
-  FiMail,
-  FiBriefcase,
   FiArrowRight,
 } from "react-icons/fi";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function AuthPage() {
-  const { user, loginMutation, registerMutation } = useAuth();
+  const { user, loginMutation } = useAuth();
   const [isLoaded, setIsLoaded] = useState(false);
   // Initialize with the first feature active
   const [activeFeatures, setActiveFeatures] = useState<Record<number, boolean>>({
@@ -195,17 +191,7 @@ export default function AuthPage() {
     defaultValues: { username: "", password: "" },
   });
 
-  const registerForm = useForm<InsertUser>({
-    resolver: zodResolver(insertUserSchema),
-    defaultValues: {
-      username: "",
-      password: "",
-      firstName: "",
-      lastName: "",
-      email: "",
-      company: "",
-    },
-  });
+
 
   if (user) {
     return <Redirect to="/" />;
@@ -642,313 +628,125 @@ export default function AuthPage() {
                 Welcome
               </CardTitle>
               <CardDescription className="text-white/70">
-                Sign in to your account or create a new one
+                Sign in to your account
               </CardDescription>
             </CardHeader>
 
             <CardContent className="relative z-10">
-              <Tabs defaultValue="login" className="w-full">
-                <TabsList className="grid w-full grid-cols-2 bg-gray-800/50 p-1 rounded-lg mb-6">
-                  <TabsTrigger
-                    value="login"
-                    className="text-sm font-medium data-[state=active]:bg-gradient-to-r from-blue-600 to-violet-600 data-[state=active]:text-white"
-                  >
-                    Sign In
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="register"
-                    className="text-sm font-medium data-[state=active]:bg-gradient-to-r from-blue-600 to-violet-600 data-[state=active]:text-white"
-                  >
-                    Create Account
-                  </TabsTrigger>
-                </TabsList>
+              <div className="w-full">
+                <div className="space-y-2 mb-6">
+                  <h3 className="text-lg font-medium text-white">
+                    Sign in to your account
+                  </h3>
+                  <p className="text-sm text-white/60">
+                    Enter your credentials below to continue
+                  </p>
+                </div>
 
-                <TabsContent value="login">
-                  <div className="space-y-2 mb-6">
-                    <h3 className="text-lg font-medium text-white">
-                      Sign in to your account
-                    </h3>
-                    <p className="text-sm text-white/60">
-                      Enter your credentials below to continue
-                    </p>
-                  </div>
-
-                  <Form {...loginForm}>
-                    <form
-                      onSubmit={loginForm.handleSubmit((data) =>
-                        loginMutation.mutate(data),
+                <Form {...loginForm}>
+                  <form
+                    onSubmit={loginForm.handleSubmit((data) =>
+                      loginMutation.mutate(data),
+                    )}
+                    className="space-y-4"
+                  >
+                    <FormField
+                      control={loginForm.control}
+                      name="username"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-sm font-medium text-white/80">
+                            Username
+                          </FormLabel>
+                          <FormControl>
+                            <div className="relative">
+                              <FiUser className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/50" />
+                              <Input
+                                className="h-11 pl-10 bg-gray-800/50 border-white/10 text-white placeholder:text-white/30 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                                {...field}
+                                placeholder="Enter your username"
+                                value={field.value || ""}
+                              />
+                            </div>
+                          </FormControl>
+                          <FormMessage className="text-red-400" />
+                        </FormItem>
                       )}
-                      className="space-y-4"
-                    >
-                      <FormField
-                        control={loginForm.control}
-                        name="username"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-sm font-medium text-white/80">
-                              Username
-                            </FormLabel>
-                            <FormControl>
-                              <div className="relative">
-                                <FiUser className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/50" />
-                                <Input
-                                  className="h-11 pl-10 bg-gray-800/50 border-white/10 text-white placeholder:text-white/30 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                                  {...field}
-                                  placeholder="Enter your username"
-                                  value={field.value || ""}
-                                />
-                              </div>
-                            </FormControl>
-                            <FormMessage className="text-red-400" />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={loginForm.control}
-                        name="password"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-sm font-medium text-white/80">
-                              Password
-                            </FormLabel>
-                            <FormControl>
-                              <div className="relative">
-                                <FiLock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/50" />
-                                <Input
-                                  type="password"
-                                  className="h-11 pl-10 bg-gray-800/50 border-white/10 text-white placeholder:text-white/30 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                                  {...field}
-                                  placeholder="Enter your password"
-                                  value={field.value || ""}
-                                />
-                              </div>
-                            </FormControl>
-                            <FormMessage className="text-red-400" />
-                          </FormItem>
-                        )}
-                      />
-                      <Button
-                        type="submit"
-                        className="w-full h-11 text-base font-medium bg-gradient-to-r from-blue-600 to-violet-600 hover:from-blue-700 hover:to-violet-700 text-white rounded-lg transition-all duration-300 ease-in-out transform hover:scale-[1.02] mt-2"
-                        disabled={loginMutation.isPending}
-                      >
-                        {loginMutation.isPending ? (
-                          "Signing in..."
-                        ) : (
-                          <span className="flex items-center justify-center">
-                            Sign In
-                            <FiArrowRight className="ml-2 h-4 w-4" />
-                          </span>
-                        )}
-                      </Button>
-                    </form>
-                  </Form>
-
-                  <div className="relative my-6">
-                    <div className="absolute inset-0 flex items-center">
-                      <div className="w-full border-t border-white/10" />
-                    </div>
-                    <div className="relative flex justify-center text-xs uppercase">
-                      <span className="bg-gray-900/40 px-2 text-white/60">
-                        Or continue with
-                      </span>
-                    </div>
-                  </div>
-
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="w-full h-11 text-base text-white border-white/10 bg-white/5 hover:bg-white/10 hover:border-white/20 rounded-lg transition-all duration-300"
-                    onClick={() =>
-                      (window.location.href = `/api/auth/microsoft`)
-                    }
-                  >
-                    <svg
-                      className="w-5 h-5 mr-2"
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 23 23"
-                    >
-                      <path fill="#f3f3f3" d="M0 0h23v23H0z" />
-                      <path fill="#f35325" d="M1 1h10v10H1z" />
-                      <path fill="#81bc06" d="M12 1h10v10H12z" />
-                      <path fill="#05a6f0" d="M1 12h10v10H1z" />
-                      <path fill="#ffba08" d="M12 12h10v10H12z" />
-                    </svg>
-                    Sign in with Microsoft
-                  </Button>
-                </TabsContent>
-
-                <TabsContent value="register">
-                  <div className="space-y-2 mb-6">
-                    <h3 className="text-lg font-medium text-white">
-                      Create a new account
-                    </h3>
-                    <p className="text-sm text-white/60">
-                      Fill out the form below to register
-                    </p>
-                  </div>
-
-                  <Form {...registerForm}>
-                    <form
-                      onSubmit={registerForm.handleSubmit((data) =>
-                        registerMutation.mutate(data),
+                    />
+                    <FormField
+                      control={loginForm.control}
+                      name="password"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-sm font-medium text-white/80">
+                            Password
+                          </FormLabel>
+                          <FormControl>
+                            <div className="relative">
+                              <FiLock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/50" />
+                              <Input
+                                type="password"
+                                className="h-11 pl-10 bg-gray-800/50 border-white/10 text-white placeholder:text-white/30 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                                {...field}
+                                placeholder="Enter your password"
+                                value={field.value || ""}
+                              />
+                            </div>
+                          </FormControl>
+                          <FormMessage className="text-red-400" />
+                        </FormItem>
                       )}
-                      className="space-y-4"
+                    />
+                    <Button
+                      type="submit"
+                      className="w-full h-11 text-base font-medium bg-gradient-to-r from-blue-600 to-violet-600 hover:from-blue-700 hover:to-violet-700 text-white rounded-lg transition-all duration-300 ease-in-out transform hover:scale-[1.02] mt-2"
+                      disabled={loginMutation.isPending}
                     >
-                      <div className="grid grid-cols-2 gap-4">
-                        <FormField
-                          control={registerForm.control}
-                          name="firstName"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel className="text-sm font-medium text-white/80">
-                                First Name
-                              </FormLabel>
-                              <FormControl>
-                                <Input
-                                  className="h-11 bg-gray-800/50 border-white/10 text-white placeholder:text-white/30 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                                  {...field}
-                                  placeholder="First Name"
-                                  value={field.value || ""}
-                                />
-                              </FormControl>
-                              <FormMessage className="text-red-400" />
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={registerForm.control}
-                          name="lastName"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel className="text-sm font-medium text-white/80">
-                                Last Name
-                              </FormLabel>
-                              <FormControl>
-                                <Input
-                                  className="h-11 bg-gray-800/50 border-white/10 text-white placeholder:text-white/30 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                                  {...field}
-                                  placeholder="Last Name"
-                                  value={field.value || ""}
-                                />
-                              </FormControl>
-                              <FormMessage className="text-red-400" />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-                      <FormField
-                        control={registerForm.control}
-                        name="username"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-sm font-medium text-white/80">
-                              Username
-                            </FormLabel>
-                            <FormControl>
-                              <div className="relative">
-                                <FiUser className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/50" />
-                                <Input
-                                  className="h-11 pl-10 bg-gray-800/50 border-white/10 text-white placeholder:text-white/30 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                                  {...field}
-                                  placeholder="Choose a username"
-                                  value={field.value || ""}
-                                />
-                              </div>
-                            </FormControl>
-                            <FormMessage className="text-red-400" />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={registerForm.control}
-                        name="email"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-sm font-medium text-white/80">
-                              Email
-                            </FormLabel>
-                            <FormControl>
-                              <div className="relative">
-                                <FiMail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/50" />
-                                <Input
-                                  type="email"
-                                  className="h-11 pl-10 bg-gray-800/50 border-white/10 text-white placeholder:text-white/30 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                                  {...field}
-                                  placeholder="Enter your email"
-                                  value={field.value || ""}
-                                />
-                              </div>
-                            </FormControl>
-                            <FormMessage className="text-red-400" />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={registerForm.control}
-                        name="company"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-sm font-medium text-white/80">
-                              Company
-                            </FormLabel>
-                            <FormControl>
-                              <div className="relative">
-                                <FiBriefcase className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/50" />
-                                <Input
-                                  className="h-11 pl-10 bg-gray-800/50 border-white/10 text-white placeholder:text-white/30 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                                  {...field}
-                                  placeholder="Your company (optional)"
-                                  value={field.value || ""}
-                                />
-                              </div>
-                            </FormControl>
-                            <FormMessage className="text-red-400" />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={registerForm.control}
-                        name="password"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-sm font-medium text-white/80">
-                              Password
-                            </FormLabel>
-                            <FormControl>
-                              <div className="relative">
-                                <FiLock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/50" />
-                                <Input
-                                  type="password"
-                                  className="h-11 pl-10 bg-gray-800/50 border-white/10 text-white placeholder:text-white/30 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                                  {...field}
-                                  placeholder="Choose a strong password"
-                                  value={field.value || ""}
-                                />
-                              </div>
-                            </FormControl>
-                            <FormMessage className="text-red-400" />
-                          </FormItem>
-                        )}
-                      />
-                      <Button
-                        type="submit"
-                        className="w-full h-11 text-base font-medium bg-gradient-to-r from-blue-600 to-violet-600 hover:from-blue-700 hover:to-violet-700 text-white rounded-lg transition-all duration-300 ease-in-out transform hover:scale-[1.02] mt-2"
-                        disabled={registerMutation.isPending}
-                      >
-                        {registerMutation.isPending ? (
-                          "Creating account..."
-                        ) : (
-                          <span className="flex items-center justify-center">
-                            Create Account
-                            <FiArrowRight className="ml-2 h-4 w-4" />
-                          </span>
-                        )}
-                      </Button>
-                    </form>
-                  </Form>
-                </TabsContent>
-              </Tabs>
+                      {loginMutation.isPending ? (
+                        "Signing in..."
+                      ) : (
+                        <span className="flex items-center justify-center">
+                          Sign In
+                          <FiArrowRight className="ml-2 h-4 w-4" />
+                        </span>
+                      )}
+                    </Button>
+                  </form>
+                </Form>
+
+                <div className="relative my-6">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-white/10" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-gray-900/40 px-2 text-white/60">
+                      Or continue with
+                    </span>
+                  </div>
+                </div>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full h-11 text-base text-white border-white/10 bg-white/5 hover:bg-white/10 hover:border-white/20 rounded-lg transition-all duration-300"
+                  onClick={() =>
+                    (window.location.href = `/api/auth/microsoft`)
+                  }
+                >
+                  <svg
+                    className="w-5 h-5 mr-2"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 23 23"
+                  >
+                    <path fill="#f3f3f3" d="M0 0h23v23H0z" />
+                    <path fill="#f35325" d="M1 1h10v10H1z" />
+                    <path fill="#81bc06" d="M12 1h10v10H12z" />
+                    <path fill="#05a6f0" d="M1 12h10v10H1z" />
+                    <path fill="#ffba08" d="M12 12h10v10H12z" />
+                  </svg>
+                  Sign in with Microsoft
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </div>
