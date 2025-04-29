@@ -1668,9 +1668,10 @@ function getCountryCode(req: express.Request): CountryInfo {
     ip = ips[0]; // Take the first IP which is typically the client's real IP
   }
   
-  // Special handling for UAE traffic (5.193.x.x range)
-  if (ip && ip.startsWith('5.193.')) {
-    console.log(`UAE IP detected: ${ip}`);
+  // Special handling for UAE traffic by examining the full x-forwarded-for header
+  const forwardedFor = req.headers['x-forwarded-for'] as string;
+  if (forwardedFor && forwardedFor.includes('5.193.')) {
+    console.log(`UAE IP detected in forwarded headers: ${forwardedFor}`);
     return { code: 'AE', name: 'United Arab Emirates' };
   }
   
