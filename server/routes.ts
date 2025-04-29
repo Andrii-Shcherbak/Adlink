@@ -391,7 +391,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const deviceType = getDeviceType(req.headers['user-agent'] || '');
     const devicePlatform = getDevicePlatform(req.headers['user-agent'] || '');
     const referrer = getReferrer(req.headers.referer);
-    const countryInfo = getCountryCode(req);
+    const countryInfo = await getCountryCode(req);
     const deviceInfo = getDetailedDeviceInfo(req.headers['user-agent'] || '');
 
     try {
@@ -469,7 +469,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const deviceType = getDeviceType(req.headers['user-agent'] || '');
     const devicePlatform = getDevicePlatform(req.headers['user-agent'] || '');
     const referrer = getReferrer(req.headers.referer);
-    const countryInfo = getCountryCode(req);
+    const countryInfo = await getCountryCode(req);
     const deviceInfo = getDetailedDeviceInfo(req.headers['user-agent'] || '');
 
     try {
@@ -544,7 +544,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const deviceType = getDeviceType(req.headers['user-agent'] || '');
     const devicePlatform = getDevicePlatform(req.headers['user-agent'] || '');
     const referrer = getReferrer(req.headers.referer);
-    const countryInfo = getCountryCode(req);
+    const countryInfo = await getCountryCode(req);
     const deviceInfo = getDetailedDeviceInfo(req.headers['user-agent'] || '');
 
     try {
@@ -626,7 +626,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const deviceType = getDeviceType(req.headers['user-agent'] || '');
     const devicePlatform = getDevicePlatform(req.headers['user-agent'] || '');
     const referrer = getReferrer(req.headers.referer);
-    const countryInfo = getCountryCode(req);
+    const countryInfo = await getCountryCode(req);
     const deviceInfo = getDetailedDeviceInfo(req.headers['user-agent'] || '');
 
     try {
