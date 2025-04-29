@@ -1672,7 +1672,28 @@ function getCountryCode(req: express.Request): CountryInfo {
   const forwardedFor = req.headers['x-forwarded-for'] as string;
   if (forwardedFor && forwardedFor.includes('5.193.')) {
     console.log(`UAE IP detected in forwarded headers: ${forwardedFor}`);
-    return { code: 'AE', name: 'United Arab Emirates' };
+    
+    // Add city detection for UAE IPs based on IP ranges
+    // This is a simple approximation - for production, you would use a more sophisticated lookup
+    let city = "Dubai"; // Default to Dubai for UAE IPs
+    
+    // Extract the first IP which is the client's
+    const clientIp = forwardedFor.split(',')[0].trim();
+    
+    // Check specific IP ranges for different UAE cities
+    if (clientIp.startsWith('5.193.1.')) {
+      city = "Dubai";
+    } else if (clientIp.startsWith('5.193.2.')) {
+      city = "Abu Dhabi";
+    } else if (clientIp.startsWith('5.193.3.')) {
+      city = "Sharjah";
+    }
+    
+    return { 
+      code: 'AE', 
+      name: 'United Arab Emirates',
+      city: city
+    };
   }
   
   console.log(`Using IP for geolocation: ${ip}`);
