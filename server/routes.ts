@@ -1657,9 +1657,21 @@ function getCountryCode(req: express.Request): CountryInfo {
            req.socket.remoteAddress ||
            '127.0.0.1';
   
+  // Log all available headers for debugging real client IPs
+  console.log("Full headers for geolocation debugging:", JSON.stringify(req.headers));
+  
   // Handle comma-separated list of IPs (common in forwarded requests)
+  // The first IP in the list is typically the client's real IP
   if (ip && ip.includes(',')) {
-    ip = ip.split(',')[0].trim();
+    const ips = ip.split(',').map(i => i.trim());
+    console.log(`Found multiple IPs: ${ips.join(', ')}`);
+    ip = ips[0]; // Take the first IP which is typically the client's real IP
+  }
+  
+  // Special handling for UAE traffic (5.193.x.x range)
+  if (ip && ip.startsWith('5.193.')) {
+    console.log(`UAE IP detected: ${ip}`);
+    return { code: 'AE', name: 'United Arab Emirates' };
   }
   
   console.log(`Using IP for geolocation: ${ip}`);
