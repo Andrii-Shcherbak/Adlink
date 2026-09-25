@@ -11,7 +11,7 @@ import { qrConfigSchema } from "@shared/schema";
 import { UAParser } from "ua-parser-js";
 import { scrypt, timingSafeEqual, randomBytes } from "crypto";
 import { promisify } from "util";
-import { openAiService } from "./services/openai-service";
+import { AISuggestionError, openAiService } from "./services/openai-service";
 import { emailService } from "./services/email-service";
 import { azureStorageService } from "./services/azure-storage-service";
 import { servePdfDocument } from "./pdf-handler";
@@ -256,8 +256,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (title) {
         await storage.updateUrl(url.id, req.user!.id, { title });
       }
-    } catch (error) {
-      console.error("Error generating title for new URL:", error);
+    } catch {
+      console.warn("Automatic title generation was skipped.");
       // Don't block the response or fail if title generation fails
     }
 
@@ -930,24 +930,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/ai/generate-title", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
   
-    const { url } = req.body;
-    if (!url) {
-      return res.status(400).json({ error: "URL is required" });
+    const { url } = req.body ?? {};
+    if (typeof url !== "string" || !url.trim()) {
+      return res.status(400).json({ error: "A URL is required to generate a title." });
     }
     
     try {
       const title = await openAiService.generateTitle({ url });
       res.json({ title });
     } catch (error) {
-      console.error("Error generating title:", error);
-      res.status(500).json({ error: "Failed to generate title" });
+      if (error instanceof AISuggestionError) {
+        return res.status(error.statusCode).json({ error: error.message });
+      }
+      console.error("Unexpected error in AI title suggestion endpoint.");
+      res.status(503).json({
+        error: "The AI provider could not generate a title right now. Please try again later.",
+      });
     }
   });
   
   app.post("/api/ai/generate-shortcodes", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
   
-    const { url, title, count = 5 } = req.body;
+    const { url, title, count = 5 } = req.body ?? {};
+    if (typeof url !== "string" || !url.trim()) {
+      return res.status(400).json({
+        error: "A URL is required to generate shortcode suggestions.",
+      });
+    }
+    if (
+      (title !== undefined && typeof title !== "string") ||
+      !Number.isInteger(count) ||
+      count < 1 ||
+      count > 8
+    ) {
+      return res.status(400).json({
+        error: "Shortcode suggestion count must be between 1 and 8.",
+      });
+    }
     
     try {
       const shortcodes = await openAiService.generateShortcodeSuggestions({ 
@@ -957,8 +977,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       res.json({ shortcodes });
     } catch (error) {
-      console.error("Error generating shortcodes:", error);
-      res.status(500).json({ error: "Failed to generate shortcode suggestions" });
+      if (error instanceof AISuggestionError) {
+        return res.status(error.statusCode).json({ error: error.message });
+      }
+      console.error("Unexpected error in AI shortcode suggestion endpoint.");
+      res.status(503).json({
+        error: "The AI provider could not generate shortcode suggestions right now. Please try again later.",
+      });
     }
   });
 
