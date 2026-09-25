@@ -1,7 +1,6 @@
-import OpenAI from "openai";
+import { GoogleGenAI } from "@google/genai";
 
-// the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
-const MODEL = "gpt-4o";
+const MODEL = "gemini-3-pro-preview";
 
 export class AISuggestionError extends Error {
   constructor(
@@ -16,12 +15,6 @@ export class AISuggestionError extends Error {
 type ProviderErrorDetails = {
   status?: unknown;
   code?: unknown;
-  type?: unknown;
-  request_id?: unknown;
-  error?: {
-    code?: unknown;
-    type?: unknown;
-  };
 };
 
 function stringValue(value: unknown): string | undefined {
@@ -35,46 +28,31 @@ function asProviderError(error: unknown, operation: string): AISuggestionError {
       : {};
   const status =
     typeof details.status === "number" ? details.status : undefined;
-  const code =
-    stringValue(details.code) ?? stringValue(details.error?.code);
-  const type =
-    stringValue(details.type) ?? stringValue(details.error?.type);
+  const code = stringValue(details.code);
 
   // Avoid logging provider response bodies or headers, which can contain sensitive data.
-  console.error(`OpenAI ${operation} request failed`, {
-    status,
-    code,
-    type,
-    requestId: stringValue(details.request_id),
-  });
+  console.error(`Gemini ${operation} request failed`, { status, code });
 
   if (
-    code === "credit_balance_exhausted" ||
-    code === "insufficient_quota" ||
-    type === "insufficient_quota"
+    status === 429 ||
+    code?.toUpperCase() === "RESOURCE_EXHAUSTED" ||
+    code?.toUpperCase() === "QUOTA_EXCEEDED"
   ) {
     return new AISuggestionError(
-      "AI suggestions are unavailable because the AI provider account has no credits. Please ask an administrator to restore provider billing.",
-      503,
+      "The managed AI provider is temporarily limiting requests or has exhausted its available quota. Please try again later.",
+      429,
     );
   }
 
   if (status === 401 || status === 403) {
     return new AISuggestionError(
-      "AI suggestions are unavailable because the AI provider rejected its credentials. Please contact an administrator.",
+      "AI suggestions are unavailable because the managed AI provider rejected its credentials. Please contact an administrator.",
       503,
     );
   }
 
-  if (status === 429) {
-    return new AISuggestionError(
-      "The AI provider is temporarily rate limiting requests. Please wait a moment and try again.",
-      429,
-    );
-  }
-
   return new AISuggestionError(
-    "The AI provider could not generate suggestions right now. Please try again later.",
+    "The managed AI provider could not generate suggestions right now. Please try again later.",
     503,
   );
 }
@@ -91,21 +69,24 @@ interface GenerateShortcodeOptions {
   maxTokens?: number;
 }
 
-export class OpenAIService {
-  constructor(private readonly clientFactory?: () => OpenAI) {}
+type GeminiClient = Pick<GoogleGenAI, "models">;
+type GeminiClientFactory = () => GeminiClient;
 
-  private getClient(): OpenAI {
+export class AISuggestionService {
+  constructor(private readonly clientFactory?: GeminiClientFactory) {}
+
+  private getClient(): GeminiClient {
     if (this.clientFactory) return this.clientFactory();
 
-    const apiKey = process.env.OPENAI_API_KEY?.trim();
+    const apiKey = process.env.GEMINI_API_KEY?.trim();
     if (!apiKey) {
       throw new AISuggestionError(
-        "AI suggestions are not configured. Please contact an administrator.",
+        "Replit-managed Gemini credentials are not enabled for this app. Approve the AI integration in the Project Editor or contact an administrator.",
         503,
       );
     }
 
-    return new OpenAI({ apiKey });
+    return new GoogleGenAI({ apiKey });
   }
 
   async generateTitle({
@@ -117,20 +98,15 @@ export class OpenAIService {
     }
 
     try {
-      const response = await this.getClient().chat.completions.create({
+      const response = await this.getClient().models.generateContent({
         model: MODEL,
-        messages: [
-          {
-            role: "user",
-            content: `Generate a short, concise, and descriptive title for this URL: ${url}
+        contents: `Generate a short, concise, and descriptive title for this URL: ${url}
 The title should be clear, professional, and accurately represent the content of the URL.
 Respond with only the title, no additional text or quotes.`,
-          },
-        ],
-        max_tokens: maxTokens,
+        config: { maxOutputTokens: maxTokens },
       });
 
-      const title = response.choices[0]?.message.content?.trim();
+      const title = response.text?.trim();
       if (!title) {
         throw new AISuggestionError(
           "The AI provider returned an empty title. Please try again.",
@@ -165,12 +141,9 @@ Respond with only the title, no additional text or quotes.`,
     }
 
     try {
-      const response = await this.getClient().chat.completions.create({
+      const response = await this.getClient().models.generateContent({
         model: MODEL,
-        messages: [
-          {
-            role: "user",
-            content: `Generate ${count} memorable, short, and unique shortcode suggestions for this URL: ${url}
+        contents: `Generate ${count} memorable, short, and unique shortcode suggestions for this URL: ${url}
 ${title ? `The URL title is: ${title}` : ""}
 
 Rules for shortcodes:
@@ -181,13 +154,13 @@ Rules for shortcodes:
 - No spaces or special characters other than hyphens
 
 Response format: Return a JSON object with a "shortcodes" array containing exactly ${count} shortcode strings.`,
-          },
-        ],
-        max_tokens: maxTokens,
-        response_format: { type: "json_object" },
+        config: {
+          maxOutputTokens: maxTokens,
+          responseMimeType: "application/json",
+        },
       });
 
-      const content = response.choices[0]?.message.content;
+      const content = response.text;
       if (!content) {
         throw new AISuggestionError(
           "The AI provider returned an empty shortcode response. Please try again.",
@@ -242,4 +215,4 @@ Response format: Return a JSON object with a "shortcodes" array containing exact
   }
 }
 
-export const openAiService = new OpenAIService();
+export const aiSuggestionService = new AISuggestionService();

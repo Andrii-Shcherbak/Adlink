@@ -1,20 +1,16 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import OpenAI from "openai";
-import { AISuggestionError, OpenAIService } from "./openai-service";
+import { GoogleGenAI } from "@google/genai";
+import { AISuggestionError, AISuggestionService } from "./ai-suggestion-service";
 
-function serviceReturning(content: string | null): OpenAIService {
-  return new OpenAIService(
+function serviceReturning(text: string | undefined): AISuggestionService {
+  return new AISuggestionService(
     () =>
       ({
-        chat: {
-          completions: {
-            create: async () => ({
-              choices: [{ message: { content } }],
-            }),
-          },
+        models: {
+          generateContent: async () => ({ text }),
         },
-      }) as unknown as OpenAI,
+      }) as unknown as GoogleGenAI,
   );
 }
 
@@ -68,43 +64,48 @@ test("rejects malformed shortcode responses", async () => {
 });
 
 test("explains provider quota exhaustion without exposing provider payloads", async () => {
-  const service = new OpenAIService(
+  const service = new AISuggestionService(
     () =>
       ({
-        chat: {
-          completions: {
-            create: async () => {
-              throw Object.assign(new Error("private provider response"), {
-                status: 429,
-                code: "credit_balance_exhausted",
-                type: "insufficient_quota",
-                request_id: "test-request",
-              });
-            },
+        models: {
+          generateContent: async () => {
+            throw Object.assign(new Error("private provider response"), {
+              status: 429,
+              code: "RESOURCE_EXHAUSTED",
+            });
           },
         },
-      }) as unknown as OpenAI,
+      }) as unknown as GoogleGenAI,
   );
 
   await assert.rejects(
     service.generateTitle({ url: "https://example.com" }),
     (error: unknown) =>
       error instanceof AISuggestionError &&
-      error.statusCode === 503 &&
-      error.message.includes("no credits") &&
+      error.statusCode === 429 &&
+      error.message.includes("quota") &&
       !error.message.includes("private provider response"),
   );
 });
 
-test("reports missing AI configuration clearly", async () => {
-  process.env.OPENAI_API_KEY = "";
-  const service = new OpenAIService();
+test("reports missing managed AI configuration clearly", async () => {
+  const originalKey = process.env.GEMINI_API_KEY;
+  delete process.env.GEMINI_API_KEY;
 
-  await assert.rejects(
-    service.generateTitle({ url: "https://example.com" }),
-    (error: unknown) =>
-      error instanceof AISuggestionError &&
-      error.statusCode === 503 &&
-      error.message.includes("not configured"),
-  );
+  try {
+    const service = new AISuggestionService();
+    await assert.rejects(
+      service.generateTitle({ url: "https://example.com" }),
+      (error: unknown) =>
+        error instanceof AISuggestionError &&
+        error.statusCode === 503 &&
+        error.message.includes("credentials are not enabled"),
+    );
+  } finally {
+    if (originalKey === undefined) {
+      delete process.env.GEMINI_API_KEY;
+    } else {
+      process.env.GEMINI_API_KEY = originalKey;
+    }
+  }
 });

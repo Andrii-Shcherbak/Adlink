@@ -1,1 +1,0 @@
-- [OpenAI SDK tests](openai-sdk-testing.md) — Inject a fake client; patching global fetch after SDK import may not intercept requests.

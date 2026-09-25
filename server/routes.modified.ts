@@ -8,7 +8,7 @@ import { qrConfigSchema } from "@shared/schema";
 import { UAParser } from "ua-parser-js";
 import { scrypt, timingSafeEqual, randomBytes } from "crypto";
 import { promisify } from "util";
-import { openAiService } from "./services/openai-service";
+import { aiSuggestionService } from "./services/ai-suggestion-service";
 import { emailService } from "./services/email-service";
 import { azureStorageService } from "./services/azure-storage-service";
 import { servePdfDocument } from "./pdf-handler";
@@ -250,7 +250,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     // Generate a title asynchronously - don't block the response
     try {
-      const title = await openAiService.generateTitle({ url: url.originalUrl });
+      const title = await aiSuggestionService.generateTitle({ url: url.originalUrl });
       if (title) {
         await storage.updateUrl(url.id, req.user!.id, { title });
       }
@@ -864,7 +864,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
     
     try {
-      const title = await openAiService.generateTitle({ url });
+      const title = await aiSuggestionService.generateTitle({ url });
       res.json({ title });
     } catch (error) {
       console.error("Error generating title:", error);
@@ -878,10 +878,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const { url, title, count = 5 } = req.body;
     
     try {
-      const shortcodes = await openAiService.generateShortcodeSuggestions({ 
-        url, 
+      const shortcodes =
+        await aiSuggestionService.generateShortcodeSuggestions({
+        url,
         title,
-        count
+        count,
       });
       res.json({ shortcodes });
     } catch (error) {
