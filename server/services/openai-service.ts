@@ -214,14 +214,14 @@ Response format: Return a JSON object with a "shortcodes" array containing exact
       }
 
       const shortcodePattern = /^(?=.{4,12}$)[a-z0-9]+(?:-[a-z0-9]+)*$/;
-      const shortcodes = [
-        ...new Set(
+      const shortcodes = Array.from(
+        new Set(
           parsed.shortcodes
             .filter((value): value is string => typeof value === "string")
             .map((value) => value.trim().toLowerCase())
             .filter((value) => shortcodePattern.test(value)),
         ),
-      ].slice(0, count);
+      ).slice(0, count);
 
       if (shortcodes.length === 0) {
         throw new AISuggestionError(
