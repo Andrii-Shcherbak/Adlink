@@ -79,18 +79,6 @@ function asProviderError(error: unknown, operation: string): AISuggestionError {
   );
 }
 
-function getOpenAIClient(): OpenAI {
-  const apiKey = process.env.OPENAI_API_KEY?.trim();
-  if (!apiKey) {
-    throw new AISuggestionError(
-      "AI suggestions are not configured. Please contact an administrator.",
-      503,
-    );
-  }
-
-  return new OpenAI({ apiKey });
-}
-
 interface GenerateTitleOptions {
   url: string;
   maxTokens?: number;
@@ -104,6 +92,22 @@ interface GenerateShortcodeOptions {
 }
 
 export class OpenAIService {
+  constructor(private readonly clientFactory?: () => OpenAI) {}
+
+  private getClient(): OpenAI {
+    if (this.clientFactory) return this.clientFactory();
+
+    const apiKey = process.env.OPENAI_API_KEY?.trim();
+    if (!apiKey) {
+      throw new AISuggestionError(
+        "AI suggestions are not configured. Please contact an administrator.",
+        503,
+      );
+    }
+
+    return new OpenAI({ apiKey });
+  }
+
   async generateTitle({
     url,
     maxTokens = 50,
@@ -113,7 +117,7 @@ export class OpenAIService {
     }
 
     try {
-      const response = await getOpenAIClient().chat.completions.create({
+      const response = await this.getClient().chat.completions.create({
         model: MODEL,
         messages: [
           {
@@ -161,7 +165,7 @@ Respond with only the title, no additional text or quotes.`,
     }
 
     try {
-      const response = await getOpenAIClient().chat.completions.create({
+      const response = await this.getClient().chat.completions.create({
         model: MODEL,
         messages: [
           {
