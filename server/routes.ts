@@ -16,7 +16,7 @@ import {
   aiSuggestionService,
 } from "./services/ai-suggestion-service";
 import { emailService } from "./services/email-service";
-import { azureStorageService } from "./services/azure-storage-service";
+import { fileStorage } from "./services/file-storage";
 import { servePdfDocument } from "./pdf-handler";
 import multer from "multer";
 import path from "path";
@@ -80,14 +80,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "No PDF file provided" });
       }
       
-      // Upload file to Azure Storage
+      // Upload file to storage
       const fileBuffer = req.file.buffer;
       const originalName = req.file.originalname;
       const fileSize = req.file.size;
       const contentType = req.file.mimetype;
       
-      // Upload to Azure Storage
-      const fileUrl = await azureStorageService.uploadFile(
+      const fileUrl = await fileStorage.uploadFile(
         fileBuffer,
         originalName,
         contentType
@@ -1471,10 +1470,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const files = await storage.getUserFiles(req.user!.id, folderId);
       
       // Generate secure access URLs for each file
-      const filesWithUrls = files.map(file => ({
+      const filesWithUrls = await Promise.all(files.map(async file => ({
         ...file,
-        secureUrl: azureStorageService.getAssetFileUrl(file.storageFileName)
-      }));
+        secureUrl: await fileStorage.getAssetFileUrl(file.storageFileName)
+      })));
       
       res.json(filesWithUrls);
     } catch (error) {
@@ -1492,8 +1491,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "No file provided" });
       }
       
-      // Upload to Azure Storage
-      const { fileUrl, fileName } = await azureStorageService.uploadAssetFile(
+      const { fileUrl, fileName } = await fileStorage.uploadAssetFile(
         req.file.buffer,
         req.file.originalname,
         req.file.mimetype,
@@ -1519,7 +1517,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Generate secure URL for the response
       const response = {
         ...file,
-        secureUrl: azureStorageService.getAssetFileUrl(fileName)
+        secureUrl: await fileStorage.getAssetFileUrl(fileName)
       };
       
       res.status(201).json(response);
@@ -1551,7 +1549,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Generate secure URL for the response
       const response = {
         ...updatedFile,
-        secureUrl: azureStorageService.getAssetFileUrl(updatedFile.storageFileName)
+        secureUrl: await fileStorage.getAssetFileUrl(updatedFile.storageFileName)
       };
       
       res.json(response);

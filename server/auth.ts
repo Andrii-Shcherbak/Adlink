@@ -88,8 +88,14 @@ export function setupAuth(app: Express) {
     }),
   );
 
-  // Microsoft Strategy
-  passport.use(
+  // Microsoft Strategy (only when configured; passport throws on a missing clientID)
+  const microsoftAuthEnabled = Boolean(
+    process.env.MICROSOFT_CLIENT_ID && process.env.MICROSOFT_CLIENT_SECRET,
+  );
+  if (!microsoftAuthEnabled) {
+    console.warn("MICROSOFT_CLIENT_ID/MICROSOFT_CLIENT_SECRET not set. Microsoft login is disabled.");
+  }
+  if (microsoftAuthEnabled) passport.use(
     new MicrosoftStrategy(
       {
         clientID: process.env.MICROSOFT_CLIENT_ID!,
@@ -309,9 +315,12 @@ export function setupAuth(app: Express) {
     })(req, res, next);
   });
 
-  app.get("/api/auth/microsoft",
-    passport.authenticate("microsoft", { prompt: "select_account" })
-  );
+  app.get("/api/auth/microsoft", (req, res, next) => {
+    if (!microsoftAuthEnabled) {
+      return res.status(503).json({ error: "Microsoft login is not configured" });
+    }
+    passport.authenticate("microsoft", { prompt: "select_account" })(req, res, next);
+  });
 
   app.get("/api/auth/microsoft/callback",
     (req, res, next) => {

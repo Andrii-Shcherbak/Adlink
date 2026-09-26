@@ -1,50 +1,47 @@
 import { BlobServiceClient, ContainerClient, BlockBlobClient, StorageSharedKeyCredential, generateBlobSASQueryParameters, BlobSASPermissions } from '@azure/storage-blob';
+import type { FileStorageProvider } from './file-storage';
 
-// Check if Azure Storage credentials are available
-if (!process.env.AZURE_STORAGE_CONNECTION_STRING || !process.env.AZURE_STORAGE_CONTAINER_NAME) {
-  console.warn('Azure Storage credentials not found. PDF document uploads will not work.');
-}
+export class AzureStorageService implements FileStorageProvider {
+  private _blobServiceClient?: BlobServiceClient;
+  private _containerClient?: ContainerClient;
+  private containerName = '';
+  private accountName = '';
+  private accountKey = '';
 
-export class AzureStorageService {
-  private blobServiceClient: BlobServiceClient;
-  private containerClient: ContainerClient;
-  private containerName: string;
-  private accountName: string;
-  private accountKey: string;
+  // Clients are created on first use so the server can start without Azure credentials.
+  private get containerClient(): ContainerClient {
+    if (!this._containerClient) this.initialize();
+    return this._containerClient!;
+  }
 
-  constructor() {
-    // Initialize Azure Storage client
-    const connectionString = process.env.AZURE_STORAGE_CONNECTION_STRING;
-    this.containerName = process.env.AZURE_STORAGE_CONTAINER_NAME || 'documents';
+  private initialize(): void {
+    const connectionString = process.env.AZURE_STORAGE_CONNECTION_STRING?.trim();
+    this.containerName = process.env.AZURE_STORAGE_CONTAINER_NAME?.trim() || 'documents';
 
     if (!connectionString) {
       throw new Error('Azure Storage connection string is not provided');
     }
 
-    try {
-      // Parse connection string to get account name and key
-      const connectionStringParts = connectionString.split(';');
-      const accountNamePart = connectionStringParts.find(part => part.startsWith('AccountName='));
-      const accountKeyPart = connectionStringParts.find(part => part.startsWith('AccountKey='));
-      
-      if (!accountNamePart || !accountKeyPart) {
-        throw new Error('Invalid connection string format');
-      }
-      
-      this.accountName = accountNamePart.split('=')[1];
-      this.accountKey = accountKeyPart.split('=')[1];
-      
-      this.blobServiceClient = BlobServiceClient.fromConnectionString(connectionString);
-      this.containerClient = this.blobServiceClient.getContainerClient(this.containerName);
-      
-      // Ensure container exists
-      this.initializeContainer().catch(err => {
-        console.error('Failed to initialize Azure Storage container:', err);
-      });
-    } catch (error) {
-      console.error('Failed to initialize Azure Storage client:', error);
-      throw new Error('Failed to initialize Azure Storage client');
+    // Parse connection string to get account name and key
+    const connectionStringParts = connectionString.split(';');
+    const accountNamePart = connectionStringParts.find(part => part.startsWith('AccountName='));
+    const accountKeyPart = connectionStringParts.find(part => part.startsWith('AccountKey='));
+
+    if (!accountNamePart || !accountKeyPart) {
+      throw new Error('Invalid Azure Storage connection string format');
     }
+
+    this.accountName = accountNamePart.slice('AccountName='.length);
+    // Account keys are base64 and end in '=', so don't split on '='
+    this.accountKey = accountKeyPart.slice('AccountKey='.length);
+
+    this._blobServiceClient = BlobServiceClient.fromConnectionString(connectionString);
+    this._containerClient = this._blobServiceClient.getContainerClient(this.containerName);
+
+    // Ensure container exists
+    this.initializeContainer().catch(err => {
+      console.error('Failed to initialize Azure Storage container:', err);
+    });
   }
 
   // Initialize container if it doesn't exist
@@ -54,9 +51,9 @@ export class AzureStorageService {
       const containerExists = await this.containerClient.exists();
       if (!containerExists) {
         console.log(`Creating container '${this.containerName}'...`);
-        await this.containerClient.create({
-          access: 'blob', // Public access at blob level
-        });
+        // Private container: blobs are served through SAS URLs, and newer storage
+        // accounts reject public access by default.
+        await this.containerClient.create();
         console.log(`Container '${this.containerName}' created successfully`);
       }
     } catch (error) {
@@ -148,7 +145,7 @@ export class AzureStorageService {
   }
 
   // Get a blob's download URL with SAS token
-  getBlobUrlWithSAS(url: string): string {
+  async getSignedDocumentUrl(url: string): Promise<string> {
     try {
       // Extract the blob name from the URL
       const blobName = this.getBlobNameFromUrl(url);
@@ -216,7 +213,7 @@ export class AzureStorageService {
   }
   
   // Get a secure URL for viewing a digital asset
-  getAssetFileUrl(fileName: string): string {
+  async getAssetFileUrl(fileName: string): Promise<string> {
     try {
       // Get the blob client
       const blockBlobClient = this.getBlockBlobClient(fileName);
@@ -279,6 +276,3 @@ export class AzureStorageService {
     }
   }
 }
-
-// Singleton instance
-export const azureStorageService = new AzureStorageService();

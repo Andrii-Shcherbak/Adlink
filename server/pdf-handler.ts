@@ -1,16 +1,16 @@
 import { Response } from "express";
 import { Url } from "@shared/schema";
-import { azureStorageService } from "./services/azure-storage-service";
+import { fileStorage } from "./services/file-storage";
 
-export function servePdfDocument(res: Response, url: Url): void {
+export async function servePdfDocument(res: Response, url: Url): Promise<void> {
   // Make sure pdfDocumentUrl is not null
   if (!url.pdfDocumentUrl) {
     res.status(404).send("PDF document URL not found");
     return;
   }
 
-  // Generate SAS token for secure access
-  const secureUrl = azureStorageService.getBlobUrlWithSAS(url.pdfDocumentUrl);
+  // Generate a time-limited signed URL for secure access
+  const secureUrl = await fileStorage.getSignedDocumentUrl(url.pdfDocumentUrl);
   
   console.log(`PDF Document URL: Serving PDF document:`, {
     title: url.title,
@@ -18,7 +18,7 @@ export function servePdfDocument(res: Response, url: Url): void {
     pdfDocumentName: url.pdfDocumentName,
     pdfDocumentSize: url.pdfDocumentSize
   });
-  console.log('Secure URL with SAS token generated');
+  console.log('Signed document URL generated');
   
   // Serve the PDF viewer page with the document URL with SAS token
   // Using PDF.js viewer for more reliable PDF rendering

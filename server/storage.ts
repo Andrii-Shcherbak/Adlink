@@ -896,13 +896,12 @@ export class DatabaseStorage implements IStorage {
         throw new Error('File not found or unauthorized');
       }
       
-      // Import the Azure Storage Service to delete the file
-      const { azureStorageService } = await import('./services/azure-storage-service');
+      const { fileStorage } = await import('./services/file-storage');
       
-      // Delete the actual file from Azure Storage
+      // Delete the actual file from storage
       if (file.storageFileName) {
         try {
-          await azureStorageService.deleteAssetFile(file.storageFileName);
+          await fileStorage.deleteAssetFile(file.storageFileName);
         } catch (storageError) {
           console.error('Error deleting file from storage:', storageError);
           // Continue with database deletion even if storage deletion fails

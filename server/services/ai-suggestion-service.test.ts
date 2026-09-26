@@ -99,7 +99,7 @@ test("reports missing managed AI configuration clearly", async () => {
       (error: unknown) =>
         error instanceof AISuggestionError &&
         error.statusCode === 503 &&
-        error.message.includes("credentials are not enabled"),
+        error.message.includes("GEMINI_API_KEY"),
     );
   } finally {
     if (originalKey === undefined) {

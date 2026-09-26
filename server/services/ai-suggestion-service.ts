@@ -1,6 +1,28 @@
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenAI, ThinkingLevel } from "@google/genai";
 
-const MODEL = "gemini-3-pro-preview";
+// A "-latest" alias follows Google's current model, so retirements (which broke
+// the pinned gemini-3-pro-preview) don't take the feature down.
+const DEFAULT_MODEL = "gemini-flash-lite-latest";
+
+function getModel(): string {
+  return process.env.GEMINI_MODEL?.trim() || DEFAULT_MODEL;
+}
+
+// Thinking tokens count against maxOutputTokens, so a small output budget on a
+// thinking model yields empty text. Disable thinking where the model allows it,
+// otherwise keep it low and leave headroom for it.
+function generationConfig(model: string, maxTokens: number) {
+  if (model.startsWith("gemini-2.5-flash")) {
+    return { maxOutputTokens: maxTokens, thinkingConfig: { thinkingBudget: 0 } };
+  }
+  if (model.startsWith("gemini-3")) {
+    return {
+      maxOutputTokens: maxTokens + 1024,
+      thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
+    };
+  }
+  return { maxOutputTokens: maxTokens + 1024 };
+}
 
 export class AISuggestionError extends Error {
   constructor(
@@ -81,7 +103,7 @@ export class AISuggestionService {
     const apiKey = process.env.GEMINI_API_KEY?.trim();
     if (!apiKey) {
       throw new AISuggestionError(
-        "Replit-managed Gemini credentials are not enabled for this app. Approve the AI integration in the Project Editor or contact an administrator.",
+        "AI suggestions are not configured. Set GEMINI_API_KEY on the server.",
         503,
       );
     }
@@ -98,12 +120,13 @@ export class AISuggestionService {
     }
 
     try {
+      const model = getModel();
       const response = await this.getClient().models.generateContent({
-        model: MODEL,
+        model,
         contents: `Generate a short, concise, and descriptive title for this URL: ${url}
 The title should be clear, professional, and accurately represent the content of the URL.
 Respond with only the title, no additional text or quotes.`,
-        config: { maxOutputTokens: maxTokens },
+        config: generationConfig(model, maxTokens),
       });
 
       const title = response.text?.trim();
@@ -141,8 +164,9 @@ Respond with only the title, no additional text or quotes.`,
     }
 
     try {
+      const model = getModel();
       const response = await this.getClient().models.generateContent({
-        model: MODEL,
+        model,
         contents: `Generate ${count} memorable, short, and unique shortcode suggestions for this URL: ${url}
 ${title ? `The URL title is: ${title}` : ""}
 
@@ -155,7 +179,7 @@ Rules for shortcodes:
 
 Response format: Return a JSON object with a "shortcodes" array containing exactly ${count} shortcode strings.`,
         config: {
-          maxOutputTokens: maxTokens,
+          ...generationConfig(model, maxTokens),
           responseMimeType: "application/json",
         },
       });
