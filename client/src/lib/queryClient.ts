@@ -39,6 +39,23 @@ export async function apiRequest(
         ...options,
         ...optionsOrData,
       };
+      delete options.customConfig;
+
+      // Without a JSON Content-Type the server ignores the body entirely
+      const body = options.body;
+      const isRawBody =
+        body instanceof FormData || body instanceof Blob || body instanceof URLSearchParams;
+      if (body !== undefined && body !== null && !isRawBody) {
+        const hasContentType = Object.keys(options.headers ?? {}).some(
+          (name) => name.toLowerCase() === 'content-type',
+        );
+        if (!hasContentType) {
+          options.headers = { ...options.headers, 'Content-Type': 'application/json' };
+        }
+        if (typeof body !== 'string') {
+          options.body = JSON.stringify(body);
+        }
+      }
     } 
     // Otherwise treat it as data for a POST request
     else if (optionsOrData !== undefined) {

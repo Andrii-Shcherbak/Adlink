@@ -1,4 +1,4 @@
-import React, { useState, useRef, useMemo } from 'react';
+import React, { useState, useRef, useMemo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { Layout } from '@/components/layout';
@@ -497,6 +497,15 @@ const NewFolderDialog: React.FC<{
     },
   });
 
+  // The dialog stays mounted, so refresh its values for the current folder each time it opens
+  useEffect(() => {
+    if (!open) return;
+    form.reset({
+      name: isEditing ? folderToEdit?.name || '' : '',
+      parentId: isEditing ? folderToEdit?.parentId ?? null : currentFolder?.id ?? null,
+    });
+  }, [open, isEditing, folderToEdit, currentFolder?.id]);
+
   const createFolderMutation = useMutation({
     mutationFn: async (data: FolderFormValues & { path?: string }) => {
       // Add required path field with default value, server will calculate the correct path
@@ -636,6 +645,17 @@ const FileUploadDialog: React.FC<{
       description: fileToEdit?.description || '',
     },
   });
+
+  // The dialog stays mounted, so refresh its values for the current folder each time it opens
+  useEffect(() => {
+    if (!open) return;
+    form.reset({
+      name: isEditing ? fileToEdit?.name || '' : '',
+      folderId: isEditing ? fileToEdit?.folderId ?? null : currentFolder?.id ?? null,
+      description: isEditing ? fileToEdit?.description || '' : '',
+    });
+    setFile(null);
+  }, [open, isEditing, fileToEdit, currentFolder?.id]);
 
   const fileUploadMutation = useMutation({
     mutationFn: async (data: FormData) => {
@@ -962,9 +982,6 @@ export default function AssetsPage() {
   const [currentFolder, setCurrentFolder] = useState<Folder | null>(null);
   const [folderDialogOpen, setFolderDialogOpen] = useState(false);
   const [fileDialogOpen, setFileDialogOpen] = useState(false);
-  const [folderPath, setFolderPath] = useState<{ id: number | null, name: string }[]>([
-    { id: null, name: 'Root' }
-  ]);
   const [editingFolder, setEditingFolder] = useState<Folder | null>(null);
   const [editingFile, setEditingFile] = useState<File | null>(null);
   const [viewMode, setViewMode] = useState<'grid' | 'tree'>('tree'); // Default to tree view
@@ -983,6 +1000,23 @@ export default function AssetsPage() {
       return Array.isArray(response) ? response : [];
     },
   });
+
+  // Breadcrumb follows the folder's actual ancestors, so it stays right after
+  // selecting sibling folders or moving/renaming folders
+  const folderPath = useMemo(() => {
+    const trail: { id: number | null, name: string }[] = [];
+    const seen = new Set<number>();
+    let folder = currentFolder
+      ? (folders as Folder[]).find(f => f.id === currentFolder.id) ?? currentFolder
+      : null;
+    while (folder && !seen.has(folder.id)) {
+      seen.add(folder.id);
+      trail.unshift({ id: folder.id, name: folder.name });
+      const parentId: number | null = folder.parentId;
+      folder = parentId ? (folders as Folder[]).find(f => f.id === parentId) ?? null : null;
+    }
+    return [{ id: null, name: 'Root' }, ...trail];
+  }, [currentFolder, folders]);
 
   // Fetch files for the current folder
   const { 
@@ -1045,8 +1079,6 @@ export default function AssetsPage() {
   // Handle folder navigation
   const handleFolderSelect = (folder: Folder) => {
     setCurrentFolder(folder);
-    // Update breadcrumb path
-    setFolderPath([...folderPath, { id: folder.id, name: folder.name }]);
   };
 
   // Handle breadcrumb navigation
@@ -1054,17 +1086,10 @@ export default function AssetsPage() {
     if (id === null) {
       // Navigate to root
       setCurrentFolder(null);
-      setFolderPath([{ id: null, name: 'Root' }]);
     } else {
-      // Find the folder in our data
       const folder = folders.find((f: Folder) => f.id === id);
       if (folder) {
         setCurrentFolder(folder);
-        // Update breadcrumb path - find the index and slice
-        const index = folderPath.findIndex(item => item.id === id);
-        if (index !== -1) {
-          setFolderPath(folderPath.slice(0, index + 1));
-        }
       }
     }
   };
@@ -1146,11 +1171,12 @@ export default function AssetsPage() {
       
       return apiRequest(endpoint, {
         method: 'PATCH',
-        body: JSON.stringify({
-          parentId: targetFolderId, // For folders
-          folderId: targetFolderId, // For files
-        }),
-      } as any);
+        body: JSON.stringify(
+          item.type === ItemTypes.FOLDER
+            ? { parentId: targetFolderId }
+            : { folderId: targetFolderId }
+        ),
+      });
     },
     onSuccess: () => {
       // Refresh both folders and files
