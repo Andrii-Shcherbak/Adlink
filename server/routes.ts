@@ -1470,18 +1470,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (!req.isAuthenticated()) return res.sendStatus(401);
     
     try {
-      // Parse folderId from query string
-      let folderId: number | null = null;
+      // No folderId: all of the user's files; "null": root-level files; a number: that folder
+      let folderId: number | null | undefined = undefined;
       if (req.query.folderId) {
         if (req.query.folderId === 'null') {
-          folderId = null; // Explicitly set null
+          folderId = null;
         } else {
           const parsedId = parseInt(req.query.folderId as string);
-          if (!isNaN(parsedId)) {
-            folderId = parsedId;
-          } else {
-            console.error('Invalid folderId in query:', req.query.folderId);
+          if (isNaN(parsedId)) {
+            return res.status(400).json({ error: "Invalid folderId" });
           }
+          folderId = parsedId;
         }
       }
       

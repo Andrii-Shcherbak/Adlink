@@ -20,6 +20,7 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
+import { AssetDropUploadProvider, FileDropArea, useFileDropTarget } from '@/components/asset-drop-upload';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 
 // Define folder creation form schema
@@ -115,6 +116,8 @@ const FolderItem: React.FC<{
   onToggleExpand,
   isTreeView = false
 }) => {
+  const { isFileOver, dropProps: fileDropProps } = useFileDropTarget(folder.id, folder.name);
+
   // Setup drag functionality
   const [{ isDragging }, drag] = useDrag(() => ({
     type: ItemTypes.FOLDER,
@@ -178,11 +181,12 @@ const FolderItem: React.FC<{
 
     return (
       <div>
-        <div 
+        <div
           ref={combinedRef}
+          {...fileDropProps}
           className={`group flex items-center px-1 py-0.5 text-sm rounded transition-colors ${
-            isOver && canDrop 
-              ? 'bg-blue-50 dark:bg-blue-900/20' 
+            (isOver && canDrop) || isFileOver
+              ? 'bg-blue-50 dark:bg-blue-900/20 ring-1 ring-blue-400'  
               : 'hover:bg-gray-50/80 dark:hover:bg-gray-800/50'
           } ${isDragging ? 'opacity-50' : 'opacity-100'}`}
           style={{ paddingLeft: `${paddingLeft}px` }}
@@ -271,10 +275,13 @@ const FolderItem: React.FC<{
 
   // For grid view (modern and compact)
   return (
-    <div 
+    <div
       ref={ref}
+      {...fileDropProps}
       className={`group flex items-center rounded-md cursor-pointer p-2.5 transition-colors ${
-        isOver && canDrop ? 'bg-blue-50 dark:bg-blue-900/10' : 'hover:bg-gray-50/50 dark:hover:bg-gray-900/10'
+        (isOver && canDrop) || isFileOver
+          ? 'bg-blue-50 dark:bg-blue-900/10 ring-1 ring-blue-400'
+          : 'hover:bg-gray-50/50 dark:hover:bg-gray-900/10'
       } ${isDragging ? 'opacity-50' : 'opacity-100'}`}
     >
       <div className="flex-1 flex items-center space-x-2 overflow-hidden" onClick={() => onSelect(folder)}>
@@ -948,6 +955,7 @@ const TreeNode: React.FC<{
 const RootDropArea: React.FC<{
   onMoveItem: (dragItem: { type: string, id: number }, targetFolderId: number | null) => void
 }> = ({ onMoveItem }) => {
+  const { isFileOver, dropProps: fileDropProps } = useFileDropTarget(null, 'Root');
   const [{ isOver, canDrop }, drop] = useDrop(() => ({
     accept: [ItemTypes.FOLDER, ItemTypes.FILE],
     drop: (item: { type: string, id: number }) => {
@@ -961,10 +969,11 @@ const RootDropArea: React.FC<{
   }));
   
   return (
-    <div 
-      ref={drop} 
+    <div
+      ref={drop}
+      {...fileDropProps}
       className={`rounded-md border-2 border-dashed mb-2 ${
-        isOver && canDrop 
+        (isOver && canDrop) || isFileOver 
           ? 'border-blue-400 bg-blue-50/40 dark:border-blue-600 dark:bg-blue-900/10' 
           : 'border-gray-200 dark:border-gray-800 hover:bg-gray-50/50 dark:hover:bg-gray-900/10'
       } transition-colors`}
@@ -1213,6 +1222,7 @@ export default function AssetsPage() {
   return (
     <Layout>
       <DndProvider backend={HTML5Backend}>
+        <AssetDropUploadProvider folders={folders}>
         <div>
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 gap-4">
             <h1 className="text-2xl font-bold">Digital Asset Management</h1>
@@ -1317,7 +1327,11 @@ export default function AssetsPage() {
                     </div>
                   </div>
                   
-                  <div className="flex-1 h-full overflow-hidden flex flex-col">
+                  <FileDropArea
+                    folderId={currentFolder?.id ?? null}
+                    label={currentFolder?.name ?? 'Root'}
+                    className="flex-1 h-full overflow-hidden flex flex-col"
+                  >
                     <div className="h-full flex flex-col">
                       <div className="flex justify-between items-center mb-3 px-1">
                         <h2 className="text-sm font-semibold text-violet-600 dark:text-violet-400 flex items-center">
@@ -1365,7 +1379,7 @@ export default function AssetsPage() {
                             </div>
                             <h3 className="text-sm font-medium">No files in this {currentFolder ? 'folder' : 'location'}</h3>
                             <p className="text-xs text-gray-500 mt-1 mb-3">
-                              Upload files to view them here
+                              Upload files, or drag files and folders here from your computer
                             </p>
                             <Button variant="outline" size="sm" onClick={() => setFileDialogOpen(true)}>
                               <Upload className="mr-1.5 h-3 w-3" />
@@ -1375,10 +1389,14 @@ export default function AssetsPage() {
                         )}
                       </div>
                     </div>
-                  </div>
+                  </FileDropArea>
                 </div>
               ) : (
-                <div className="h-[calc(100vh-220px)] p-1 flex flex-col">
+                <FileDropArea
+                  folderId={currentFolder?.id ?? null}
+                  label={currentFolder?.name ?? 'Root'}
+                  className="h-[calc(100vh-220px)] p-1 flex flex-col"
+                >
                   <div className="flex-1 overflow-y-auto">
                     {currentFolders.length > 0 && (
                       <div className="mb-4">
@@ -1458,9 +1476,11 @@ export default function AssetsPage() {
                         </div>
                         <h3 className="text-base font-medium">{currentFolder ? 'This folder is empty' : 'No assets yet'}</h3>
                         <p className="text-sm text-gray-500 mt-1 mb-4">
-                          {currentFolder 
+                          {currentFolder
                             ? 'Upload files or create folders to organize your assets'
                             : 'Start by creating folders or uploading files to manage your digital assets'}
+                          <br />
+                          You can also drag files and folders here from your computer.
                         </p>
                         <div className="flex justify-center space-x-3">
                           <Button size="sm" variant="outline" onClick={() => {
@@ -1481,7 +1501,7 @@ export default function AssetsPage() {
                       </div>
                     )}
                   </div>
-                </div>
+                </FileDropArea>
               )}
             </>
           )}
@@ -1502,6 +1522,7 @@ export default function AssetsPage() {
           isEditing={!!editingFile}
           fileToEdit={editingFile}
         />
+        </AssetDropUploadProvider>
       </DndProvider>
     </Layout>
   );
