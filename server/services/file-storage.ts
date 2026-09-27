@@ -16,6 +16,14 @@ export interface FileStorageProvider {
   /** Returns a short-lived read URL for an asset's storage file name. */
   getAssetFileUrl(fileName: string): Promise<string>;
   deleteAssetFile(fileName: string): Promise<void>;
+  /** Stores a QR code logo; returns its file name (unique, served via /api/logos/:name). */
+  uploadLogo(buffer: Buffer, extension: string, contentType: string): Promise<string>;
+  /** Reads a stored QR code logo; null when it doesn't exist. */
+  downloadLogo(name: string): Promise<Buffer | null>;
+}
+
+export function uniqueLogoName(extension: string): string {
+  return `logo-${Date.now()}-${Math.random().toString(36).substring(2, 10)}.${extension}`;
 }
 
 // STORAGE_PROVIDER=gcs|azure; defaults to GCS when a bucket is configured.

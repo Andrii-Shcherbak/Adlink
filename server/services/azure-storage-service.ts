@@ -1,5 +1,5 @@
 import { BlobServiceClient, ContainerClient, BlockBlobClient, StorageSharedKeyCredential, generateBlobSASQueryParameters, BlobSASPermissions } from '@azure/storage-blob';
-import type { FileStorageProvider } from './file-storage';
+import { uniqueLogoName, type FileStorageProvider } from './file-storage';
 
 export class AzureStorageService implements FileStorageProvider {
   private _blobServiceClient?: BlobServiceClient;
@@ -264,6 +264,23 @@ export class AzureStorageService implements FileStorageProvider {
     return sasToken;
   }
   
+  async uploadLogo(buffer: Buffer, extension: string, contentType: string): Promise<string> {
+    const name = uniqueLogoName(extension);
+    await this.getBlockBlobClient(`logos/${name}`).upload(buffer, buffer.length, {
+      blobHTTPHeaders: { blobContentType: contentType }
+    });
+    return name;
+  }
+
+  async downloadLogo(name: string): Promise<Buffer | null> {
+    try {
+      return await this.getBlockBlobClient(`logos/${name}`).downloadToBuffer();
+    } catch (error: any) {
+      if (error?.statusCode === 404) return null;
+      throw error;
+    }
+  }
+
   // Delete an asset file
   async deleteAssetFile(fileName: string): Promise<void> {
     try {

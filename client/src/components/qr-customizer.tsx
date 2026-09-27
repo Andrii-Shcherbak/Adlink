@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,12 +6,11 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
-import { QRCodeSVG } from "qrcode.react";
 import type { QrConfig } from "@shared/schema";
 import { Settings2, Download, Paintbrush, Layout, Image, Check, Loader2, Upload, Trash2, Link2, RotateCcw } from "lucide-react";
-import { downloadQRCode } from "@/lib/utils";
 import { cn } from "@/lib/utils";
-import "./qr-styles.css";
+import { useToast } from "@/hooks/use-toast";
+import { StyledQrCode, defaultQrConfig, downloadStyledQrCode, normalizeQrConfig } from "./styled-qr-code";
 
 const colorPresets = [
   { name: "Classic", fg: "#000000", bg: "#FFFFFF" },
@@ -27,45 +26,59 @@ interface QrCustomizerProps {
   onSave: (config: QrConfig) => void;
 }
 
-const defaultConfig: QrConfig = {
-  fgColor: "#000000",
-  bgColor: "#FFFFFF",
-  includeMargin: false,
-  logoUrl: "",
-  pattern: "squares",
-  cornerStyle: "square",
-  frameStyle: "none",
-  cornerDotColor: "#000000",
-  cornerSquareColor: "#000000",
-  frameColor: "#000000"
-};
+const patterns = [
+  { value: "squares", label: "Squares" },
+  { value: "dots", label: "Dots" },
+  { value: "rounded", label: "Rounded" },
+  { value: "classy", label: "Classy" },
+  { value: "elegant", label: "Elegant" },
+] as const;
 
 export function QrCustomizer({ url, config, onSave }: QrCustomizerProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [localConfig, setLocalConfig] = useState<QrConfig>({
-    ...config,
-    fgColor: config.fgColor || "#000000",
-    bgColor: config.bgColor || "#FFFFFF",
-    includeMargin: config.includeMargin || false,
-    logoUrl: config.logoUrl || "",
-    // Add required fields that were missing
-    pattern: config.pattern || "squares",
-    cornerStyle: config.cornerStyle || "square",
-    frameStyle: config.frameStyle || "none",
-    cornerDotColor: config.cornerDotColor || config.fgColor || "#000000",
-    cornerSquareColor: config.cornerSquareColor || config.fgColor || "#000000",
-    frameColor: config.frameColor || config.fgColor || "#000000"
-  });
-  
-  const qrRef = useRef<HTMLDivElement>(null);
-  
+  const [localConfig, setLocalConfig] = useState<QrConfig>(() => normalizeQrConfig(config));
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false);
+  const { toast } = useToast();
+
   const handleDownload = () => {
-    if (qrRef.current) {
-      downloadQRCode(qrRef.current, `qr-${url.split('/').pop()}`);
+    downloadStyledQrCode(url, localConfig, `qr-${url.split('/').pop()}`).catch((error) => {
+      console.error("Error downloading QR code:", error);
+      toast({ title: "Download failed", description: "Could not generate the QR code image.", variant: "destructive" });
+    });
+  };
+
+  const handleLogoUpload = async (file: File) => {
+    if (file.size > 2 * 1024 * 1024) {
+      toast({ title: "Logo too large", description: "Please choose an image of 2MB or less.", variant: "destructive" });
+      return;
+    }
+    setIsUploadingLogo(true);
+    try {
+      const formData = new FormData();
+      formData.append("logo", file);
+      const response = await fetch("/api/upload-logo", {
+        method: "POST",
+        body: formData,
+        credentials: "include",
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to upload logo");
+      }
+      setLocalConfig(prev => ({ ...prev, logoUrl: data.logoUrl }));
+    } catch (error) {
+      console.error("Error uploading logo:", error);
+      toast({
+        title: "Logo upload failed",
+        description: error instanceof Error ? error.message : "Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploadingLogo(false);
     }
   };
-  
+
   const updateColors = (color: string) => {
     setLocalConfig(prev => ({
       ...prev,
@@ -208,35 +221,25 @@ export function QrCustomizer({ url, config, onSave }: QrCustomizerProps) {
                   <div>
                     <Label htmlFor="pattern" className="block mb-2">QR Pattern Style</Label>
                     <div className="grid grid-cols-5 gap-2">
-                      {[
-                        { value: "squares", label: "Squares", img: "/patterns/squares.png" },
-                        { value: "dots", label: "Dots", img: "/patterns/dots.png" },
-                        { value: "rounded", label: "Rounded", img: "/patterns/rounded.png" },
-                        { value: "classy", label: "Classy", img: "/patterns/classy.png" },
-                        { value: "elegant", label: "Elegant", img: "/patterns/elegant.png" }
-                      ].map(pattern => (
+                      {patterns.map(pattern => (
                         <Button
                           key={pattern.value}
                           type="button"
                           variant={localConfig.pattern === pattern.value ? "default" : "outline"}
-                          onClick={() => setLocalConfig(prev => ({ ...prev, pattern: pattern.value as any }))}
+                          onClick={() => setLocalConfig(prev => ({ ...prev, pattern: pattern.value }))}
                           className={cn(
-                            "h-auto p-2 flex flex-col items-center gap-1",
+                            // Buttons shrink child SVGs to icon size; keep previews full size
+                            "h-auto p-2 flex flex-col items-center gap-1 [&_svg]:size-auto",
                             localConfig.pattern === pattern.value 
                               ? "border-primary bg-primary/10" 
                               : "hover:bg-muted/50"
                           )}
                         >
-                          <div 
-                            className="relative w-full aspect-square mb-1 rounded overflow-hidden border" 
-                            style={{ 
-                              borderColor: localConfig.pattern === pattern.value ? "var(--primary)" : "transparent"
-                            }}
-                          >
-                            <img 
-                              src={pattern.img} 
-                              alt={pattern.label} 
-                              className="w-full h-full object-cover"
+                          <div className="mb-1 rounded overflow-hidden bg-white p-1">
+                            <StyledQrCode
+                              value="https://adlink"
+                              size={52}
+                              config={{ ...localConfig, pattern: pattern.value, logoUrl: "", frameStyle: "none", includeMargin: false }}
                             />
                           </div>
                           <span className="text-xs font-medium">{pattern.label}</span>
@@ -320,14 +323,28 @@ export function QrCustomizer({ url, config, onSave }: QrCustomizerProps) {
                     <Label className="block mb-2">Upload Logo (SVG or PNG)</Label>
                     <div className="grid gap-4">
                       <div className="flex items-center justify-center w-full">
-                        <label 
-                          htmlFor="logo-upload" 
-                          className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer bg-muted/50 hover:bg-muted/70 transition-colors"
+                        <label
+                          htmlFor="logo-upload"
+                          className={cn(
+                            "flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer bg-muted/50 hover:bg-muted/70 transition-colors",
+                            isUploadingLogo && "pointer-events-none opacity-60"
+                          )}
+                          onDragOver={(e) => e.preventDefault()}
+                          onDrop={(e) => {
+                            e.preventDefault();
+                            const file = e.dataTransfer.files?.[0];
+                            if (file) handleLogoUpload(file);
+                          }}
                         >
                           <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                            <Upload className="w-8 h-8 mb-2 text-primary/50" />
+                            {isUploadingLogo ? (
+                              <Loader2 className="w-8 h-8 mb-2 text-primary/50 animate-spin" />
+                            ) : (
+                              <Upload className="w-8 h-8 mb-2 text-primary/50" />
+                            )}
                             <p className="mb-1 text-sm text-muted-foreground">
-                              <span className="font-semibold">Click to upload</span> or drag and drop
+                              <span className="font-semibold">{isUploadingLogo ? "Uploading..." : "Click to upload"}</span>
+                              {!isUploadingLogo && " or drag and drop"}
                             </p>
                             <p className="text-xs text-muted-foreground">
                               SVG or PNG (max 2MB)
@@ -338,32 +355,12 @@ export function QrCustomizer({ url, config, onSave }: QrCustomizerProps) {
                             type="file" 
                             className="hidden" 
                             accept=".svg,.png"
-                            onChange={async (e) => {
+                            disabled={isUploadingLogo}
+                            onChange={(e) => {
                               const file = e.target.files?.[0];
-                              if (file) {
-                                try {
-                                  const formData = new FormData();
-                                  formData.append("logo", file);
-                                
-                                  const response = await fetch("/api/uploads/logo", {
-                                    method: "POST",
-                                    body: formData,
-                                  });
-                                
-                                  if (!response.ok) {
-                                    throw new Error("Failed to upload logo");
-                                  }
-                                
-                                  const data = await response.json();
-                                  setLocalConfig(prev => ({ 
-                                    ...prev, 
-                                    logoUrl: data.url 
-                                  }));
-                                } catch (error) {
-                                  console.error("Error uploading logo:", error);
-                                  // Show error toast
-                                }
-                              }
+                              if (file) handleLogoUpload(file);
+                              // Allow re-selecting the same file after an error
+                              e.target.value = "";
                             }}
                           />
                         </label>
@@ -403,46 +400,14 @@ export function QrCustomizer({ url, config, onSave }: QrCustomizerProps) {
             <Card className="w-full h-full bg-muted/30 border rounded-lg flex flex-col">
               <div className="flex-1 flex flex-col p-4">
                 <h3 className="font-medium text-sm mb-3 text-center">Preview</h3>
-                <div 
-                  className={cn(
-                    "flex-1 flex justify-center items-center p-4 bg-background rounded-lg shadow-sm overflow-hidden",
-                    `qr-pattern-${localConfig.pattern}`,
-                    `qr-corner-${localConfig.cornerStyle}`,
-                    `qr-frame-${localConfig.frameStyle}`,
-                  )}
-                  ref={qrRef}
-                  style={{
-                    "--corner-dot-color": localConfig.cornerDotColor,
-                    "--corner-square-color": localConfig.cornerSquareColor,
-                    "--frame-color": localConfig.frameColor,
-                  } as React.CSSProperties}
-                >
-                  <div className="qr-code-wrapper">
-                    <QRCodeSVG
-                      value={url}
-                      size={250}
-                      level="H"
-                      fgColor={localConfig.fgColor}
-                      bgColor={localConfig.bgColor}
-                      includeMargin={localConfig.includeMargin}
-                      imageSettings={
-                        localConfig.logoUrl
-                          ? {
-                            src: localConfig.logoUrl,
-                            height: 60,
-                            width: 60,
-                            excavate: true,
-                          }
-                          : undefined
-                      }
-                    />
-                  </div>
+                <div className="flex-1 flex justify-center items-center p-4 bg-background rounded-lg shadow-sm overflow-hidden">
+                  <StyledQrCode value={url} config={localConfig} size={220} />
                 </div>
                 <div className="mt-4 flex justify-center">
                   <Button 
                     variant="outline" 
                     size="sm"
-                    onClick={() => setLocalConfig({...defaultConfig})}
+                    onClick={() => setLocalConfig({...defaultQrConfig})}
                     className="text-xs"
                   >
                     <RotateCcw className="h-3 w-3 mr-1" />

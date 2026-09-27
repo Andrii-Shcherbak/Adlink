@@ -793,54 +793,74 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Serve uploaded files
   app.use('/uploads', express.static(path.join(process.cwd(), 'public/uploads')));
   
-  // Configure multer for logo uploads
-  const storage_config = multer.diskStorage({
-    destination: function(req, file, cb) {
-      const dir = path.join(process.cwd(), 'public/uploads');
-      
-      // Create directory if it doesn't exist
-      if (!fs.existsSync(dir)) {
-        fs.mkdirSync(dir, { recursive: true });
-      }
-      
-      cb(null, dir);
-    },
-    filename: function(req, file, cb) {
-      // Generate unique filename with timestamp and original extension
-      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-      const fileExt = path.extname(file.originalname);
-      cb(null, `logo-${uniqueSuffix}${fileExt}`);
-    }
-  });
+  // QR code logos are kept in file storage (local disk doesn't persist on serverless hosts)
+  const logoTypes: Record<string, string> = {
+    'image/png': 'png',
+    'image/jpeg': 'jpg',
+    'image/gif': 'gif',
+    'image/svg+xml': 'svg',
+  };
+  const logoContentTypes = Object.fromEntries(
+    Object.entries(logoTypes).map(([type, ext]) => [ext, type]),
+  );
 
-  const logoUpload = multer({ 
-    storage: storage_config,
+  const logoUpload = multer({
+    storage: multer.memoryStorage(),
     limits: {
-      fileSize: 5 * 1024 * 1024 // 5MB max size
+      fileSize: 2 * 1024 * 1024 // 2MB max size
     },
     fileFilter: function(req, file, cb) {
-      // Only allow images
-      const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/svg+xml'];
-      if (allowedTypes.includes(file.mimetype)) {
-        cb(null, true);
-      } else {
-        cb(null, false);
-        return cb(new Error('Only image files are allowed'));
-      }
+      cb(null, file.mimetype in logoTypes);
     }
   });
 
   // Logo upload endpoint
-  app.post('/api/upload-logo', logoUpload.single('logo'), (req, res) => {
+  app.post('/api/upload-logo', (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
-    
-    if (!req.file) {
-      return res.status(400).json({ error: "No file provided or invalid file type" });
+
+    logoUpload.single('logo')(req, res, async (err: unknown) => {
+      if (err) {
+        const tooLarge = err instanceof multer.MulterError && err.code === 'LIMIT_FILE_SIZE';
+        return res.status(400).json({ error: tooLarge ? "Logo must be 2MB or smaller" : "Invalid logo upload" });
+      }
+      if (!req.file) {
+        return res.status(400).json({ error: "Please upload a PNG, JPG, GIF or SVG image" });
+      }
+
+      try {
+        const name = await fileStorage.uploadLogo(
+          req.file.buffer,
+          logoTypes[req.file.mimetype],
+          req.file.mimetype,
+        );
+        res.json({ success: true, logoUrl: `/api/logos/${name}` });
+      } catch (error) {
+        console.error('Error uploading logo:', error);
+        res.status(500).json({ error: "Failed to store logo" });
+      }
+    });
+  });
+
+  // Public so QR codes can embed the logo; names are unguessable and immutable.
+  app.get('/api/logos/:name', async (req, res) => {
+    const match = /^logo-[a-z0-9-]+\.(png|jpg|gif|svg)$/.exec(req.params.name);
+    if (!match) return res.sendStatus(404);
+
+    try {
+      const data = await fileStorage.downloadLogo(req.params.name);
+      if (!data) return res.sendStatus(404);
+      res.set({
+        'Content-Type': logoContentTypes[match[1]],
+        'Cache-Control': 'public, max-age=31536000, immutable',
+        'X-Content-Type-Options': 'nosniff',
+        // SVGs can carry scripts; never let them run if opened directly
+        'Content-Security-Policy': "default-src 'none'; style-src 'unsafe-inline'; sandbox",
+      });
+      res.send(data);
+    } catch (error) {
+      console.error('Error serving logo:', error);
+      res.sendStatus(500);
     }
-    
-    // Return the URL to the uploaded file
-    const logoUrl = `/uploads/${req.file.filename}`;
-    res.json({ success: true, logoUrl });
   });
 
   app.patch("/api/urls/:id/shortcode", async (req, res) => {

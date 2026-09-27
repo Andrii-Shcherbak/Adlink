@@ -1,5 +1,5 @@
 import { Storage, type Bucket } from '@google-cloud/storage';
-import type { FileStorageProvider } from './file-storage';
+import { uniqueLogoName, type FileStorageProvider } from './file-storage';
 
 // V4 signed URLs can live at most 7 days
 const DOCUMENT_URL_TTL_MS = 7 * 24 * 60 * 60 * 1000;
@@ -126,6 +126,22 @@ export class GcsStorageService implements FileStorageProvider {
     } catch (error) {
       console.error('Error generating URL for asset file:', error);
       throw new Error('Failed to generate URL for asset file');
+    }
+  }
+
+  async uploadLogo(buffer: Buffer, extension: string, contentType: string): Promise<string> {
+    const name = uniqueLogoName(extension);
+    await this.bucket.file(`logos/${name}`).save(buffer, { contentType, resumable: false });
+    return name;
+  }
+
+  async downloadLogo(name: string): Promise<Buffer | null> {
+    try {
+      const [data] = await this.bucket.file(`logos/${name}`).download();
+      return data;
+    } catch (error: any) {
+      if (error?.code === 404) return null;
+      throw error;
     }
   }
 

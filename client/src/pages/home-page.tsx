@@ -26,7 +26,7 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { QRCodeSVG } from "qrcode.react";
+import { StyledQrCode, downloadStyledQrCode, normalizeQrConfig } from "@/components/styled-qr-code";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import {
   Loader2,
@@ -1035,7 +1035,7 @@ export default function HomePage() {
             <CardContent className="p-6">
               <div className="space-y-6">
                 {urls.map((url) => {
-                  const qrConfig = url.qrConfig as QrConfig;
+                  const qrConfig = normalizeQrConfig(url.qrConfig as QrConfig | null);
                   const securityLevel = getUrlSecurityLevel(url);
                   const securityColors = getSecurityColorClasses(securityLevel);
 
@@ -1195,63 +1195,27 @@ export default function HomePage() {
                         </div>
                         <div className="flex items-center gap-2 justify-end">
                           <div className="flex items-center gap-2">
-                            <QRCodeSVG
-                              id={`qr-${url.id}`}
+                            <StyledQrCode
                               value={`${domain}/${url.shortCode}`}
+                              config={qrConfig}
                               size={100}
-                              level="H"
-                              fgColor={qrConfig.fgColor}
-                              bgColor={qrConfig.bgColor}
-                              includeMargin={qrConfig.includeMargin}
-                              imageSettings={
-                                qrConfig.logoUrl
-                                  ? {
-                                      src: qrConfig.logoUrl,
-                                      height: 24,
-                                      width: 24,
-                                      excavate: true,
-                                    }
-                                  : undefined
-                              }
                             />
                             <Button
                               variant="ghost"
                               size="icon"
                               onClick={() => {
-                                const canvas = document.createElement("canvas");
-                                const svgElement = document.getElementById(
-                                  `qr-${url.id}`,
-                                );
-                                if (svgElement) {
-                                  const svgData =
-                                    new XMLSerializer().serializeToString(
-                                      svgElement,
-                                    );
-                                  const img = new Image();
-                                  img.onload = () => {
-                                    canvas.width = img.width;
-                                    canvas.height = img.height;
-                                    const ctx = canvas.getContext("2d");
-                                    if (ctx) {
-                                      ctx.fillStyle = qrConfig.bgColor;
-                                      ctx.fillRect(
-                                        0,
-                                        0,
-                                        canvas.width,
-                                        canvas.height,
-                                      );
-                                      ctx.drawImage(img, 0, 0);
-                                      const pngFile =
-                                        canvas.toDataURL("image/png");
-                                      const downloadLink =
-                                        document.createElement("a");
-                                      downloadLink.download = `qr-${url.shortCode}.png`;
-                                      downloadLink.href = pngFile;
-                                      downloadLink.click();
-                                    }
-                                  };
-                                  img.src = `data:image/svg+xml;base64,${btoa(svgData)}`;
-                                }
+                                downloadStyledQrCode(
+                                  `${domain}/${url.shortCode}`,
+                                  qrConfig,
+                                  `qr-${url.shortCode}`,
+                                ).catch((error) => {
+                                  console.error("Error downloading QR code:", error);
+                                  toast({
+                                    title: "Download failed",
+                                    description: "Could not generate the QR code image.",
+                                    variant: "destructive",
+                                  });
+                                });
                               }}
                             >
                               <Download className="h-4 w-4" />

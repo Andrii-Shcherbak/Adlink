@@ -29,6 +29,8 @@ export default defineConfig({
     },
   },
   root: path.resolve(__dirname, "client"),
+  // Static assets (images, patterns) live in the project-root public/ folder
+  publicDir: path.resolve(__dirname, "public"),
   build: {
     outDir: path.resolve(__dirname, "dist/public"),
     emptyOutDir: true,
