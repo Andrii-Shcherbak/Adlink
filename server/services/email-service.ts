@@ -22,8 +22,8 @@ export class EmailService {
   private readonly domain: string = getAuthDomain();
 
   constructor() {
-    // Always use the specified sender email address
-    this.from = 'dev@dcxtransform.com';
+    // Must be a sender verified in SendGrid
+    this.from = process.env.EMAIL_FROM?.trim() || 'dev@dcxtransform.com';
     
     console.log(`Email service initialized with sender: ${this.from}`);
   }

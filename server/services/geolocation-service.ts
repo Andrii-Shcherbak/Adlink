@@ -11,8 +11,24 @@
  */
 
 import * as countryList from 'country-list';
-import * as geoip from 'geoip-lite';
+import { createRequire } from 'module';
 import { Request } from 'express';
+
+// geoip-lite loads ~150MB of data into memory, so it's only loaded on first use
+// and left out of the Vercel bundle (Vercel supplies location headers instead)
+type GeoipLite = typeof import('geoip-lite');
+let geoipModule: GeoipLite | null | undefined;
+function getGeoip(): GeoipLite | null {
+  if (geoipModule === undefined) {
+    try {
+      geoipModule = createRequire(import.meta.url)('geoip-lite') as GeoipLite;
+    } catch {
+      console.warn('geoip-lite is not available; IP lookups are disabled');
+      geoipModule = null;
+    }
+  }
+  return geoipModule;
+}
 
 const { getName } = countryList;
 
@@ -65,6 +81,29 @@ class GeolocationService {
   }
 
   /**
+   * Detect geolocation from Vercel's edge headers when deployed there
+   */
+  private getVercelLocation(req: Request): GeoLocationInfo | null {
+    const country = req.headers['x-vercel-ip-country'] as string | undefined;
+    if (!country) return null;
+
+    const header = (name: string) => {
+      const value = req.headers[name] as string | undefined;
+      return value ? decodeURIComponent(value) : undefined;
+    };
+    const latitude = Number(header('x-vercel-ip-latitude'));
+    const longitude = Number(header('x-vercel-ip-longitude'));
+    return {
+      code: country,
+      name: getName(country) || country,
+      city: header('x-vercel-ip-city'),
+      region: header('x-vercel-ip-country-region'),
+      latitude: Number.isFinite(latitude) ? latitude : undefined,
+      longitude: Number.isFinite(longitude) ? longitude : undefined,
+    };
+  }
+
+  /**
    * Detect geolocation from Cloudflare headers when available
    */
   private getCloudflareLocation(req: Request): GeoLocationInfo | null {
@@ -85,7 +124,7 @@ class GeolocationService {
    */
   private lookupGeoIP(ip: string): GeoLocationInfo | null {
     try {
-      const geo = geoip.lookup(ip);
+      const geo = getGeoip()?.lookup(ip);
       if (!geo) return null;
       
       console.log(`Found location via geoip-lite: ${geo.country}, ${geo.city}`);
@@ -193,7 +232,13 @@ class GeolocationService {
       });
     }
     
-    // 1. Try Cloudflare headers first (most reliable when available)
+    // 1. Try edge headers first (most reliable when available)
+    const vercelLocation = this.getVercelLocation(req);
+    if (vercelLocation) {
+      console.log(`Location detected from Vercel headers: ${vercelLocation.name}${vercelLocation.city ? `, ${vercelLocation.city}` : ''}`);
+      return vercelLocation;
+    }
+
     const cloudflareLocation = this.getCloudflareLocation(req);
     if (cloudflareLocation) {
       console.log(`Location detected from Cloudflare headers: ${cloudflareLocation.name}${cloudflareLocation.city ? `, ${cloudflareLocation.city}` : ''}`);

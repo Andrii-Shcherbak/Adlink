@@ -102,8 +102,10 @@ export function setupAuth(app: Express) {
         clientSecret: process.env.MICROSOFT_CLIENT_SECRET!,
         callbackURL: `${getAuthDomain()}/api/auth/microsoft/callback`,
         scope: ["user.read"],
-        authority: "https://login.microsoftonline.com/organizations",
-        tenant: process.env.MICROSOFT_TENANT_ID!,
+        // Tenant ID restricts sign-in to your organization; passport-microsoft ignores `authority`
+        tenant: process.env.MICROSOFT_TENANT_ID || "organizations",
+        // Accounts without an Exchange mailbox have no `mail`; fall back to their sign-in name
+        addUPNAsEmail: true,
         passReqToCallback: true
       },
       async (req, accessToken, refreshToken, profile, done) => {
