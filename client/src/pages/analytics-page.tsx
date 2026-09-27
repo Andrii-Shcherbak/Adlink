@@ -4,21 +4,111 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { Loader2 } from "lucide-react";
 
-export default function AnalyticsPage() {
-  // Update to fetch only current user's URLs with a larger limit
-  const { data, isLoading } = useQuery<{
-    urls: Url[];
-    pagination: { total: number; page: number; totalPages: number; hasMore: boolean; }
-  }>({
-    queryKey: ["/api/urls"],
-    queryFn: async () => {
-      const res = await fetch("/api/urls?limit=100&page=1"); // Get more URLs for analytics
-      if (!res.ok) throw new Error("Failed to fetch URLs");
-      return res.json();
-    },
-  });
+type ChartEntry = { name: string; value: number };
 
-  const urls = data?.urls || [];
+type CountryData = number | { count?: number; name?: string; cities?: Record<string, number> };
+
+function analyticsOf(url: Url): any {
+  return (url.analytics as any) || {};
+}
+
+function topEntries(totals: Map<string, number>, limit: number): ChartEntry[] {
+  return Array.from(totals, ([name, value]) => ({ name, value }))
+    .filter((entry) => entry.value > 0)
+    .sort((a, b) => b.value - a.value)
+    .slice(0, limit);
+}
+
+/** Adds up a `{ label: count }` map across all links, optionally merging labels. */
+function sumCounts(
+  urls: Url[],
+  pick: (analytics: any) => Record<string, number> | undefined,
+  labelOf: (name: string) => string = (name) => name,
+  limit = 10,
+): ChartEntry[] {
+  const totals = new Map<string, number>();
+  for (const url of urls) {
+    for (const [name, count] of Object.entries(pick(analyticsOf(url)) || {})) {
+      const label = labelOf(name);
+      if (typeof count === "number") totals.set(label, (totals.get(label) || 0) + count);
+    }
+  }
+  return topEntries(totals, limit);
+}
+
+// "iOS 18.1.1" -> "iOS", "macOS 10.15.7" -> "macOS": browsers report versions inconsistently
+function osFamily(name: string): string {
+  return name.replace(/\s+[\d._]+$/, "") || name;
+}
+
+const regionNames = typeof Intl !== "undefined" && "DisplayNames" in Intl
+  ? new Intl.DisplayNames(["en"], { type: "region" })
+  : null;
+
+// Short, familiar names ("United Kingdom") instead of official ones
+function countryLabel(code: string, recordedName: string): string {
+  if (/^[A-Z]{2}$/.test(code)) {
+    try {
+      const name = regionNames?.of(code);
+      if (name && name !== code) return name;
+    } catch {
+      // fall through to the recorded name
+    }
+  }
+  return recordedName;
+}
+
+/** Totals per country code, labelled with the name most clicks were recorded under. */
+function countryTotals(urls: Url[]): ChartEntry[] {
+  const byCode = new Map<string, { value: number; names: Map<string, number> }>();
+  for (const url of urls) {
+    for (const [rawCode, data] of Object.entries(analyticsOf(url).countries || {}) as [string, CountryData][]) {
+      // Early data could contain a missing code ("undefined")
+      const code = /^[A-Za-z]{2}$/.test(rawCode) ? rawCode.toUpperCase() : "UNKNOWN";
+      const count = typeof data === "number" ? data : data?.count || 0;
+      const name = code === "UNKNOWN" ? "Unknown" : countryLabel(code, (typeof data === "object" && data?.name) || code);
+      const entry = byCode.get(code) || { value: 0, names: new Map() };
+      entry.value += count;
+      entry.names.set(name, (entry.names.get(name) || 0) + count);
+      byCode.set(code, entry);
+    }
+  }
+  const totals = new Map<string, number>();
+  byCode.forEach(({ value, names }) => {
+    const label = Array.from(names).sort((a, b) => b[1] - a[1])[0]?.[0] ?? "Unknown";
+    totals.set(label, (totals.get(label) || 0) + value);
+  });
+  return topEntries(totals, 10);
+}
+
+function titleCase(text: string): string {
+  // "council bluffs" -> "Council Bluffs", "são paulo" -> "São Paulo"
+  return text
+    .toLowerCase()
+    .split(/([\s-]+)/)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join("");
+}
+
+const PAGE_SIZE = 100;
+
+async function fetchAllUrls(): Promise<Url[]> {
+  const all: Url[] = [];
+  for (let page = 1; ; page++) {
+    const res = await fetch(`/api/urls?limit=${PAGE_SIZE}&page=${page}`, { credentials: "include" });
+    if (!res.ok) throw new Error("Failed to fetch URLs");
+    const data: { urls: Url[]; pagination: { hasMore?: boolean; totalPages?: number } } = await res.json();
+    all.push(...data.urls);
+    const hasMore = data.pagination?.hasMore ?? page < (data.pagination?.totalPages ?? 0);
+    if (!hasMore || data.urls.length === 0) return all;
+  }
+}
+
+export default function AnalyticsPage() {
+  const { data: urls = [], isLoading } = useQuery<Url[]>({
+    queryKey: ["/api/urls", "all-for-analytics"],
+    queryFn: fetchAllUrls,
+  });
 
   if (isLoading) {
     return (
@@ -75,18 +165,7 @@ export default function AnalyticsPage() {
             <CardContent className="h-[400px]">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
-                  data={urls.reduce((acc, url) => {
-                    const analytics = url.analytics as { devices: Record<string, number> };
-                    Object.entries(analytics.devices).forEach(([device, count]) => {
-                      const existingEntry = acc.find(entry => entry.name === device);
-                      if (existingEntry) {
-                        existingEntry.value += count;
-                      } else {
-                        acc.push({ name: device, value: count });
-                      }
-                    });
-                    return acc;
-                  }, [] as { name: string; value: number }[])}
+                  data={sumCounts(urls, (analytics) => analytics.devices)}
                   margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
                 >
                   <CartesianGrid strokeDasharray="3 3" />
@@ -109,52 +188,7 @@ export default function AnalyticsPage() {
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
                   layout="vertical"
-                  data={urls.reduce((acc, url) => {
-                    const analytics = url.analytics as any;
-                    const countries = analytics.countries || {};
-                    
-                    Object.entries(countries).forEach(([code, data]) => {
-                      // Handle both old format (number) and new format (object with count and name)
-                      if (typeof data === 'number') {
-                        // Old format - just a number count
-                        const countryName = code === 'UNKNOWN' ? 'Unknown' : code;
-                        const existingEntry = acc.find(entry => entry.name === countryName);
-                        if (existingEntry) {
-                          existingEntry.value += data;
-                        } else {
-                          acc.push({ name: countryName, value: data });
-                        }
-                      } else if (data && typeof data === 'object') {
-                        // New format - object with count and name
-                        const countryData = data as { count: number, name?: string, cities?: Record<string, number> };
-                        const countryName = countryData.name || (code === 'UNKNOWN' ? 'Unknown' : code);
-                        
-                        // Count total cities clicks if cities data exists
-                        let citiesTotal = 0;
-                        if (countryData.cities) {
-                          citiesTotal = Object.values(countryData.cities).reduce((sum, count) => sum + count, 0);
-                        }
-                        
-                        // Use the greater of explicit count or cities total (for data consistency)
-                        const actualCount = Math.max(countryData.count || 0, citiesTotal);
-                        
-                        const existingEntry = acc.find(entry => entry.name === countryName);
-                        if (existingEntry) {
-                          existingEntry.value += actualCount;
-                        } else {
-                          acc.push({ 
-                            name: countryName, 
-                            value: actualCount,
-                            code // Keep code for reference
-                          });
-                        }
-                      }
-                    });
-                    return acc;
-                  }, [] as { name: string; value: number; code?: string }[])
-                    .sort((a, b) => b.value - a.value)
-                    .slice(0, 10) // Show top 10 countries for better readability
-                  }
+                  data={countryTotals(urls)}
                   margin={{ top: 20, right: 30, left: 50, bottom: 5 }}
                 >
                   <CartesianGrid strokeDasharray="3 3" />
@@ -180,21 +214,7 @@ export default function AnalyticsPage() {
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
                   layout="vertical"
-                  data={urls.reduce((acc, url) => {
-                    const analytics = url.analytics as { referrers: Record<string, number> };
-                    Object.entries(analytics.referrers || {}).forEach(([referrer, count]) => {
-                      const existingEntry = acc.find(entry => entry.name === referrer);
-                      if (existingEntry) {
-                        existingEntry.value += count;
-                      } else {
-                        acc.push({ name: referrer || 'direct', value: count });
-                      }
-                    });
-                    return acc;
-                  }, [] as { name: string; value: number }[])
-                    .sort((a, b) => b.value - a.value)
-                    .slice(0, 10) // Show top 10 referrers for better readability
-                  }
+                  data={sumCounts(urls, (analytics) => analytics.referrers)}
                   margin={{ top: 20, right: 30, left: 50, bottom: 5 }}
                 >
                   <CartesianGrid strokeDasharray="3 3" />
@@ -211,6 +231,36 @@ export default function AnalyticsPage() {
               </ResponsiveContainer>
             </CardContent>
           </Card>
+        </div>
+
+        <div className="grid gap-8 grid-cols-1 lg:grid-cols-2">
+          {[
+            { title: "Operating Systems", label: "OS", data: sumCounts(urls, (analytics) => analytics.deviceDetails?.os, osFamily) },
+            { title: "Device Brands", label: "Brand", data: sumCounts(urls, (analytics) => analytics.deviceDetails?.brands) },
+          ].map((chart) => (
+            <Card key={chart.title}>
+              <CardHeader>
+                <CardTitle>{chart.title}</CardTitle>
+              </CardHeader>
+              <CardContent className="h-[400px]">
+                {chart.data.length === 0 ? (
+                  <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+                    No data yet
+                  </div>
+                ) : (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart layout="vertical" data={chart.data} margin={{ top: 20, right: 30, left: 50, bottom: 5 }}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis type="number" allowDecimals={false} />
+                      <YAxis type="category" dataKey="name" width={120} />
+                      <Tooltip labelFormatter={(label) => `${chart.label}: ${label}`} formatter={(value) => [value, "Clicks"]} />
+                      <Bar dataKey="value" fill="hsl(var(--primary))" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                )}
+              </CardContent>
+            </Card>
+          ))}
         </div>
 
         <Card>
@@ -239,8 +289,7 @@ export default function AnalyticsPage() {
                           if (cityName === '-' || cityName.toLowerCase() === 'unknown') {
                             displayName = `Unknown (${countryData.name || code})`;
                           } else {
-                            // Format city name with proper capitalization
-                            displayName = cityName.charAt(0).toUpperCase() + cityName.slice(1).toLowerCase();
+                            displayName = titleCase(cityName);
                           }
                           
                           const existingEntry = acc.find(entry => entry.name === displayName);

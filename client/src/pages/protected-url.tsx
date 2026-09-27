@@ -21,7 +21,8 @@ export default function ProtectedUrl() {
       const res = await fetch(`/${shortCode}/verify`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password }),
+        // The page that linked here (kept across the redirect), for referrer analytics
+        body: JSON.stringify({ password, referrer: document.referrer }),
       });
 
       if (!res.ok) {

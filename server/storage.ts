@@ -201,130 +201,138 @@ export class DatabaseStorage implements IStorage {
     referrer: string,
     deviceInfo?: DeviceInfo
   ): Promise<void> {
-    const [url] = await db
-      .select()
-      .from(urls)
-      .where(and(eq(urls.id, id), eq(urls.userId, userId)));
+    // Lock the row so simultaneous clicks queue up instead of overwriting each other's counts
+    await db.transaction(async (tx) => {
+      const [url] = await tx
+        .select()
+        .from(urls)
+        .where(and(eq(urls.id, id), eq(urls.userId, userId)))
+        .for("update");
 
-    if (!url) {
-      throw new Error("URL not found or unauthorized");
-    }
+      if (!url) {
+        throw new Error("URL not found or unauthorized");
+      }
 
-    // Clone the analytics to avoid direct mutation of db result
-    let analytics = JSON.parse(JSON.stringify(url.analytics || {}));
+      if (!countryInfo.code) {
+        countryInfo = { code: 'UNKNOWN', name: 'Unknown' };
+      }
 
-    // Initialize defaults if not present
-    analytics.devices = analytics.devices || { desktop: 0, mobile: 0, tablet: 0 };
-    analytics.countries = analytics.countries || {};
-    analytics.referrers = analytics.referrers || {};
-    analytics.deviceDetails = analytics.deviceDetails || { os: {}, models: {}, brands: {} };
+      // Clone the analytics to avoid direct mutation of db result
+      let analytics = JSON.parse(JSON.stringify(url.analytics || {}));
 
-    // Update device count
-    analytics.devices[deviceType] = (analytics.devices[deviceType] || 0) + 1;
+      // Initialize defaults if not present
+      analytics.devices = analytics.devices || { desktop: 0, mobile: 0, tablet: 0 };
+      analytics.countries = analytics.countries || {};
+      analytics.referrers = analytics.referrers || {};
+      analytics.deviceDetails = analytics.deviceDetails || { os: {}, models: {}, brands: {} };
+
+      // Update device count
+      analytics.devices[deviceType] = (analytics.devices[deviceType] || 0) + 1;
     
-    // Update detailed device information if available
-    if (deviceInfo) {
-      // Track OS information
-      if (deviceInfo.os) {
-        analytics.deviceDetails.os[deviceInfo.os] = 
-          (analytics.deviceDetails.os[deviceInfo.os] || 0) + 1;
-      }
-      
-      // Track device model information
-      if (deviceInfo.model) {
-        analytics.deviceDetails.models[deviceInfo.model] = 
-          (analytics.deviceDetails.models[deviceInfo.model] || 0) + 1;
-      }
-      
-      // Track device brand information
-      if (deviceInfo.brand) {
-        analytics.deviceDetails.brands[deviceInfo.brand] = 
-          (analytics.deviceDetails.brands[deviceInfo.brand] || 0) + 1;
-      }
-    }
-    
-    // Completely rebuild countries structure if needed
-    const countryEntry = analytics.countries[countryInfo.code];
-    
-    // Create a completely new analytics structure with proper typing
-    const newAnalytics: {
-      devices: Record<DeviceType, number>;
-      countries: Record<string, { count: number; name: string; cities: Record<string, number> }>;
-      referrers: Record<string, number>;
-      deviceDetails: {
-        os: Record<string, number>;
-        models: Record<string, number>;
-        brands: Record<string, number>;
-      };
-    } = {
-      devices: { ...analytics.devices },
-      countries: {},
-      referrers: { ...analytics.referrers },
-      deviceDetails: { 
-        os: analytics.deviceDetails?.os ? { ...analytics.deviceDetails.os } : {},
-        models: analytics.deviceDetails?.models ? { ...analytics.deviceDetails.models } : {},
-        brands: analytics.deviceDetails?.brands ? { ...analytics.deviceDetails.brands } : {}
-      }
-    };
-    
-    // Copy and convert all countries data to new format
-    if (analytics.countries && typeof analytics.countries === 'object') {
-      Object.entries(analytics.countries).forEach(([code, entry]) => {
-        if (typeof entry === 'number') {
-          // Convert old format to new format
-          newAnalytics.countries[code] = {
-            count: entry,
-            name: code,
-            cities: {}
-          };
-        } else if (entry && typeof entry === 'object') {
-          // Already in new format, just copy it
-          const countryData = entry as { count?: number; name?: string; cities?: Record<string, number> };
-          newAnalytics.countries[code] = { 
-            count: countryData.count || 0,
-            name: countryData.name || code,
-            cities: countryData.cities || {}
-          };
+      // Update detailed device information if available
+      if (deviceInfo) {
+        // Track OS information
+        if (deviceInfo.os) {
+          analytics.deviceDetails.os[deviceInfo.os] = 
+            (analytics.deviceDetails.os[deviceInfo.os] || 0) + 1;
         }
-      });
-    }
-    
-    // Make sure the current country exists
-    if (!newAnalytics.countries[countryInfo.code]) {
-      newAnalytics.countries[countryInfo.code] = {
-        count: 0,
-        name: countryInfo.name,
-        cities: {}
-      };
-    }
-    
-    // Increment the count for this country
-    newAnalytics.countries[countryInfo.code].count += 1;
-    
-    // Replace the analytics object with our new one
-    analytics = newAnalytics;
-    
-    // Update city data if available
-    if (countryInfo.city) {
-      const cityName = countryInfo.city.toLowerCase();
-      if (!analytics.countries[countryInfo.code].cities) {
-        analytics.countries[countryInfo.code].cities = {};
-      }
       
-      analytics.countries[countryInfo.code].cities[cityName] = 
-        (analytics.countries[countryInfo.code].cities[cityName] || 0) + 1;
-    }
+        // Track device model information
+        if (deviceInfo.model) {
+          analytics.deviceDetails.models[deviceInfo.model] = 
+            (analytics.deviceDetails.models[deviceInfo.model] || 0) + 1;
+        }
+      
+        // Track device brand information
+        if (deviceInfo.brand) {
+          analytics.deviceDetails.brands[deviceInfo.brand] = 
+            (analytics.deviceDetails.brands[deviceInfo.brand] || 0) + 1;
+        }
+      }
     
-    // Update referrer data
-    analytics.referrers[referrer] = (analytics.referrers[referrer] || 0) + 1;
+      // Completely rebuild countries structure if needed
+      const countryEntry = analytics.countries[countryInfo.code];
+    
+      // Create a completely new analytics structure with proper typing
+      const newAnalytics: {
+        devices: Record<DeviceType, number>;
+        countries: Record<string, { count: number; name: string; cities: Record<string, number> }>;
+        referrers: Record<string, number>;
+        deviceDetails: {
+          os: Record<string, number>;
+          models: Record<string, number>;
+          brands: Record<string, number>;
+        };
+      } = {
+        devices: { ...analytics.devices },
+        countries: {},
+        referrers: { ...analytics.referrers },
+        deviceDetails: { 
+          os: analytics.deviceDetails?.os ? { ...analytics.deviceDetails.os } : {},
+          models: analytics.deviceDetails?.models ? { ...analytics.deviceDetails.models } : {},
+          brands: analytics.deviceDetails?.brands ? { ...analytics.deviceDetails.brands } : {}
+        }
+      };
+    
+      // Copy and convert all countries data to new format
+      if (analytics.countries && typeof analytics.countries === 'object') {
+        Object.entries(analytics.countries).forEach(([code, entry]) => {
+          if (typeof entry === 'number') {
+            // Convert old format to new format
+            newAnalytics.countries[code] = {
+              count: entry,
+              name: code,
+              cities: {}
+            };
+          } else if (entry && typeof entry === 'object') {
+            // Already in new format, just copy it
+            const countryData = entry as { count?: number; name?: string; cities?: Record<string, number> };
+            newAnalytics.countries[code] = { 
+              count: countryData.count || 0,
+              name: countryData.name || code,
+              cities: countryData.cities || {}
+            };
+          }
+        });
+      }
+    
+      // Make sure the current country exists
+      if (!newAnalytics.countries[countryInfo.code]) {
+        newAnalytics.countries[countryInfo.code] = {
+          count: 0,
+          name: countryInfo.name,
+          cities: {}
+        };
+      }
+    
+      // Increment the count for this country
+      newAnalytics.countries[countryInfo.code].count += 1;
+    
+      // Replace the analytics object with our new one
+      analytics = newAnalytics;
+    
+      // Update city data if available
+      if (countryInfo.city) {
+        const cityName = countryInfo.city.toLowerCase();
+        if (!analytics.countries[countryInfo.code].cities) {
+          analytics.countries[countryInfo.code].cities = {};
+        }
+      
+        analytics.countries[countryInfo.code].cities[cityName] = 
+          (analytics.countries[countryInfo.code].cities[cityName] || 0) + 1;
+      }
+    
+      // Update referrer data
+      analytics.referrers[referrer] = (analytics.referrers[referrer] || 0) + 1;
 
-    await db
-      .update(urls)
-      .set({
-        clicks: url.clicks + 1,
-        analytics: analytics
-      })
-      .where(and(eq(urls.id, id), eq(urls.userId, userId)));
+      await tx
+        .update(urls)
+        .set({
+          clicks: sql`${urls.clicks} + 1`,
+          analytics: analytics
+        })
+        .where(and(eq(urls.id, id), eq(urls.userId, userId)));
+    });
   }
 
   async updateUrlQrConfig(id: number, userId: number, qrConfig: any): Promise<Url | undefined> {

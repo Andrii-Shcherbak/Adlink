@@ -26,6 +26,8 @@ import { getName } from 'country-list';
 import { db } from "./db";
 import { and, eq } from "drizzle-orm";
 import { geolocationService } from "./services/geolocation-service";
+import { isLikelyBot, isLocalAddress, isNonVisitRequest } from "./utils/click-filters";
+import { createPdfAccessToken, verifyPdfAccessToken } from "./utils/pdf-access-token";
 
 // Load environment variables from .env file
 dotenv.config();
@@ -133,7 +135,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
               devices: Record<string, number>;
               countries: Record<string, { count: number; name: string; cities: Record<string, number> }>;
               referrers: Record<string, number>;
+              [other: string]: unknown;
             } = {
+              // Keep everything this migration doesn't convert (e.g. deviceDetails)
+              ...oldAnalytics,
               devices: oldAnalytics.devices || { desktop: 0, mobile: 0, tablet: 0 },
               countries: {},
               referrers: oldAnalytics.referrers || {}
@@ -339,9 +344,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(410).send("This link has expired.");
     }
     
-    // Simple token validation
-    const token = req.query.token as string;
-    if (!token || !token.startsWith('pdf_verified_')) {
+    // Only visitors who just entered the password get a valid (signed, expiring) token
+    if (!verifyPdfAccessToken(req.query.token, url.id)) {
       return res.redirect(`/${req.params.shortCode}`);
     }
     
@@ -390,14 +394,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.redirect(`/protected/${url.shortCode}`);
     }
 
-    const deviceType = getDeviceType(req.headers['user-agent'] || '');
     const devicePlatform = getDevicePlatform(req.headers['user-agent'] || '');
-    const referrer = getReferrer(req.headers.referer);
-    const countryInfo = await getCountryCode(req);
-    const deviceInfo = getDetailedDeviceInfo(req.headers['user-agent'] || '');
+    await recordClick(req, url, req.headers.referer);
 
     try {
-      await storage.incrementUrlClicks(url.id, url.userId, deviceType, countryInfo, referrer, deviceInfo);
       
       // Check if this is a PDF document URL
       if (url.isPdfDocument) {
@@ -468,14 +468,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.redirect(`/protected/${url.shortCode}`);
     }
 
-    const deviceType = getDeviceType(req.headers['user-agent'] || '');
     const devicePlatform = getDevicePlatform(req.headers['user-agent'] || '');
-    const referrer = getReferrer(req.headers.referer);
-    const countryInfo = await getCountryCode(req);
-    const deviceInfo = getDetailedDeviceInfo(req.headers['user-agent'] || '');
+    await recordClick(req, url, req.headers.referer);
 
     try {
-      await storage.incrementUrlClicks(url.id, url.userId, deviceType, countryInfo, referrer, deviceInfo);
       
       // Check if this is a PDF document URL
       if (url.isPdfDocument) {
@@ -543,14 +539,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(401).json({ error: "Invalid password" });
     }
 
-    const deviceType = getDeviceType(req.headers['user-agent'] || '');
     const devicePlatform = getDevicePlatform(req.headers['user-agent'] || '');
-    const referrer = getReferrer(req.headers.referer);
-    const countryInfo = await getCountryCode(req);
-    const deviceInfo = getDetailedDeviceInfo(req.headers['user-agent'] || '');
+    // The Referer here is our own password page; the protected page sends the visitor's real one
+    await recordClick(req, url, typeof req.body?.referrer === 'string' ? req.body.referrer : undefined);
 
     try {
-      await storage.incrementUrlClicks(url.id, url.userId, deviceType, countryInfo, referrer, deviceInfo);
       
       // Check if this is a PDF document URL
       if (url.isPdfDocument) {
@@ -563,8 +556,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Instead of redirecting through the same mechanism, we'll generate a one-time token
         // that can be used to directly serve the PDF
-        const timestamp = Date.now();
-        const oneTimeAccessToken = `pdf_verified_${timestamp}_${url.id}`;
+        const oneTimeAccessToken = createPdfAccessToken(url.id);
         
         // Create a special route for password-verified PDFs
         return res.json({ 
@@ -625,22 +617,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(401).json({ error: "Invalid password" });
     }
 
-    const deviceType = getDeviceType(req.headers['user-agent'] || '');
     const devicePlatform = getDevicePlatform(req.headers['user-agent'] || '');
-    const referrer = getReferrer(req.headers.referer);
-    const countryInfo = await getCountryCode(req);
-    const deviceInfo = getDetailedDeviceInfo(req.headers['user-agent'] || '');
+    // The Referer here is our own password page; the protected page sends the visitor's real one
+    await recordClick(req, url, typeof req.body?.referrer === 'string' ? req.body.referrer : undefined);
 
     try {
-      await storage.incrementUrlClicks(url.id, url.userId, deviceType, countryInfo, referrer, deviceInfo);
       
       // Check if this is a PDF document URL
       if (url.isPdfDocument) {
         console.log(`Password-protected PDF document URL verified (legacy route): Serving PDF directly via viewer`);
         
         // Use the same one-time token approach for the legacy route
-        const timestamp = Date.now();
-        const oneTimeAccessToken = `pdf_verified_${timestamp}_${url.id}`;
+        const oneTimeAccessToken = createPdfAccessToken(url.id);
         
         // Create a special route for password-verified PDFs
         return res.json({ 
@@ -1657,6 +1645,46 @@ function getDetailedDeviceInfo(userAgent: string): {
 }
 
 // Handle referrers
+function getClientIp(req: express.Request): string | undefined {
+  const forwarded = req.headers['x-forwarded-for'];
+  const first = (Array.isArray(forwarded) ? forwarded[0] : forwarded)?.split(',')[0]?.trim();
+  return first || req.ip || req.socket.remoteAddress;
+}
+
+/**
+ * Records a link visit in its analytics. Bots, link previews, prefetches and local
+ * (development) requests are skipped. Never throws: analytics must not block the visit.
+ */
+async function recordClick(
+  req: express.Request,
+  url: { id: number; userId: number; shortCode: string },
+  referrerUrl: string | undefined,
+): Promise<void> {
+  try {
+    const userAgent = req.headers['user-agent'];
+    if (isNonVisitRequest(req.method, req.headers) || isLikelyBot(userAgent)) {
+      console.log(`Visit to ${url.shortCode} not counted: bot or prefetch (${userAgent || 'no user agent'})`);
+      return;
+    }
+    if (isLocalAddress(getClientIp(req))) {
+      console.log(`Visit to ${url.shortCode} not counted: local request`);
+      return;
+    }
+
+    const countryInfo = await getCountryCode(req);
+    await storage.incrementUrlClicks(
+      url.id,
+      url.userId,
+      getDeviceType(userAgent || ''),
+      countryInfo,
+      getReferrer(referrerUrl),
+      getDetailedDeviceInfo(userAgent || ''),
+    );
+  } catch (error) {
+    console.error(`Error recording click for ${url.shortCode}:`, error);
+  }
+}
+
 function getReferrer(referer: string | undefined): string {
   if (!referer) return 'direct';
   

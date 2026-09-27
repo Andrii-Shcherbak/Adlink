@@ -184,36 +184,6 @@ class GeolocationService {
     return null;
   }
 
-  /**
-   * Generate consistent test data for development
-   */
-  private getTestLocationData(req: Request): GeoLocationInfo {
-    // For development, provide realistic test data based on URL/user
-    const urlId = parseInt(req.params.id || req.query.id as string || '0');
-    const userId = (req as any).user?.id || 0;
-    
-    // List of realistic test locations with complete data
-    const testLocations = [
-      { code: 'US', name: 'United States', city: 'New York', region: 'New York' },
-      { code: 'GB', name: 'United Kingdom', city: 'London', region: 'England' },
-      { code: 'CA', name: 'Canada', city: 'Toronto', region: 'Ontario' },
-      { code: 'DE', name: 'Germany', city: 'Berlin', region: 'Berlin' },
-      { code: 'FR', name: 'France', city: 'Paris', region: 'Île-de-France' },
-      { code: 'JP', name: 'Japan', city: 'Tokyo', region: 'Tokyo' },
-      { code: 'IN', name: 'India', city: 'Mumbai', region: 'Maharashtra' },
-      { code: 'BR', name: 'Brazil', city: 'São Paulo', region: 'São Paulo' },
-      { code: 'AU', name: 'Australia', city: 'Sydney', region: 'New South Wales' },
-      { code: 'AE', name: 'United Arab Emirates', city: 'Dubai', region: 'Dubai' },
-      { code: 'SG', name: 'Singapore', city: 'Singapore', region: 'Singapore' },
-      { code: 'KR', name: 'South Korea', city: 'Seoul', region: 'Seoul' },
-    ];
-    
-    // Generate a consistent index based on URL and user IDs
-    // This ensures the same URL always shows the same country distribution
-    // which makes analytics testing more realistic
-    const index = (urlId + userId) % testLocations.length;
-    return testLocations[index];
-  }
 
   /**
    * Get location information from request
@@ -251,8 +221,8 @@ class GeolocationService {
     
     // 3. For development environment or internal IPs, use test data
     if (!ip || ip === '127.0.0.1' || ip === '::1' || ip.includes('::ffff:127.0.0.1')) {
-      console.log('Development environment detected, using randomized but consistent test data');
-      return this.getTestLocationData(req);
+      // Local development: there's no real location to report
+      return { code: 'UNKNOWN', name: 'Unknown' };
     }
     
     // 4. Special handling for known IP patterns
