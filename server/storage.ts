@@ -130,9 +130,9 @@ export class DatabaseStorage implements IStorage {
     try {
       const [user] = await db.insert(users).values({
         ...insertUser,
-        role: 'user',
-        isApproved: false,
-        isActive: true
+        role: insertUser.role ?? 'user',
+        isApproved: insertUser.isApproved ?? false,
+        isActive: insertUser.isActive ?? true
       }).returning();
       return user;
     } catch (error) {

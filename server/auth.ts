@@ -181,14 +181,14 @@ export function setupAuth(app: Express) {
           } else {
             console.log(`Microsoft auth: Found existing user for email ${email}, id: ${user.id}`);
             
-            if (user.userType !== 'internal') {
-              console.log(`Microsoft auth: Updating user ${user.id} to internal type`);
-              // If a user with this email exists but is not marked as internal,
-              // update them to be an internal user using the storage interface
+            if (user.userType !== 'internal' || !user.isApproved) {
+              console.log(`Microsoft auth: Marking user ${user.id} as approved internal user`);
+              // Microsoft-authenticated users are trusted by the organization:
+              // ensure they are internal and approved (keep deactivation intact)
               const updatedUser = await storage.updateUserApproval({
                 userId: user.id,
                 isApproved: true,
-                isActive: true,
+                isActive: user.isActive,
                 userType: 'internal'
               });
               
