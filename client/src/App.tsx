@@ -1,7 +1,8 @@
 import { QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider } from "@/hooks/use-auth";
 import { queryClient } from "./lib/queryClient";
-import { Switch, Route } from "wouter";
+import { useEffect } from "react";
+import { Switch, Route, useLocation } from "wouter";
 import { Toaster } from "@/components/ui/toaster";
 import NotFound from "@/pages/not-found";
 import HomePage from "@/pages/home-page";
@@ -26,7 +27,37 @@ function ProtectedLayout({ component: Component }: { component: () => React.JSX.
   );
 }
 
+const APP_NAME = "Adlink";
+
+const PAGE_TITLES: Record<string, string> = {
+  "/": "URLs",
+  "/analytics": "Analytics",
+  "/profile": "Profile",
+  "/assets": "Digital Assets",
+  "/admin": "Admin",
+  "/activities": "Activities",
+  "/auth": "Sign in",
+  "/auth-status": "Account Status",
+};
+
+function getPageTitle(path: string): string {
+  if (PAGE_TITLES[path]) return PAGE_TITLES[path];
+  if (path.startsWith("/invite/")) return "Invitation";
+  if (path.startsWith("/protected/")) return "Protected Link";
+  return "Page Not Found";
+}
+
+function usePageTitle() {
+  const [location] = useLocation();
+
+  useEffect(() => {
+    document.title = `${getPageTitle(location)} | ${APP_NAME}`;
+  }, [location]);
+}
+
 function Router() {
+  usePageTitle();
+
   return (
     <Switch>
       <ProtectedRoute path="/" component={() => <ProtectedLayout component={HomePage} />} />

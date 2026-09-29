@@ -31,6 +31,7 @@ export interface IStorage {
   createUser(user: InsertUser): Promise<User>;
   createUrl(userId: number, url: InsertUrl): Promise<Url>;
   getUrlByShortCode(shortCode: string, userId?: number): Promise<Url | undefined>;
+  getUserUrl(id: number, userId: number): Promise<Url | undefined>;
   getUserUrls(userId: number, limit?: number, offset?: number): Promise<Url[]>;
   getUserUrlsCount(userId: number): Promise<number>;
   incrementUrlClicks(id: number, userId: number, deviceType: DeviceType, countryInfo: CountryInfo, referrer: string, deviceInfo?: DeviceInfo): Promise<void>;
@@ -169,6 +170,15 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(urls)
       .where(and(...conditions));
+
+    return url;
+  }
+
+  async getUserUrl(id: number, userId: number): Promise<Url | undefined> {
+    const [url] = await db
+      .select()
+      .from(urls)
+      .where(and(eq(urls.id, id), eq(urls.userId, userId)));
 
     return url;
   }
