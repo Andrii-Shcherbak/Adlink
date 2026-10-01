@@ -3,6 +3,13 @@
 @tailwind utilities;
 
 @layer base {
+  /* The generated dark theme's red is too dark to read as text on the near-black
+     background; this one stays legible as text and behind white button labels. */
+  :root {
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+  }
+
   * {
     @apply border-border;
   }

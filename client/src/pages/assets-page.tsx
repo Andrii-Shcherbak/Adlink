@@ -200,9 +200,9 @@ const FolderItem: React.FC<{
               className="w-4 h-4 flex items-center justify-center focus:outline-none"
             >
               {expanded ? (
-                <ChevronDown className="h-3 w-3 text-gray-500" />
+                <ChevronDown className="h-3 w-3 text-gray-400" />
               ) : (
-                <ChevronRight className="h-3 w-3 text-gray-500" />
+                <ChevronRight className="h-3 w-3 text-gray-400" />
               )}
             </button>
           ) : (
@@ -339,7 +339,7 @@ const FileItem: React.FC<{
       if (contentType === 'application/pdf') return <FileTextIcon className="h-3.5 w-3.5 text-purple-500" />;
       if (contentType.includes('spreadsheet') || contentType.includes('excel')) return <TableIcon className="h-3.5 w-3.5 text-emerald-500" />;
       if (contentType.includes('document') || contentType.includes('word')) return <FileTypeIcon className="h-3.5 w-3.5 text-blue-500" />;
-      return <FileIcon className="h-3.5 w-3.5 text-gray-500" />;
+      return <FileIcon className="h-3.5 w-3.5 text-gray-400" />;
     };
 
     return (
@@ -356,7 +356,7 @@ const FileItem: React.FC<{
             {fileIcon()}
           </div>
           <span className="truncate">{file.name}</span>
-          <span className="ml-1.5 text-[10px] text-gray-500">{formatFileSize(file.fileSize)}</span>
+          <span className="ml-1.5 text-[10px] text-gray-400">{formatFileSize(file.fileSize)}</span>
         </div>
         <div className="flex space-x-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
           <Button 
@@ -406,7 +406,7 @@ const FileItem: React.FC<{
     if (contentType === 'application/pdf') return <FileTextIcon className="h-4 w-4 text-purple-500" />;
     if (contentType.includes('spreadsheet') || contentType.includes('excel')) return <TableIcon className="h-4 w-4 text-emerald-500" />;
     if (contentType.includes('document') || contentType.includes('word')) return <FileTypeIcon className="h-4 w-4 text-blue-500" />;
-    return <FileIcon className="h-4 w-4 text-gray-500" />;
+    return <FileIcon className="h-4 w-4 text-gray-400" />;
   };
 
   const getColorByType = () => {
@@ -435,7 +435,7 @@ const FileItem: React.FC<{
         </div>
         <div className="overflow-hidden min-w-0">
           <h3 className="font-medium text-sm truncate">{file.name}</h3>
-          <div className="flex items-center text-xs text-gray-500 space-x-2">
+          <div className="flex items-center text-xs text-gray-400 space-x-2">
             <span>{formatFileSize(file.fileSize)}</span>
             {fileExtension && (
               <>
@@ -978,7 +978,7 @@ const RootDropArea: React.FC<{
           : 'border-gray-200 dark:border-gray-800 hover:bg-gray-50/50 dark:hover:bg-gray-900/10'
       } transition-colors`}
     >
-      <div className="text-center py-1.5 text-xs text-gray-500 flex items-center justify-center gap-1.5">
+      <div className="text-center py-1.5 text-xs text-gray-400 flex items-center justify-center gap-1.5">
         <Folder className="h-3 w-3 text-gray-400" />
         <span>Root folder drop zone</span>
       </div>
@@ -1345,7 +1345,7 @@ export default function AssetsPage() {
                         
                         <div className="flex items-center gap-2">
                           {currentFolder && (
-                            <div className="text-xs text-gray-500">
+                            <div className="text-xs text-gray-400">
                               <FolderBreadcrumb 
                                 currentPath={folderPath} 
                                 onNavigate={handleBreadcrumbNavigate} 
@@ -1382,7 +1382,7 @@ export default function AssetsPage() {
                               <FileIcon className="mx-auto h-8 w-8 text-gray-400" />
                             </div>
                             <h3 className="text-sm font-medium">No files in this {currentFolder ? 'folder' : 'location'}</h3>
-                            <p className="text-xs text-gray-500 mt-1 mb-3">
+                            <p className="text-xs text-gray-400 mt-1 mb-3">
                               Upload files, or drag files and folders here from your computer
                             </p>
                             <Button variant="outline" size="sm" onClick={() => setFileDialogOpen(true)}>
@@ -1479,7 +1479,7 @@ export default function AssetsPage() {
                           )}
                         </div>
                         <h3 className="text-base font-medium">{currentFolder ? 'This folder is empty' : 'No assets yet'}</h3>
-                        <p className="text-sm text-gray-500 mt-1 mb-4">
+                        <p className="text-sm text-gray-400 mt-1 mb-4">
                           {currentFolder
                             ? 'Upload files or create folders to organize your assets'
                             : 'Start by creating folders or uploading files to manage your digital assets'}

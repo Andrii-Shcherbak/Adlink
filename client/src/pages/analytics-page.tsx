@@ -90,6 +90,25 @@ function titleCase(text: string): string {
     .join("");
 }
 
+// Recharts defaults (white tooltip, grey axes) assume a light page
+const gridProps = { strokeDasharray: "3 3", stroke: "hsl(var(--border))" };
+const axisProps = {
+  tick: { fill: "hsl(var(--foreground))", fillOpacity: 0.75, fontSize: 12 },
+  axisLine: { stroke: "hsl(var(--border))" },
+  tickLine: { stroke: "hsl(var(--border))" },
+};
+const tooltipProps = {
+  cursor: { fill: "hsl(var(--primary))", fillOpacity: 0.15 },
+  contentStyle: {
+    backgroundColor: "hsl(var(--popover))",
+    border: "1px solid hsl(var(--border))",
+    borderRadius: 6,
+    color: "hsl(var(--popover-foreground))",
+  },
+  labelStyle: { color: "hsl(var(--popover-foreground))", fontWeight: 600 },
+  itemStyle: { color: "hsl(var(--popover-foreground))" },
+};
+
 const PAGE_SIZE = 100;
 
 async function fetchAllUrls(): Promise<Url[]> {
@@ -151,10 +170,10 @@ export default function AnalyticsPage() {
                   data={urls}
                   margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
                 >
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="shortCode" />
-                  <YAxis />
-                  <Tooltip />
+                  <CartesianGrid {...gridProps} />
+                  <XAxis dataKey="shortCode" {...axisProps} />
+                  <YAxis {...axisProps} />
+                  <Tooltip {...tooltipProps} />
                   <Bar dataKey="clicks" fill="hsl(var(--primary))" />
                 </BarChart>
               </ResponsiveContainer>
@@ -171,10 +190,10 @@ export default function AnalyticsPage() {
                   data={sumCounts(urls, (analytics) => analytics.devices)}
                   margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
                 >
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <Tooltip />
+                  <CartesianGrid {...gridProps} />
+                  <XAxis dataKey="name" {...axisProps} />
+                  <YAxis {...axisProps} />
+                  <Tooltip {...tooltipProps} />
                   <Bar dataKey="value" fill="hsl(var(--primary))" />
                 </BarChart>
               </ResponsiveContainer>
@@ -194,10 +213,11 @@ export default function AnalyticsPage() {
                   data={countryTotals(urls)}
                   margin={{ top: 20, right: 30, left: 50, bottom: 5 }}
                 >
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis type="number" />
-                  <YAxis type="category" dataKey="name" width={120} />
-                  <Tooltip 
+                  <CartesianGrid {...gridProps} />
+                  <XAxis type="number" {...axisProps} />
+                  <YAxis type="category" dataKey="name" width={120} {...axisProps} />
+                  <Tooltip
+                    {...tooltipProps}
                     labelFormatter={(label) => `Country: ${label}`}
                     formatter={(value, name, props) => {
                       return [value, 'Clicks'];
@@ -220,10 +240,11 @@ export default function AnalyticsPage() {
                   data={sumCounts(urls, (analytics) => analytics.referrers)}
                   margin={{ top: 20, right: 30, left: 50, bottom: 5 }}
                 >
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis type="number" />
-                  <YAxis type="category" dataKey="name" width={120} />
-                  <Tooltip 
+                  <CartesianGrid {...gridProps} />
+                  <XAxis type="number" {...axisProps} />
+                  <YAxis type="category" dataKey="name" width={120} {...axisProps} />
+                  <Tooltip
+                    {...tooltipProps}
                     labelFormatter={(label) => `Referrer: ${label}`}
                     formatter={(value, name, props) => {
                       return [value, 'Clicks'];
@@ -253,10 +274,10 @@ export default function AnalyticsPage() {
                 ) : (
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart layout="vertical" data={chart.data} margin={{ top: 20, right: 30, left: 50, bottom: 5 }}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis type="number" allowDecimals={false} />
-                      <YAxis type="category" dataKey="name" width={120} />
-                      <Tooltip labelFormatter={(label) => `${chart.label}: ${label}`} formatter={(value) => [value, "Clicks"]} />
+                      <CartesianGrid {...gridProps} />
+                      <XAxis type="number" allowDecimals={false} {...axisProps} />
+                      <YAxis type="category" dataKey="name" width={120} {...axisProps} />
+                      <Tooltip {...tooltipProps} labelFormatter={(label) => `${chart.label}: ${label}`} formatter={(value) => [value, "Clicks"]} />
                       <Bar dataKey="value" fill="hsl(var(--primary))" />
                     </BarChart>
                   </ResponsiveContainer>
@@ -318,10 +339,11 @@ export default function AnalyticsPage() {
                 }
                 margin={{ top: 20, right: 30, left: 100, bottom: 5 }}
               >
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis type="number" />
-                <YAxis type="category" dataKey="name" width={150} />
-                <Tooltip 
+                <CartesianGrid {...gridProps} />
+                <XAxis type="number" {...axisProps} />
+                <YAxis type="category" dataKey="name" width={150} {...axisProps} />
+                <Tooltip
+                  {...tooltipProps}
                   labelFormatter={(label) => `City: ${label}`} 
                   formatter={(value, name, props) => {
                     return [value, props.payload.country ? `Clicks (${props.payload.country})` : 'Clicks'];
