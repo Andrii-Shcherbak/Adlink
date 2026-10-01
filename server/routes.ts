@@ -17,6 +17,7 @@ import {
 } from "./services/ai-suggestion-service";
 import { fileStorage } from "./services/file-storage";
 import { servePdfDocument } from "./pdf-handler";
+import { renderStatusPage } from "./status-page";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
@@ -72,6 +73,12 @@ function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T | null> {
 }
 
 const TITLE_GENERATION_TIMEOUT_MS = 4000;
+
+// Shows link visitors a branded page instead of a bare status text
+function sendStatusPage(res: express.Response, variant: "expired" | "not-found") {
+  const { status, html } = renderStatusPage(variant);
+  return res.status(status).type("html").set("Cache-Control", "no-store").send(html);
+}
 
 // Only lets clients change the fields they're meant to (never userId, storage names, ...)
 function pickFields<K extends string>(body: unknown, keys: K[]): Partial<Record<K, any>> {
@@ -375,11 +382,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Special route for password-verified PDF documents
   app.get("/verified-pdf/:shortCode", asyncHandler(async (req, res) => {
     const url = await storage.getUrlByShortCode(req.params.shortCode);
-    if (!url) return res.sendStatus(404);
+    if (!url) return sendStatusPage(res, "not-found");
     
     // Check if URL has expired
     if (url.expiresAt && new Date(url.expiresAt) < new Date()) {
-      return res.status(410).send("This link has expired.");
+      return sendStatusPage(res, "expired");
     }
     
     // Only visitors who just entered the password get a valid (signed, expiring) token
@@ -420,7 +427,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     // Check if URL has expired
     if (url.expiresAt && new Date(url.expiresAt) < new Date()) {
-      return res.status(410).send("This link has expired.");
+      return sendStatusPage(res, "expired");
     }
 
     if (url.isPasswordProtected) {
@@ -490,11 +497,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Keep the /api/r/:shortCode route for backward compatibility
   app.get("/api/r/:shortCode", asyncHandler(async (req, res) => {
     const url = await storage.getUrlByShortCode(req.params.shortCode);
-    if (!url) return res.sendStatus(404);
+    if (!url) return sendStatusPage(res, "not-found");
     
     // Check if URL has expired
     if (url.expiresAt && new Date(url.expiresAt) < new Date()) {
-      return res.status(410).send("This link has expired.");
+      return sendStatusPage(res, "expired");
     }
 
     if (url.isPasswordProtected) {
