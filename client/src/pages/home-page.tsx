@@ -588,16 +588,26 @@ function MultiDestinationDialog({ url }: { url: Url }) {
               </div>
 
               <div className="rounded-md bg-muted p-3 text-sm">
-                <p>
-                  Leave a field empty to use the original URL as fallback for
-                  that platform.
-                </p>
-                <div className="mt-1">
-                  <p className="mb-1">Original URL:</p>
-                  <div className="font-mono text-xs p-2 rounded max-h-[80px] overflow-auto whitespace-normal break-all">
-                    {url.originalUrl}
-                  </div>
-                </div>
+                {url.isPdfDocument ? (
+                  <p>
+                    Leave a field empty to show the PDF document
+                    {url.pdfDocumentName ? ` (${url.pdfDocumentName})` : ""} on
+                    that platform.
+                  </p>
+                ) : (
+                  <>
+                    <p>
+                      Leave a field empty to use the original URL as fallback
+                      for that platform.
+                    </p>
+                    <div className="mt-1">
+                      <p className="mb-1">Original URL:</p>
+                      <div className="font-mono text-xs p-2 rounded max-h-[80px] overflow-auto whitespace-normal break-all">
+                        {url.originalUrl}
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           )}

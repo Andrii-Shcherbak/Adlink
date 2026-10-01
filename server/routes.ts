@@ -7,7 +7,7 @@ import {
   insertUrlSchema, destinationsSchema, userApprovalSchema, 
   insertFolderSchema, insertFileSchema, urls, shortCodeSchema, RESERVED_SHORTCODES
 } from "@shared/schema";
-import { qrConfigSchema } from "@shared/schema";
+import { qrConfigSchema, type Url } from "@shared/schema";
 import { UAParser } from "ua-parser-js";
 import { scrypt, timingSafeEqual, randomBytes } from "crypto";
 import { promisify } from "util";
@@ -438,47 +438,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     await recordClick(req, url, req.headers.referer);
 
     try {
-      
-      // Check if this is a PDF document URL
+      // A device-specific destination wins; otherwise fall back to the link's own target (PDF viewer or original URL)
+      const platformDestination = getPlatformDestination(url, devicePlatform);
+      if (platformDestination) {
+        console.log(`Multi-destination URL: Redirecting ${devicePlatform} device to ${platformDestination}`);
+        return res.redirect(platformDestination);
+      }
+
       if (url.isPdfDocument) {
-        console.log(`Serving PDF document for shortcode ${url.shortCode}:`, {
-          title: url.title,
-          isPdfDocument: url.isPdfDocument,
-          pdfDocumentUrl: url.pdfDocumentUrl,
-          pdfDocumentName: url.pdfDocumentName,
-          pdfDocumentSize: url.pdfDocumentSize,
-          shortCode: url.shortCode
-        });
-        
-        // We've already imported servePdfDocument at the top of the file
+        console.log(`Serving PDF document for shortcode ${url.shortCode}`);
         return servePdfDocument(res, url);
       }
-      
-      // Handle multi-destination URLs - redirect based on device platform
-      if (url.isMultiDestination && url.destinations) {
-        // Parse destinations JSON if it's a string
-        const destinations = typeof url.destinations === 'string' 
-          ? JSON.parse(url.destinations) 
-          : url.destinations;
-        
-        let redirectUrl = url.originalUrl; // Default fallback
-        
-        if (devicePlatform === 'ios' && destinations.ios) {
-          redirectUrl = destinations.ios;
-          console.log(`Multi-destination URL: Redirecting iOS device to ${redirectUrl}`);
-        } 
-        else if (devicePlatform === 'android' && destinations.android) {
-          redirectUrl = destinations.android;
-          console.log(`Multi-destination URL: Redirecting Android device to ${redirectUrl}`);
-        }
-        else if (devicePlatform === 'desktop' && destinations.desktop) {
-          redirectUrl = destinations.desktop;
-          console.log(`Multi-destination URL: Redirecting desktop device to ${redirectUrl}`);
-        }
-        
-        return res.redirect(redirectUrl);
-      }
-      
+
       // Regular URL - just redirect to the original URL
       res.redirect(url.originalUrl);
     } catch (error) {
@@ -512,40 +483,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     await recordClick(req, url, req.headers.referer);
 
     try {
-      
-      // Check if this is a PDF document URL
+      // A device-specific destination wins; otherwise fall back to the link's own target (PDF viewer or original URL)
+      const platformDestination = getPlatformDestination(url, devicePlatform);
+      if (platformDestination) {
+        console.log(`Multi-destination URL: Redirecting ${devicePlatform} device to ${platformDestination}`);
+        return res.redirect(platformDestination);
+      }
+
       if (url.isPdfDocument) {
-        console.log(`Serving PDF document from /api/r/ route for shortcode ${url.shortCode}`);
-        
-        // We've already imported servePdfDocument at the top of the file
+        console.log(`Serving PDF document for shortcode ${url.shortCode}`);
         return servePdfDocument(res, url);
       }
-      
-      // Handle multi-destination URLs - redirect based on device platform
-      if (url.isMultiDestination && url.destinations) {
-        // Parse destinations JSON if it's a string
-        const destinations = typeof url.destinations === 'string' 
-          ? JSON.parse(url.destinations) 
-          : url.destinations;
-        
-        let redirectUrl = url.originalUrl; // Default fallback
-        
-        if (devicePlatform === 'ios' && destinations.ios) {
-          redirectUrl = destinations.ios;
-          console.log(`Multi-destination URL: Redirecting iOS device to ${redirectUrl}`);
-        } 
-        else if (devicePlatform === 'android' && destinations.android) {
-          redirectUrl = destinations.android;
-          console.log(`Multi-destination URL: Redirecting Android device to ${redirectUrl}`);
-        }
-        else if (devicePlatform === 'desktop' && destinations.desktop) {
-          redirectUrl = destinations.desktop;
-          console.log(`Multi-destination URL: Redirecting desktop device to ${redirectUrl}`);
-        }
-        
-        return res.redirect(redirectUrl);
-      }
-      
+
       // Regular URL - just redirect to the original URL
       res.redirect(url.originalUrl);
     } catch (error) {
@@ -584,52 +533,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     await recordClick(req, url, typeof req.body?.referrer === 'string' ? req.body.referrer : undefined);
 
     try {
-      
-      // Check if this is a PDF document URL
+      // A device-specific destination wins; otherwise fall back to the link's own target (PDF viewer or original URL)
+      const platformDestination = getPlatformDestination(url, devicePlatform);
+      if (platformDestination) {
+        console.log(`Protected multi-destination URL: Redirecting ${devicePlatform} device to ${platformDestination}`);
+        return res.json({ redirectUrl: platformDestination });
+      }
+
       if (url.isPdfDocument) {
-        console.log(`Password-protected PDF document URL verified: Serving PDF directly via viewer`);
-        console.log(`PDF Document details:`, { 
-          isPdfDocument: url.isPdfDocument,
-          pdfDocumentUrl: url.pdfDocumentUrl,
-          shortCode: url.shortCode
-        });
-        
-        // Instead of redirecting through the same mechanism, we'll generate a one-time token
-        // that can be used to directly serve the PDF
+        // One-time token lets the verified visitor open the PDF without re-entering the password
         const oneTimeAccessToken = createPdfAccessToken(url.id);
-        
-        // Create a special route for password-verified PDFs
         return res.json({ 
           redirectUrl: `/verified-pdf/${url.shortCode}?token=${oneTimeAccessToken}`,
           isPdfDocument: true
         });
       }
-      
-      // Handle multi-destination URLs for password-protected links
-      if (url.isMultiDestination && url.destinations) {
-        // Parse destinations JSON if it's a string
-        const destinations = typeof url.destinations === 'string' 
-          ? JSON.parse(url.destinations) 
-          : url.destinations;
-        
-        let redirectUrl = url.originalUrl; // Default fallback
-        
-        if (devicePlatform === 'ios' && destinations.ios) {
-          redirectUrl = destinations.ios;
-          console.log(`Protected multi-destination URL: Redirecting iOS device to ${redirectUrl}`);
-        } 
-        else if (devicePlatform === 'android' && destinations.android) {
-          redirectUrl = destinations.android;
-          console.log(`Protected multi-destination URL: Redirecting Android device to ${redirectUrl}`);
-        }
-        else if (devicePlatform === 'desktop' && destinations.desktop) {
-          redirectUrl = destinations.desktop;
-          console.log(`Protected multi-destination URL: Redirecting desktop device to ${redirectUrl}`);
-        }
-        
-        return res.json({ redirectUrl });
-      }
-      
+
       // Regular URL
       res.json({ redirectUrl: url.originalUrl });
     } catch (error) {
@@ -662,46 +581,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     await recordClick(req, url, typeof req.body?.referrer === 'string' ? req.body.referrer : undefined);
 
     try {
-      
-      // Check if this is a PDF document URL
+      // A device-specific destination wins; otherwise fall back to the link's own target (PDF viewer or original URL)
+      const platformDestination = getPlatformDestination(url, devicePlatform);
+      if (platformDestination) {
+        console.log(`Protected multi-destination URL: Redirecting ${devicePlatform} device to ${platformDestination}`);
+        return res.json({ redirectUrl: platformDestination });
+      }
+
       if (url.isPdfDocument) {
-        console.log(`Password-protected PDF document URL verified (legacy route): Serving PDF directly via viewer`);
-        
-        // Use the same one-time token approach for the legacy route
+        // One-time token lets the verified visitor open the PDF without re-entering the password
         const oneTimeAccessToken = createPdfAccessToken(url.id);
-        
-        // Create a special route for password-verified PDFs
         return res.json({ 
           redirectUrl: `/verified-pdf/${url.shortCode}?token=${oneTimeAccessToken}`,
           isPdfDocument: true
         });
       }
-      
-      // Handle multi-destination URLs for password-protected links
-      if (url.isMultiDestination && url.destinations) {
-        // Parse destinations JSON if it's a string
-        const destinations = typeof url.destinations === 'string' 
-          ? JSON.parse(url.destinations) 
-          : url.destinations;
-        
-        let redirectUrl = url.originalUrl; // Default fallback
-        
-        if (devicePlatform === 'ios' && destinations.ios) {
-          redirectUrl = destinations.ios;
-          console.log(`Protected multi-destination URL: Redirecting iOS device to ${redirectUrl}`);
-        } 
-        else if (devicePlatform === 'android' && destinations.android) {
-          redirectUrl = destinations.android;
-          console.log(`Protected multi-destination URL: Redirecting Android device to ${redirectUrl}`);
-        }
-        else if (devicePlatform === 'desktop' && destinations.desktop) {
-          redirectUrl = destinations.desktop;
-          console.log(`Protected multi-destination URL: Redirecting desktop device to ${redirectUrl}`);
-        }
-        
-        return res.json({ redirectUrl });
-      }
-      
+
       // Regular URL
       res.json({ redirectUrl: url.originalUrl });
     } catch (error) {
@@ -1113,7 +1008,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Update URL with multi-destination settings
       const updatedUrl = await storage.updateUrl(urlId, req.user!.id, {
         isMultiDestination,
-        destinations: isMultiDestination ? destinations : null
+        destinations: isMultiDestination ? destinations : { ios: "", android: "", desktop: "" }
       });
 
       // Log multi-destination update
@@ -1502,6 +1397,15 @@ function getDeviceType(userAgent: string): 'desktop' | 'mobile' | 'tablet' {
   if (device.type === 'mobile') return 'mobile';
   if (device.type === 'tablet') return 'tablet';
   return 'desktop';
+}
+
+// The multi-destination URL configured for this platform, if any
+function getPlatformDestination(url: Url, platform: 'ios' | 'android' | 'desktop'): string | null {
+  if (!url.isMultiDestination || !url.destinations) return null;
+  const destinations = typeof url.destinations === 'string'
+    ? JSON.parse(url.destinations)
+    : url.destinations as Record<string, string | undefined>;
+  return destinations[platform] || null;
 }
 
 // Get device platform (ios, android, desktop)
