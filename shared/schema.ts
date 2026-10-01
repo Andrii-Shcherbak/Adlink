@@ -81,6 +81,18 @@ export const insertUserSchema = createInsertSchema(users).extend({
   company: z.string().optional(),
 });
 
+// Short codes share the URL space with the app's own pages, so those names are reserved
+export const RESERVED_SHORTCODES = [
+  "api", "auth", "auth-status", "invite", "protected", "verified-pdf",
+  "admin", "analytics", "profile", "activities", "assets", "uploads",
+];
+
+export const shortCodeSchema = z
+  .string()
+  .trim()
+  .regex(/^[A-Za-z0-9_-]{3,50}$/, "Short code must be 3-50 characters: letters, numbers, hyphens or underscores")
+  .refine((code) => !RESERVED_SHORTCODES.includes(code.toLowerCase()), "This short code is reserved by the app");
+
 export const destinationsSchema = z.object({
   ios: z.string().url("Must be a valid URL").or(z.literal("")),
   android: z.string().url("Must be a valid URL").or(z.literal("")),

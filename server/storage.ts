@@ -34,6 +34,7 @@ export interface IStorage {
   getUserUrl(id: number, userId: number): Promise<Url | undefined>;
   getUserUrls(userId: number, limit?: number, offset?: number): Promise<Url[]>;
   getUserUrlsCount(userId: number): Promise<number>;
+  getUserTotalClicks(userId: number): Promise<number>;
   incrementUrlClicks(id: number, userId: number, deviceType: DeviceType, countryInfo: CountryInfo, referrer: string, deviceInfo?: DeviceInfo): Promise<void>;
   sessionStore: session.Store;
   updateUrlQrConfig(id: number, userId: number, qrConfig: any): Promise<Url | undefined>;
@@ -201,6 +202,14 @@ export class DatabaseStorage implements IStorage {
       .from(urls)
       .where(eq(urls.userId, userId));
     return Number(result?.count) || 0;
+  }
+
+  async getUserTotalClicks(userId: number): Promise<number> {
+    const [result] = await db
+      .select({ total: sql<number>`coalesce(sum(${urls.clicks}), 0)` })
+      .from(urls)
+      .where(eq(urls.userId, userId));
+    return Number(result?.total) || 0;
   }
 
   async incrementUrlClicks(

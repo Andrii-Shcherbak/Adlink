@@ -108,6 +108,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 }
 
+/** Which optional sign-in methods the server has configured. */
+export function useAuthProviders() {
+  const { data } = useQuery<{ microsoft: boolean }>({
+    queryKey: ["/api/auth/providers"],
+  });
+  return { microsoft: data?.microsoft ?? false };
+}
+
 export function useAuth() {
   const context = useContext(AuthContext);
   if (!context) {

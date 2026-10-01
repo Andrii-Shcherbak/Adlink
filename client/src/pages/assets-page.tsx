@@ -1037,6 +1037,10 @@ export default function AssetsPage() {
       const response = await apiRequest(`/api/assets/files${currentFolder ? `?folderId=${currentFolder.id}` : '?folderId=null'}`);
       return Array.isArray(response) ? response : [];
     },
+    // File links are signed for 1 hour; refresh them well before they expire
+    staleTime: 30 * 60 * 1000,
+    refetchInterval: 30 * 60 * 1000,
+    refetchOnWindowFocus: true,
   });
 
   // Delete folder mutation

@@ -15,6 +15,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { queryClient } from "@/lib/queryClient";
+import { getAppUrl } from "@/lib/appConfig";
+import { useAuthProviders } from "@/hooks/use-auth";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 type CreateUserForm = {
@@ -37,6 +39,7 @@ type InviteUserForm = {
 
 export default function AdminPage() {
   const { toast } = useToast();
+  const authProviders = useAuthProviders();
   const [showInviteDialog, setShowInviteDialog] = useState(false);
   const [inviteDialogData, setInviteDialogData] = useState<{
     email: string;
@@ -161,14 +164,9 @@ export default function AdminPage() {
         return { success: true };
       }
       
-      // For error responses, try to parse JSON if available
-      try {
-        const errorData = await res.json();
-        throw new Error(errorData.error || "Failed to delete user");
-      } catch (e) {
-        // If JSON parsing fails, return generic error
-        throw new Error("Failed to delete user");
-      }
+      // For error responses, use the server's message when there is one
+      const errorData = await res.json().catch(() => null);
+      throw new Error(errorData?.error || "Failed to delete user");
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
@@ -232,7 +230,7 @@ export default function AdminPage() {
       
       if (data.warning) {
         // Show a toast with the warning and invite link for manual sharing
-        const baseUrl = window.location.origin;
+        const baseUrl = getAppUrl();
         const inviteUrl = `${baseUrl}/invite/${data.token}`;
         
         // Use a dialog instead of a toast for better invitation management
@@ -482,10 +480,11 @@ export default function AdminPage() {
                                   value="internal" 
                                   checked={field.value === 'internal'}
                                   onChange={() => field.onChange('internal')}
+                                  disabled={!authProviders.microsoft}
                                   className="h-4 w-4 text-primary border-muted-foreground"
                                 />
-                                <label htmlFor="userType-internal" className="text-sm font-medium leading-none cursor-pointer">
-                                  Internal (Microsoft Login)
+                                <label htmlFor="userType-internal" className={`text-sm font-medium leading-none ${authProviders.microsoft ? "cursor-pointer" : "text-muted-foreground"}`}>
+                                  Internal (Microsoft Login){!authProviders.microsoft && " — Microsoft sign-in not configured"}
                                 </label>
                               </div>
                               <div className="flex items-center space-x-2">

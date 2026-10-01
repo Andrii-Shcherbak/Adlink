@@ -3,6 +3,11 @@ import type { Server } from "http";
 import { registerRoutes } from "./routes";
 import { log } from "./log";
 
+// A failed request (e.g. a dropped database connection) must not take the whole server down
+process.on("unhandledRejection", (reason) => {
+  console.error("Unhandled promise rejection:", reason);
+});
+
 /** Builds the Express app with all API/redirect routes (no static or Vite serving). */
 export async function createApp(): Promise<{ app: Express; server: Server }> {
   const app = express();

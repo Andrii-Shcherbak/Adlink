@@ -12,4 +12,11 @@ if (!process.env.DATABASE_URL) {
 }
 
 export const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+
+// Idle connections dropped by Neon (compute suspend, network blips) are reported here;
+// without a listener the 'error' event would crash the process.
+pool.on('error', (error) => {
+  console.error('Database pool error (idle connection dropped):', error.message);
+});
+
 export const db = drizzle({ client: pool, schema });

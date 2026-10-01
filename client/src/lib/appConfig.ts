@@ -1,15 +1,10 @@
-// Utility function to get the current app URL based on environment
+// Base URL for short links and QR codes. Set VITE_APP_URL (e.g. https://adlink.dcxtransform.com)
+// so links stay on the public domain even when the app is opened from localhost or a preview URL.
 export function getAppUrl(): string {
-  // For production, return the APP_URL environment variable if it exists
-  if (import.meta.env.VITE_APP_URL) {
-    return import.meta.env.VITE_APP_URL;
+  const appUrl = import.meta.env.VITE_APP_URL?.trim();
+  if (appUrl) {
+    return appUrl.replace(/\/+$/, "");
   }
-  
-  // For Replit deployments
-  if (import.meta.env.VITE_REPL_SLUG && import.meta.env.VITE_REPL_OWNER) {
-    return `https://${import.meta.env.VITE_REPL_SLUG}.${import.meta.env.VITE_REPL_OWNER}.repl.co`;
-  }
-  
-  // Default to current origin for local development or other environments
+
   return window.location.origin;
 }

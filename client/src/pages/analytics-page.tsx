@@ -108,6 +108,9 @@ export default function AnalyticsPage() {
   const { data: urls = [], isLoading } = useQuery<Url[]>({
     queryKey: ["/api/urls", "all-for-analytics"],
     queryFn: fetchAllUrls,
+    // Clicks arrive from outside the app, so always show fresh numbers
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
   });
 
   if (isLoading) {

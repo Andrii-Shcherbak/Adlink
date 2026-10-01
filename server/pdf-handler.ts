@@ -2,6 +2,16 @@ import { Response } from "express";
 import { Url } from "@shared/schema";
 import { fileStorage } from "./services/file-storage";
 
+// Titles and file names are user-supplied; never let them inject markup into the viewer page
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 export async function servePdfDocument(res: Response, url: Url): Promise<void> {
   // Make sure pdfDocumentUrl is not null
   if (!url.pdfDocumentUrl) {
@@ -11,6 +21,10 @@ export async function servePdfDocument(res: Response, url: Url): Promise<void> {
 
   // Generate a time-limited signed URL for secure access
   const secureUrl = await fileStorage.getSignedDocumentUrl(url.pdfDocumentUrl);
+  const title = escapeHtml(url.title || 'PDF Document');
+  const documentName = escapeHtml(url.pdfDocumentName || 'PDF Document');
+  const downloadName = escapeHtml(url.pdfDocumentName || 'document.pdf');
+  const documentUrl = escapeHtml(secureUrl);
   
   console.log(`PDF Document URL: Serving PDF document:`, {
     title: url.title,
@@ -28,7 +42,7 @@ export async function servePdfDocument(res: Response, url: Url): Promise<void> {
     <head>
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>${url.title || 'PDF Document'}</title>
+      <title>${title}</title>
       <style>
         body, html {
           margin: 0;
@@ -103,13 +117,13 @@ export async function servePdfDocument(res: Response, url: Url): Promise<void> {
     <body>
       <div class="container">
         <div class="header">
-          <h1>${url.pdfDocumentName || 'PDF Document'}</h1>
-          <a href="${secureUrl}" download="${url.pdfDocumentName || 'document.pdf'}" class="btn">Download PDF</a>
+          <h1>${documentName}</h1>
+          <a href="${documentUrl}" download="${downloadName}" class="btn">Download PDF</a>
         </div>
         
         <div class="pdf-box">
           <object 
-            data="${secureUrl}" 
+            data="${documentUrl}" 
             type="application/pdf" 
             width="100%" 
             height="600px" 
@@ -117,14 +131,14 @@ export async function servePdfDocument(res: Response, url: Url): Promise<void> {
             <!-- Fallback if object tag doesn't work -->
             <div class="pdf-fallback">
               <p>Your browser cannot display the PDF directly. Please use one of the options below:</p>
-              <a href="${secureUrl}" class="btn direct-view-btn" target="_blank">Open PDF in new tab</a>
-              <a href="${secureUrl}" download="${url.pdfDocumentName || 'document.pdf'}" class="btn">Download PDF</a>
+              <a href="${documentUrl}" class="btn direct-view-btn" target="_blank">Open PDF in new tab</a>
+              <a href="${documentUrl}" download="${downloadName}" class="btn">Download PDF</a>
             </div>
           </object>
         </div>
         
         <div class="pdf-direct-link">
-          <a href="${secureUrl}" class="btn direct-view-btn" target="_blank">Open PDF in new tab</a>
+          <a href="${documentUrl}" class="btn direct-view-btn" target="_blank">Open PDF in new tab</a>
         </div>
       </div>
       

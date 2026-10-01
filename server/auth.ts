@@ -38,6 +38,21 @@ async function comparePasswords(supplied: string, stored: string) {
   }
 }
 
+// User record without secrets, safe to send to the browser
+function toPublicUser(user: SelectUser) {
+  const { password, inviteToken, ...publicUser } = user;
+  return publicUser;
+}
+
+// Activity logging is best-effort: a failed insert must not break sign-in or crash the server
+async function logActivitySafely(activity: Parameters<typeof storage.logActivity>[0]) {
+  try {
+    await storage.logActivity(activity);
+  } catch (error) {
+    console.error("Failed to log activity:", error);
+  }
+}
+
 // Middleware to check if user is admin
 function isAdmin(req: Express.Request, res: Express.Response, next: Express.NextFunction) {
   if (!req.isAuthenticated() || req.user.role !== "admin") {
@@ -305,16 +320,21 @@ export function setupAuth(app: Express) {
           return next(err);
         }
         // Log successful login
-        await storage.logActivity({
+        await logActivitySafely({
           userId: user.id,
           type: "login",
           metadata: {
             method: "local"
           }
         });
-        return res.status(200).json(user);
+        return res.status(200).json(toPublicUser(user));
       });
     })(req, res, next);
+  });
+
+  // Lets the client hide sign-in options that aren't configured
+  app.get("/api/auth/providers", (_req, res) => {
+    res.json({ microsoft: microsoftAuthEnabled });
   });
 
   app.get("/api/auth/microsoft", (req, res, next) => {
@@ -340,7 +360,7 @@ export function setupAuth(app: Express) {
             return next(err);
           }
           // Log successful Microsoft login
-          await storage.logActivity({
+          await logActivitySafely({
             userId: user.id,
             type: "login",
             metadata: {
@@ -359,7 +379,7 @@ export function setupAuth(app: Express) {
       if (err) return next(err);
       if (userId) {
         // Log logout
-        await storage.logActivity({
+        await logActivitySafely({
           userId,
           type: "logout",
           metadata: {}
@@ -371,14 +391,14 @@ export function setupAuth(app: Express) {
 
   app.get("/api/user", (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
-    res.json(req.user);
+    res.json(toPublicUser(req.user));
   });
 
   // Admin routes for user management
   app.get("/api/admin/users", isAdmin, async (req, res) => {
     try {
       const users = await storage.getAllUsers();
-      res.json(users);
+      res.json(users.map(toPublicUser));
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch users" });
     }
@@ -394,7 +414,7 @@ export function setupAuth(app: Express) {
         isApproved: true, // Admins can create pre-approved users
         isActive: true,
       });
-      res.status(201).json(user);
+      res.status(201).json(toPublicUser(user));
     } catch (error) {
       res.status(500).json({ error: "Failed to create user" });
     }
@@ -424,7 +444,7 @@ export function setupAuth(app: Express) {
         }
       });
 
-      res.json(user);
+      res.json(toPublicUser(user));
     } catch (error) {
       res.status(500).json({ error: "Failed to update user approval status" });
     }
@@ -510,13 +530,9 @@ export function setupAuth(app: Express) {
         token
       );
       
-      if (!emailSent && !process.env.SENDGRID_API_KEY) {
-        return res.status(400).json({ 
-          error: "SendGrid API key is missing. Please add a SENDGRID_API_KEY to your environment variables." 
-        });
-      } else if (!emailSent) {
-        // If email fails for other reasons, return success but with a warning
-        // Also include the token so it can be manually shared
+      if (!emailSent) {
+        // The invitation already exists at this point, so return success with a warning
+        // and include the token so the invite link can be shared manually
         return res.status(201).json({
           success: true,
           user: {
@@ -526,7 +542,9 @@ export function setupAuth(app: Express) {
             lastName: user.lastName
           },
           token: token, // Include token for manual sharing
-          warning: "Invitation created but email could not be sent. Please check your email configuration."
+          warning: emailService.isConfigured()
+            ? "Invitation created but email could not be sent. Please check your email configuration."
+            : "Invitation created but email is not configured (RESEND_API_KEY is missing). Share the invite link manually."
         });
       }
       

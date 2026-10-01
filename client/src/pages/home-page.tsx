@@ -7,6 +7,7 @@ import {
   type Url,
   type QrConfig,
   type Destinations,
+  shortCodeSchema,
 } from "@shared/schema";
 import {
   Form,
@@ -53,6 +54,8 @@ import {
   isAfter,
   isPast,
   formatDistanceToNow,
+  parse,
+  endOfDay,
 } from "date-fns";
 import {
   AlertDialog,
@@ -99,6 +102,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { PDFDocumentDialog } from "@/components/pdf-document-dialog";
+import { getAppUrl } from "@/lib/appConfig";
 
 function truncateUrl(url: string, maxLength: number = 50): string {
   if (url.length <= maxLength) return url;
@@ -348,7 +352,8 @@ function ExpiryDialog({ url }: { url: Url }) {
               onChange={(e) => {
                 setExpiryDays(null);
                 if (e.target.value) {
-                  setExpiryDate(new Date(e.target.value));
+                  // "yyyy-MM-dd" via new Date() is UTC midnight, i.e. the previous day west of UTC
+                  setExpiryDate(endOfDay(parse(e.target.value, "yyyy-MM-dd", new Date())));
                 } else {
                   setExpiryDate(null);
                 }
@@ -750,9 +755,18 @@ function ShortcodeEditDialog({ url }: { url: Url }) {
             Cancel
           </Button>
           <Button
-            onClick={() =>
-              updateShortcodeMutation.mutate({ id: url.id, shortCode })
-            }
+            onClick={() => {
+              const parsed = shortCodeSchema.safeParse(shortCode);
+              if (!parsed.success) {
+                toast({
+                  title: "Invalid shortcode",
+                  description: parsed.error.issues[0].message,
+                  variant: "destructive",
+                });
+                return;
+              }
+              updateShortcodeMutation.mutate({ id: url.id, shortCode: parsed.data });
+            }}
             disabled={updateShortcodeMutation.isPending}
           >
             {updateShortcodeMutation.isPending ? (
@@ -770,7 +784,7 @@ function ShortcodeEditDialog({ url }: { url: Url }) {
 
 export default function HomePage() {
   const { toast } = useToast();
-  const domain = window.location.origin;
+  const domain = getAppUrl();
   const [page, setPage] = useState(1);
   const ITEMS_PER_PAGE = 5;
   const [showPdfDocumentDialog, setShowPdfDocumentDialog] = useState(false);
@@ -787,6 +801,7 @@ export default function HomePage() {
     urls: Url[];
     pagination: {
       total: number;
+      totalClicks?: number;
       page: number;
       totalPages: number;
       hasMore: boolean;
@@ -798,6 +813,9 @@ export default function HomePage() {
       if (!res.ok) throw new Error("Failed to fetch URLs");
       return res.json();
     },
+    // Click counts change outside the app (people scanning), so don't rely on the cache
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
   });
 
   const createUrlMutation = useMutation({
@@ -881,6 +899,8 @@ export default function HomePage() {
 
   const urls = data?.urls || [];
   const { total = 0, totalPages = 1 } = data?.pagination || {};
+  const totalClicks =
+    data?.pagination?.totalClicks ?? urls.reduce((sum, url) => sum + url.clicks, 0);
 
   if (isLoading) {
     return (
@@ -1015,7 +1035,7 @@ export default function HomePage() {
                           Total Clicks
                         </div>
                         <div className="text-2xl font-bold mt-1">
-                          {urls.reduce((sum, url) => sum + url.clicks, 0)}
+                          {totalClicks}
                         </div>
                       </div>
                     </div>

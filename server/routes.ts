@@ -4,8 +4,8 @@ import { createServer, type Server } from "http";
 import { setupAuth } from "./auth";
 import { storage } from "./storage";
 import { 
-  insertUrlSchema, destinationsSchema, userApprovalSchema, userInviteSchema, inviteAcceptSchema, 
-  insertFolderSchema, insertFileSchema, urls 
+  insertUrlSchema, destinationsSchema, userApprovalSchema, 
+  insertFolderSchema, insertFileSchema, urls, shortCodeSchema, RESERVED_SHORTCODES
 } from "@shared/schema";
 import { qrConfigSchema } from "@shared/schema";
 import { UAParser } from "ua-parser-js";
@@ -15,7 +15,6 @@ import {
   AISuggestionError,
   aiSuggestionService,
 } from "./services/ai-suggestion-service";
-import { emailService } from "./services/email-service";
 import { fileStorage } from "./services/file-storage";
 import { servePdfDocument } from "./pdf-handler";
 import multer from "multer";
@@ -50,6 +49,38 @@ async function hashPassword(password: string) {
   const salt = randomBytes(16).toString("hex");
   const buf = (await scryptAsync(password, salt, 64)) as Buffer;
   return `${buf.toString("hex")}.${salt}`;
+}
+
+// Express 4 doesn't catch rejected promises from async handlers; pass them to the error middleware
+function asyncHandler(
+  handler: (req: express.Request, res: express.Response, next: express.NextFunction) => Promise<unknown>,
+): express.RequestHandler {
+  return (req, res, next) => {
+    handler(req, res, next).catch(next);
+  };
+}
+
+// Resolves to null if the promise takes longer than `ms`
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T | null> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => resolve(null), ms);
+    promise.then(
+      (value) => { clearTimeout(timer); resolve(value); },
+      (error) => { clearTimeout(timer); reject(error); },
+    );
+  });
+}
+
+const TITLE_GENERATION_TIMEOUT_MS = 4000;
+
+// Only lets clients change the fields they're meant to (never userId, storage names, ...)
+function pickFields<K extends string>(body: unknown, keys: K[]): Partial<Record<K, any>> {
+  const source = (body && typeof body === "object" ? body : {}) as Record<string, unknown>;
+  const picked: Partial<Record<K, any>> = {};
+  for (const key of keys) {
+    if (key in source) picked[key] = source[key];
+  }
+  return picked;
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -204,7 +235,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/urls", async (req, res) => {
+  app.post("/api/urls", asyncHandler(async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
 
     // Check for empty URL
@@ -257,19 +288,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     });
 
-    // Generate a title asynchronously - don't block the response
+    // Generate a title, but don't hold up (or fail) link creation if the AI provider is slow
+    let createdUrl = url;
     try {
-      const title = await aiSuggestionService.generateTitle({ url: url.originalUrl });
+      const title = await withTimeout(
+        aiSuggestionService.generateTitle({ url: url.originalUrl }),
+        TITLE_GENERATION_TIMEOUT_MS,
+      );
       if (title) {
-        await storage.updateUrl(url.id, req.user!.id, { title });
+        createdUrl = await storage.updateUrl(url.id, req.user!.id, { title });
+      } else {
+        console.warn("Automatic title generation timed out and was skipped.");
       }
     } catch {
       console.warn("Automatic title generation was skipped.");
-      // Don't block the response or fail if title generation fails
     }
 
-    res.status(201).json(url);
-  });
+    res.status(201).json(createdUrl);
+  }));
 
   app.delete("/api/urls/:id", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
@@ -311,31 +347,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/urls", async (req, res) => {
+  app.get("/api/urls", asyncHandler(async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
 
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
     const offset = (page - 1) * limit;
 
-    const [urls, total] = await Promise.all([
+    const [urls, total, totalClicks] = await Promise.all([
       storage.getUserUrls(req.user!.id, limit, offset),
-      storage.getUserUrlsCount(req.user!.id)
+      storage.getUserUrlsCount(req.user!.id),
+      storage.getUserTotalClicks(req.user!.id)
     ]);
 
     res.json({
       urls,
       pagination: {
         total,
+        totalClicks,
         page,
         totalPages: Math.ceil(total / limit),
         hasMore: offset + urls.length < total
       }
     });
-  });
+  }));
 
   // Special route for password-verified PDF documents
-  app.get("/verified-pdf/:shortCode", async (req, res) => {
+  app.get("/verified-pdf/:shortCode", asyncHandler(async (req, res) => {
     const url = await storage.getUrlByShortCode(req.params.shortCode);
     if (!url) return res.sendStatus(404);
     
@@ -358,17 +396,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     // Directly serve the PDF document through our custom viewer
     return servePdfDocument(res, url);
-  });
+  }));
 
   // New direct shortCode route without /api/r prefix
-  app.get("/:shortCode", async (req, res, next) => {
-    // Skip API endpoints and protected route
-    if (req.params.shortCode.startsWith('api') || 
-        req.params.shortCode === 'protected' || 
-        req.params.shortCode === 'admin' || 
-        req.params.shortCode === 'analytics' || 
-        req.params.shortCode === 'profile' || 
-        req.params.shortCode === 'activities') {
+  app.get("/:shortCode", asyncHandler(async (req, res, next) => {
+    // Leave the app's own pages to the client
+    if (RESERVED_SHORTCODES.includes(req.params.shortCode.toLowerCase())) {
       return next();
     }
     
@@ -452,10 +485,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.redirect(url.originalUrl);
     }
-  });
+  }));
 
   // Keep the /api/r/:shortCode route for backward compatibility
-  app.get("/api/r/:shortCode", async (req, res) => {
+  app.get("/api/r/:shortCode", asyncHandler(async (req, res) => {
     const url = await storage.getUrlByShortCode(req.params.shortCode);
     if (!url) return res.sendStatus(404);
     
@@ -519,9 +552,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.redirect(url.originalUrl);
     }
-  });
+  }));
 
-  app.post("/:shortCode/verify", async (req, res) => {
+  app.post("/:shortCode/verify", asyncHandler(async (req, res) => {
     const url = await storage.getUrlByShortCode(req.params.shortCode);
     if (!url) return res.sendStatus(404);
     
@@ -596,10 +629,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error('Error incrementing clicks:', error);
       res.json({ redirectUrl: url.originalUrl });
     }
-  });
+  }));
 
   // Keep old route for backward compatibility
-  app.post("/api/r/:shortCode/verify", async (req, res) => {
+  app.post("/api/r/:shortCode/verify", asyncHandler(async (req, res) => {
     const url = await storage.getUrlByShortCode(req.params.shortCode);
     if (!url) return res.sendStatus(404);
     
@@ -668,7 +701,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error('Error incrementing clicks:', error);
       res.json({ redirectUrl: url.originalUrl });
     }
-  });
+  }));
 
   app.patch("/api/urls/:id/qr-config", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
@@ -852,10 +885,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch("/api/urls/:id/shortcode", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
 
-    const { shortCode } = req.body;
-    if (!shortCode) {
-      return res.status(400).json({ error: "Short code is required" });
+    const parsedShortCode = shortCodeSchema.safeParse(req.body?.shortCode ?? "");
+    if (!parsedShortCode.success) {
+      return res.status(400).json({ error: parsedShortCode.error.issues[0].message });
     }
+    const shortCode = parsedShortCode.data;
 
     try {
       // Verify the URL belongs to the current user
@@ -1120,21 +1154,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Admin routes for user management
-  app.get("/api/admin/users", async (req, res) => {
-    if (!req.isAuthenticated() || req.user!.role !== "admin") {
-      return res.sendStatus(403);
-    }
-
-    try {
-      const users = await storage.getAllUsers();
-      res.json(users);
-    } catch (error) {
-      console.error('Error fetching users:', error);
-      res.status(500).json({ error: "Failed to fetch users" });
-    }
-  });
-
   app.patch("/api/admin/users/:id/approve", async (req, res) => {
     if (!req.isAuthenticated() || req.user!.role !== "admin") {
       return res.sendStatus(403);
@@ -1208,123 +1227,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error deleting user:', error);
       res.status(500).json({ error: "Failed to delete user" });
-    }
-  });
-  
-  // Invite system
-  app.post("/api/invites", async (req, res) => {
-    if (!req.isAuthenticated() || req.user!.role !== "admin") {
-      return res.sendStatus(403);
-    }
-
-    const parseResult = userInviteSchema.safeParse(req.body);
-    if (!parseResult.success) {
-      return res.status(400).json(parseResult.error);
-    }
-
-    try {
-      const { email, firstName, lastName, company, userType, role } = parseResult.data;
-      
-      // Check if user with this email already exists
-      const existingUser = await storage.getUserByEmail(email);
-      if (existingUser) {
-        return res.status(409).json({ error: "A user with this email already exists" });
-      }
-      
-      // Create invitation and get token
-      const { user, token } = await storage.createInvitation({ 
-        email, 
-        firstName, 
-        lastName, 
-        company, 
-        userType: userType || 'external',
-        role: role || 'user'
-      });
-      
-      // Send invitation email
-      await emailService.sendInvitation(email, firstName, lastName, token);
-      
-      // Log invitation creation
-      await storage.logActivity({
-        userId: req.user!.id,
-        type: "invitation_created",
-        metadata: {
-          invitedUserEmail: email,
-          invitedUserId: user.id
-        }
-      });
-      
-      res.status(201).json({ 
-        success: true, 
-        message: "Invitation created and sent", 
-        user 
-      });
-      
-    } catch (error) {
-      console.error('Error creating invitation:', error);
-      res.status(500).json({ 
-        error: "Failed to create invitation",
-        message: error instanceof Error ? error.message : "Unknown error"
-      });
-    }
-  });
-
-  app.get("/api/invites/:token", async (req, res) => {
-    try {
-      const user = await storage.getUserByInviteToken(req.params.token);
-      if (!user) {
-        return res.status(404).json({ error: "Invalid or expired invitation" });
-      }
-      
-      // Return basic user info (deliberately limiting data returned for security)
-      res.json({
-        firstName: user.firstName,
-        lastName: user.lastName,
-        email: user.email
-      });
-      
-    } catch (error) {
-      console.error('Error validating invitation:', error);
-      res.status(500).json({ error: "Failed to validate invitation" });
-    }
-  });
-
-  app.post("/api/invites/:token/accept", async (req, res) => {
-    const parseResult = inviteAcceptSchema.safeParse(req.body);
-    if (!parseResult.success) {
-      return res.status(400).json(parseResult.error);
-    }
-
-    try {
-      const { username, password } = parseResult.data;
-      
-      // Check if username is already taken
-      const existingUser = await storage.getUserByUsername(username);
-      if (existingUser) {
-        return res.status(409).json({ error: "Username is already taken" });
-      }
-      
-      // Accept invitation
-      const user = await storage.acceptInvitation(req.params.token, {
-        username,
-        password
-      });
-      
-      // Log successful invitation acceptance
-      await storage.logActivity({
-        userId: user.id,
-        type: "invitation_accepted",
-        metadata: {}
-      });
-      
-      res.json({ success: true, message: "Invitation accepted" });
-      
-    } catch (error) {
-      console.error('Error accepting invitation:', error);
-      res.status(500).json({ 
-        error: "Failed to accept invitation",
-        message: error instanceof Error ? error.message : "Unknown error"
-      });
     }
   });
   
@@ -1416,7 +1318,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Folder not found" });
       }
       
-      const updatedFolder = await storage.updateFolder(folderId, req.user!.id, req.body);
+      const updatedFolder = await storage.updateFolder(folderId, req.user!.id, pickFields(req.body, ["name", "parentId"]));
       res.json(updatedFolder);
     } catch (error) {
       console.error('Error updating folder:', error);
@@ -1542,7 +1444,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "File not found" });
       }
       
-      const updatedFile = await storage.updateFile(fileId, req.user!.id, req.body);
+      const updatedFile = await storage.updateFile(fileId, req.user!.id, pickFields(req.body, ["name", "folderId", "description"]));
       if (!updatedFile) {
         return res.status(500).json({ error: "Failed to update file" });
       }

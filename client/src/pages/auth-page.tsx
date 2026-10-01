@@ -1,4 +1,4 @@
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth, useAuthProviders } from "@/hooks/use-auth";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertUserSchema, InsertUser } from "@shared/schema";
@@ -34,6 +34,7 @@ import { motion, AnimatePresence } from "framer-motion";
 
 export default function AuthPage() {
   const { user, loginMutation } = useAuth();
+  const authProviders = useAuthProviders();
   const [isLoaded, setIsLoaded] = useState(false);
   // Initialize with the first feature active
   const [activeFeatures, setActiveFeatures] = useState<Record<number, boolean>>({
@@ -714,6 +715,7 @@ export default function AuthPage() {
                   </form>
                 </Form>
 
+                {authProviders.microsoft && (<>
                 <div className="relative my-6">
                   <div className="absolute inset-0 flex items-center">
                     <div className="w-full border-t border-white/10" />
@@ -746,6 +748,7 @@ export default function AuthPage() {
                   </svg>
                   Sign in with Microsoft
                 </Button>
+                </>)}
               </div>
             </CardContent>
           </Card>

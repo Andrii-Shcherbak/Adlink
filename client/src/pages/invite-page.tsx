@@ -9,6 +9,7 @@ import { Loader2, Mail, Check, AlertCircle } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { queryClient } from "@/lib/queryClient";
 
 interface InviteData {
   email: string;
@@ -147,6 +148,9 @@ export default function InvitePage() {
         const errorData = await response.json();
         throw new Error(errorData.error || "Failed to accept invitation");
       }
+
+      // The server signed the user in; reload the session user so protected pages let them through
+      await queryClient.invalidateQueries({ queryKey: ["/api/user"] });
 
       toast({
         title: "Welcome to ADLink!",
