@@ -1,17 +1,17 @@
+import sgMail from '@sendgrid/mail';
 import { getAuthDomain } from '../utils/appConfig';
 
-// Resend email API
-// https://resend.com/docs/api-reference/emails/send-email
-const RESEND_API_URL = 'https://api.resend.com/emails';
-
-if (!process.env.RESEND_API_KEY) {
-  console.warn("WARNING: RESEND_API_KEY environment variable is not set. Email functionality will not work.");
+if (!process.env.SENDGRID_API_KEY) {
+  console.warn("WARNING: SENDGRID_API_KEY environment variable is not set. Email functionality will not work.");
 } else {
-  console.log("Resend API key configured");
+  // Set API key for the entire SendGrid client
+  sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+  console.log("SendGrid API key configured");
 }
 
 interface EmailParams {
   to: string;
+  from: string;
   subject: string;
   text: string;
   html: string;
@@ -19,61 +19,50 @@ interface EmailParams {
 
 export class EmailService {
   private readonly from: string;
-  private readonly fromName: string;
   private readonly domain: string = getAuthDomain();
 
   constructor() {
-    // Must be on a domain verified in Resend (or onboarding@resend.dev for testing)
-    this.from = process.env.EMAIL_FROM?.trim() || 'noreply@adlink.dcxtransform.com';
-    this.fromName = process.env.EMAIL_FROM_NAME?.trim() || 'ADLink';
-
-    console.log(`Email service initialized with sender: ${this.fromName} <${this.from}>`);
-  }
-
-  isConfigured(): boolean {
-    return !!process.env.RESEND_API_KEY;
+    // Must be a sender verified in SendGrid
+    this.from = process.env.EMAIL_FROM?.trim() || 'dev@dcxtransform.com';
+    
+    console.log(`Email service initialized with sender: ${this.from}`);
   }
 
   async sendEmail(params: EmailParams): Promise<boolean> {
-    const apiKey = process.env.RESEND_API_KEY;
-    if (!apiKey) {
-      console.error('Resend API key not set. Email not sent.');
+    if (!process.env.SENDGRID_API_KEY) {
+      console.error('SendGrid API key not set. Email not sent.');
       return false;
     }
 
     try {
-      const response = await fetch(RESEND_API_URL, {
-        method: 'POST',
-        headers: {
-          authorization: `Bearer ${apiKey}`,
-          'content-type': 'application/json',
-        },
-        body: JSON.stringify({
-          from: `${this.fromName} <${this.from}>`,
-          to: [params.to],
-          subject: params.subject,
-          html: params.html,
-          text: params.text,
-        }),
-      });
-
-      if (!response.ok) {
-        console.error(`Resend email error (${response.status}):`, await response.text());
-        return false;
-      }
-
-      const { id } = await response.json().catch(() => ({}));
-      console.log(`Email sent successfully to ${params.to}${id ? ` (id: ${id})` : ''}`);
+      // Create message using v3 API format
+      const msg = {
+        to: params.to,
+        from: this.from, // Use the class property instead of params.from
+        subject: params.subject,
+        text: params.text || '',
+        html: params.html || '',
+      };
+      
+      // Send email using v3 API
+      await sgMail.send(msg);
+      console.log(`Email sent successfully to ${params.to}`);
       return true;
     } catch (error) {
-      console.error('Resend email error:', error);
+      // More detailed error logging
+      console.error('SendGrid email error:');
+      if (error.response) {
+        console.error(error.response.body);
+      } else {
+        console.error(error);
+      }
       return false;
     }
   }
 
   async sendInvitation(email: string, firstName: string, lastName: string, inviteToken: string): Promise<boolean> {
     const inviteUrl = `${this.domain}/invite/${inviteToken}`;
-
+    
     const htmlContent = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <div style="background-color: #4f46e5; padding: 20px; text-align: center;">
@@ -96,7 +85,7 @@ export class EmailService {
       </div>
     `;
 
-    const textContent =
+    const textContent = 
       `You've been invited to join ADLink\n\n` +
       `Hello ${firstName} ${lastName},\n\n` +
       `You have been invited to join ADLink, a robust URL shortening and QR code generation platform.\n\n` +
@@ -104,9 +93,10 @@ export class EmailService {
       `This invitation will expire in 7 days.\n\n` +
       `Thank you,\n` +
       `The ADLink Team`;
-
+    
     return this.sendEmail({
       to: email,
+      from: this.from,
       subject: 'Invitation to join ADLink',
       text: textContent,
       html: htmlContent

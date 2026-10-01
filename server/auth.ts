@@ -530,9 +530,13 @@ export function setupAuth(app: Express) {
         token
       );
       
-      if (!emailSent) {
-        // The invitation already exists at this point, so return success with a warning
-        // and include the token so the invite link can be shared manually
+      if (!emailSent && !process.env.SENDGRID_API_KEY) {
+        return res.status(400).json({ 
+          error: "SendGrid API key is missing. Please add a SENDGRID_API_KEY to your environment variables." 
+        });
+      } else if (!emailSent) {
+        // If email fails for other reasons, return success but with a warning
+        // Also include the token so it can be manually shared
         return res.status(201).json({
           success: true,
           user: {
@@ -542,9 +546,7 @@ export function setupAuth(app: Express) {
             lastName: user.lastName
           },
           token: token, // Include token for manual sharing
-          warning: emailService.isConfigured()
-            ? "Invitation created but email could not be sent. Please check your email configuration."
-            : "Invitation created but email is not configured (RESEND_API_KEY is missing). Share the invite link manually."
+          warning: "Invitation created but email could not be sent. Please check your email configuration."
         });
       }
       
