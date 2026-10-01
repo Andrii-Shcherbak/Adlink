@@ -362,12 +362,12 @@ function ExpiryDialog({ url }: { url: Url }) {
           </div>
 
           {expiryDate && (
-            <div className="rounded-md bg-muted p-3 text-sm">
+            <div className="rounded-md bg-muted p-3 text-sm text-white">
               This link will expire on {format(expiryDate, "MMMM d, yyyy")}
               {isPast(expiryDate) && (
                 <div className="mt-2 flex items-center text-destructive">
                   <AlertTriangle className="h-4 w-4 mr-1" />
-                  <span>
+                  <span className="text-white text-bold">
                     This date is in the past. The link will be immediately
                     expired.
                   </span>
